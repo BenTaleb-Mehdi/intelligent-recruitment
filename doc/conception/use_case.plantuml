@@ -1,0 +1,41 @@
+@startuml
+left to right direction
+skinparam packageStyle rectangle
+
+actor "Candidat" as Candidate
+actor "Recruteur" as Recruiter
+actor "Administrateur" as Admin
+actor "Systèmes Externes\n(GitHub, LinkedIn, BidigitalHub)" as ExtSystems
+
+rectangle "Plateforme IA de Recrutement" {
+    ' Cas d'utilisation Candidat
+    Candidate --> (S'authentifier / OAuth2)
+    Candidate --> (Gérer son Profil & Importer CV)
+    Candidate --> (Synchroniser Portfolio / GitHub)
+    Candidate --> (Passer des Tests Techniques)
+    Candidate --> (Consulter les Offres Recommandées)
+    Candidate --> (Suivre ses Candidatures)
+    
+    ' Cas d'utilisation Recruteur
+    Recruiter --> (S'authentifier / OAuth2)
+    Recruiter --> (Créer & Publier une Offre)
+    Recruiter --> (Consulter le Ranking IA & Matching)
+    Recruiter --> (Filtrer & Rechercher des Profils)
+    Recruiter --> (Visualiser Analytics & Dashboard)
+    
+    ' Cas d'utilisation Admin
+    Admin --> (Gérer les Utilisateurs)
+    Admin --> (Superviser les Modèles IA)
+    Admin --> (Modérer le Contenu)
+    
+    ' Interactions Système & IA (Inclusions / Extensions)
+    (Gérer son Profil & Importer CV) .> (Parser le CV via NLP) : <<include>>
+    (Créer & Publier une Offre) .> (Parser l'Offre via NLP) : <<include>>
+    (Consulter le Ranking IA & Matching) .> (Calculer la Cosine Similarity) : <<include>>
+    (Consulter le Ranking IA & Matching) .> (Générer Explications IA) : <<include>>
+    
+    ' Liens Systèmes Externes
+    (Synchroniser Portfolio / GitHub) --> ExtSystems
+    (Gérer son Profil & Importer CV) --> ExtSystems
+}
+@enduml

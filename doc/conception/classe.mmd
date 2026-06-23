@@ -1,0 +1,103 @@
+classDiagram
+    class User {
+        <<abstract>>
+        #id: Long
+        #email: String
+        #passwordHash: String
+        #role: String
+        #createdAt: LocalDateTime
+        +login()
+        +logout()
+    }
+
+    class Candidate {
+        -firstName: String
+        -lastName: String
+        -phone: String
+        -employabilityScore: Float
+        -careerSuggestions: List~String~
+        +passTechnicalTest()
+        +syncExternalPortfolio()
+    }
+
+    class Recruiter {
+        -companyName: String
+        -position: String
+        -industry: String
+        +createJobOffer()
+        +viewAnalytics()
+    }
+
+    class JobOffer {
+        -id: Long
+        -title: String
+        -description: String
+        -parsedSkills: List~String~
+        -location: String
+        -salaryRange: String
+        -status: String
+        +archive()
+    }
+
+    class CV {
+        -id: String
+        -rawFileUrl: String
+        -parsedText: String
+        -extractedSkills: List~String~
+        -experienceYears: Integer
+    }
+
+    class Portfolio {
+        -id: String
+        -platformName: String
+        -externalUrl: String
+        -verifiedStatus: Boolean
+    }
+
+    class Project {
+        -id: Long
+        -title: String
+        -description: String
+        -repositoryUrl: String
+        -hiddenSkillsDetected: List~String~
+    }
+
+    class Application {
+        -id: Long
+        -appliedAt: LocalDateTime
+        -status: String
+    }
+
+    class MatchResult {
+        -id: Long
+        -globalScore: Float
+        -contentScore: Float
+        -collaborativeScore: Float
+        -explainabilityText: String
+        -generatedAt: LocalDateTime
+        +generateExplanation()
+    }
+
+    class TechnicalTest {
+        -id: Long
+        -title: String
+        -maxDuration: Integer
+        -scoreObtained: Float
+    }
+
+    %% Relations d'héritage
+    User <|-- Candidate
+    User <|-- Recruiter
+
+    %% Relations de composition / association
+    Candidate "1" -- "1" CV : possède
+    Candidate "1" -- "0..*" Portfolio : intègre
+    Portfolio "1" -- "0..*" Project : contient
+    Candidate "1" -- "0..*" Application : soumet
+    Candidate "1" -- "0..*" TechnicalTest : effectue
+
+    Recruiter "1" -- "0..*" JobOffer : publie
+    JobOffer "1" -- "0..*" Application : reçoit
+
+    JobOffer "1" -- "0..*" MatchResult : génère
+    Candidate "1" -- "0..*" MatchResult : évalué par
