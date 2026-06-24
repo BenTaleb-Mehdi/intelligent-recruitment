@@ -1,13 +1,22 @@
+
 classDiagram
     class User {
         <<abstract>>
         #id: Long
         #email: String
         #passwordHash: String
-        #role: String
         #createdAt: LocalDateTime
         +login()
         +logout()
+    }
+
+    class Role {
+        -id: Long
+        -name: String
+        -description: String
+        -permissions: List~String~
+        +addPermission()
+        +removePermission()
     }
 
     class Candidate {
@@ -85,11 +94,14 @@ classDiagram
         -scoreObtained: Float
     }
 
-    %% Relations d'héritage
+    %% Héritage
     User <|-- Candidate
     User <|-- Recruiter
 
-    %% Relations de composition / association
+    %% Gestion des Rôles (RBAC)
+    User "0..*" -- "1..*" Role : possède
+
+    %% Associations et Compositions
     Candidate "1" -- "1" CV : possède
     Candidate "1" -- "0..*" Portfolio : intègre
     Portfolio "1" -- "0..*" Project : contient
