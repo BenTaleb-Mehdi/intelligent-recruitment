@@ -9,5 +9,7 @@ export const auth = betterAuth({
     emailAndPassword: {  
         enabled: true,
         autoSignIn: true
-    }
+    },
+    basePath: "/api/auth", // Must match the Express mount path
+    trustedOrigins: ["http://localhost:3000"],
 });
