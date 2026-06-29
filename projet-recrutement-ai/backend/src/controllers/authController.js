@@ -1,14 +1,10 @@
 import { auth } from "../lib/auth.js";
+import { toNodeHandler } from "better-auth/node";
 
 /**
  * Controller 1: Better Auth Handlers (Sign-up, Sign-in, Sign-out, etc.)
  */
-export const handleAuth = async (req, res) => {
-    // Better Auth works with Standard Web Requests (Fetch API standards),
-    // this '.handler' from Better Auth includes an Express adapter to handle it.
-    const response = await auth.handler(req);
-    return response;
-};
+export const handleAuth = toNodeHandler(auth);
 
 /**
  * Controller 2: Dashboard Controller
