@@ -1,19 +1,25 @@
 "use client";
 import React, { useState } from "react";
-import { Card, CardHeader, CardBody, CardFooter, Input, Button, Link } from "@heroui/react";
+import { Card, CardHeader, CardBody, CardFooter, Input, Button, Link, Select, SelectItem } from "@heroui/react";
 import { authClient } from "@/lib/auth-client";
 
 interface RegisterCardProps {
     setView: (view: "login" | "register") => void;
 }
 
+const roles = [
+    { key: "candidat", label: "Candidat" },
+    { key: "recruteur", label: "Recruteur" },
+];
+
 export default function RegisterCard({ setView }: RegisterCardProps) {
-    const [name, setName] = useState<string>("");
-    const [email, setEmail] = useState<string>("");
-    const [password, setPassword] = useState<string>("");
-    const [error, setError] = useState<string>("");
-    const [success, setSuccess] = useState<string>("");
-    const [loading, setLoading] = useState<boolean>(false);
+    const [name, setName] = useState("");
+    const [email, setEmail] = useState("");
+    const [password, setPassword] = useState("");
+    const [role, setRole] = useState<string>("candidat");
+    const [error, setError] = useState("");
+    const [success, setSuccess] = useState("");
+    const [loading, setLoading] = useState(false);
 
     const handleRegister = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
@@ -21,7 +27,12 @@ export default function RegisterCard({ setView }: RegisterCardProps) {
         setSuccess("");
         setLoading(true);
 
-        const { error } = await authClient.signUp.email({ email, password, name });
+        const { error } = await authClient.signUp.email({
+            email,
+            password,
+            name,
+            role,
+        } as any);
 
         if (error) {
             setError(error.message || "Something went wrong. Please try again.");
@@ -63,14 +74,59 @@ export default function RegisterCard({ setView }: RegisterCardProps) {
                             </div>
                         </div>
                     )}
-                    <Input type="text" label="Full Name" variant="bordered" value={name} onChange={(e) => setName(e.target.value)} required />
-                    <Input type="email" label="Email" variant="bordered" value={email} onChange={(e) => setEmail(e.target.value)} required />
-                    <Input type="password" label="Password" variant="bordered" value={password} onChange={(e) => setPassword(e.target.value)} required />
-                    <Button type="submit" color="primary" isLoading={loading}>Register</Button>
+                    <Input
+                        type="text"
+                        label="Full Name"
+                        placeholder="John Doe"
+                        variant="bordered"
+                        value={name}
+                        onValueChange={setName}
+                        isRequired
+                    />
+                    <Input
+                        type="email"
+                        label="Email"
+                        placeholder="you@example.com"
+                        variant="bordered"
+                        value={email}
+                        onValueChange={setEmail}
+                        isRequired
+                    />
+                    <Input
+                        type="password"
+                        label="Password"
+                        placeholder="Create a strong password"
+                        variant="bordered"
+                        value={password}
+                        onValueChange={setPassword}
+                        isRequired
+                    />
+                    <Select
+                        label="Role"
+                        placeholder="Select your role"
+                        variant="bordered"
+                        selectedKeys={[role]}
+                        onSelectionChange={(keys) => {
+                            const value = Array.from(keys)[0] as string;
+                            if (value) setRole(value);
+                        }}
+                    >
+                        {roles.map((r) => (
+                            <SelectItem key={r.key}>{r.label}</SelectItem>
+                        ))}
+                    </Select>
+                    <Button type="submit" color="primary" className="font-medium" isLoading={loading}>
+                        Register
+                    </Button>
                 </form>
             </CardBody>
             <CardFooter className="justify-center">
-                <p className="text-small">Already have an account? <Link size="sm" className="cursor-pointer" onPress={() => setView("login")}>Sign in</Link></p>
+                <p className="text-small">
+                    Already have an account?{" "}
+                    <Link size="sm" className="cursor-pointer" onPress={() => setView("login")}>
+                        Sign in
+                    </Link>
+                </p>
             </CardFooter>
         </Card>
     );

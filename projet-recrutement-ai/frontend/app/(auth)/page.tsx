@@ -19,15 +19,17 @@ export default function AuthPage() {
         }
     }, [session, router]);
 
-    if (isPending) return <div className="h-screen w-screen flex justify-center items-center"><Spinner size="lg" label="Checking session..." /></div>;
+    if (isPending) {
+        return <Spinner size="lg" label="Checking session..." />;
+    }
 
     return (
-        <main className="h-screen w-screen flex justify-center items-center bg-default-50">
+        <>
             {view === "login" ? (
                 <LoginCard setView={setView} />
             ) : (
                 <RegisterCard setView={setView} />
             )}
-        </main>
+        </>
     );
 }

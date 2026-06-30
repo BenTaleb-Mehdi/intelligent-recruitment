@@ -3,6 +3,7 @@ import React, { useEffect } from "react";
 import { authClient } from "@/lib/auth-client";
 import { useRouter } from "next/navigation";
 import { Spinner, Card } from "@heroui/react";
+import { Sidebar } from "@/components/ui/sidebar";
 import DashboardSidebar from "@/components/DashboardSidebar";
 import DashboardNavbar from "@/components/DashboardNavbar";
 
@@ -20,19 +21,24 @@ export default function DashboardPage() {
     if (!session) return null;
 
     return (
-        <div className="flex h-screen w-screen overflow-hidden bg-default-50">
+        <Sidebar.Provider
+            variant="sidebar"
+            collapsible="icon"
+            defaultOpen
+            navigate={router.push}
+        >
             <DashboardSidebar />
-            <div className="flex flex-col flex-1 h-full overflow-y-auto">
+            <Sidebar.Main>
                 <DashboardNavbar userName={session?.user?.name} />
-                <main className="p-6 flex-1">
+                <div className="p-6 flex-1 bg-default-50 min-h-[calc(100vh-64px)]">
                     <Card className="p-6 shadow-sm">
                         <h2 className="text-2xl font-bold mb-4">Welcome to your Dashboard! 🎉</h2>
                         <p className="text-default-500">
                             This page is built with TypeScript (TSX) and HeroUI components.
                         </p>
                     </Card>
-                </main>
-            </div>
-        </div>
+                </div>
+            </Sidebar.Main>
+        </Sidebar.Provider>
     );
 }
