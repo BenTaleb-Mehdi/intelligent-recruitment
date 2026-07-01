@@ -48,6 +48,20 @@ export default function LoginCard({ setView }: LoginCardProps) {
     }
 };
 
+    const handleLinkedinLogin = async () => {
+    try {
+        // Safe check dial l-Register state kima drna f l-blan d sessionStorage
+        sessionStorage.setItem("is_signing_up", "false"); // aw true ila knti f RegisterCard
+        
+        await authClient.signIn.social({
+            provider: "linkedin",
+            callbackURL: "http://localhost:3000/dashboard"
+        });
+    } catch (error) {
+        console.error("Kh6a2 f dkhul b LinkedIn:", error);
+    }
+};
+
     return (
         <Card className="w-full max-w-[400px] p-4 shadow-lg">
             <CardHeader className="flex flex-col gap-1 items-center">
@@ -111,6 +125,14 @@ export default function LoginCard({ setView }: LoginCardProps) {
                         onPress={handleGithubLogin}
                     >
                         Sign in with GitHub
+                    </Button>
+                    <Button 
+                        variant="bordered"
+                        className="w-full border-default-200 hover:border-default-400 font-medium"
+                        startContent={<Icon icon="logos:linkedin-icon" className="w-5 h-5" />}
+                        onPress={handleLinkedinLogin}
+                    >
+                        Sign in with LinkedIn
                     </Button>
                 </form>
             </CardBody>
