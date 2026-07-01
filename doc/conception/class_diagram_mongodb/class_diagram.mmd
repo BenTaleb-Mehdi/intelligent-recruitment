@@ -1,0 +1,28 @@
+classDiagram
+    direction LR
+
+    class CV_Document {
+        +ObjectId _id
+        +int candidatId
+        +String fichierUrl
+        +String texteExtraitRaw
+        +Object parsedData
+        +List~String~ competencesExtraites
+        +List~Experience~ experiences
+        +List~Formation~ formations
+        +Date updatedAt
+    }
+
+    class Portfolio_Document {
+        +ObjectId _id
+        +int candidatId
+        +String plateformeSource
+        +String urlExterne
+        +List~Projet~ projets
+        +Object iaAnalysis
+        +Date lastSync
+    }
+
+    %% MongoDB structure embedded representations
+    note for CV_Document "Un-structured text dial parsing\nkaykon f single document hna"
+    note for Portfolio_Document "Les projets GitHub/BidigitalHub\ntaykono nested (embedded) hna"

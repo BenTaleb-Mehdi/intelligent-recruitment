@@ -1,0 +1,58 @@
+classDiagram
+    direction TB
+
+    class Utilisateur {
+        +int id
+        +String nom
+        +String prenom
+        +String email
+        +String motDePasse
+        +String role
+        +Date dateInscription
+    }
+
+    class OffreEmploi {
+        +int id
+        +String titre
+        +String description
+        +String localisation
+        +double salaireEstime
+        +String statut
+        +Date datePublication
+        +int recruteurId
+    }
+
+    class Candidature {
+        +int id
+        +Date datePostulation
+        +String statut
+        +float scoreMatching
+        +String explicationIA
+        +int candidatId
+        +int offreId
+    }
+
+    class TestEvaluation {
+        +int id
+        +String titre
+        +String type
+        +float scoreGlobal
+        +Date datePassage
+        +int candidatId
+    }
+
+    class Notification {
+        +int id
+        +String contenu
+        +String type
+        +boolean estLu
+        +Date dateEnvoi
+        +int utilisateurId
+    }
+
+    %% Relations (Foreign Keys f MySQL)
+    Utilisateur "1" -- "*" OffreEmploi : "publie (si Recruteur)"
+    Utilisateur "1" -- "*" Candidature : "soumet (si Candidat)"
+    OffreEmploi "1" -- "*" Candidature : "reçoit"
+    Utilisateur "1" -- "*" TestEvaluation : "passe (si Candidat)"
+    Utilisateur "1" -- "*" Notification : "reçoit"
