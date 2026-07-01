@@ -4,6 +4,7 @@ import { Button } from "@heroui/react";
 import { authClient } from "@/lib/auth-client";
 import { useRouter } from "next/navigation";
 import { useSidebar } from "@/components/ui/sidebar";
+import { Icon } from "@iconify/react";
 
 interface DashboardNavbarProps {
     userName?: string;
@@ -29,17 +30,7 @@ export default function DashboardNavbar({ userName = "User" }: DashboardNavbarPr
                     aria-label="Toggle sidebar"
                     className="md:hidden"
                 >
-                    <svg
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth={2}
-                        className="size-5"
-                    >
-                        <line x1="3" y1="6" x2="21" y2="6" />
-                        <line x1="3" y1="12" x2="21" y2="12" />
-                        <line x1="3" y1="18" x2="21" y2="18" />
-                    </svg>
+                    <Icon icon="lucide:menu" className="size-5" />
                 </Button>
                 <span className="font-bold text-base md:hidden">Recruitment AI</span>
             </div>

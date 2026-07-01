@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@heroui/react": "^2.6.14",
+    "@iconify/react": "^6.0.2",
     "better-auth": "^1.6.22",
     "framer-motion": "^12.42.0",
     "next": "16.2.9",

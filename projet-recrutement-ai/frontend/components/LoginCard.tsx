@@ -3,8 +3,7 @@ import React, { useState } from "react";
 import { Card, CardHeader, CardBody, CardFooter, Input, Button, Link } from "@heroui/react";
 import { authClient } from "@/lib/auth-client";
 import { useRouter } from "next/navigation";
-import { GithubIcon } from "@/components/icons/GithubIcon";
-import { GoogleIcon } from "@/components/icons/GoogleIcon";
+import { Icon } from "@iconify/react";
 
 interface LoginCardProps {
     setView: (view: "login" | "register") => void;
@@ -59,9 +58,7 @@ export default function LoginCard({ setView }: LoginCardProps) {
                 <form onSubmit={handleLogin} className="flex flex-col gap-4">
                     {error && (
                         <div className="flex items-start gap-2 bg-danger-50 text-danger border border-danger-200 rounded-lg p-3">
-                            <svg className="w-5 h-5 mt-0.5 shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.28 7.22a.75.75 0 00-1.06 1.06L8.94 10l-1.72 1.72a.75.75 0 101.06 1.06L10 11.06l1.72 1.72a.75.75 0 101.06-1.06L11.06 10l1.72-1.72a.75.75 0 00-1.06-1.06L10 8.94 8.28 7.22z" clipRule="evenodd" />
-                            </svg>
+                            <Icon icon="lucide:circle-alert" className="w-5 h-5 mt-0.5 shrink-0" />
                             <p className="text-sm">{error}</p>
                         </div>
                     )}
@@ -100,17 +97,17 @@ export default function LoginCard({ setView }: LoginCardProps) {
                         </div>
                     </div>
                     <Button 
-        variant="bordered"
-        className="w-full border-default-200 hover:border-default-400 font-medium"
-        startContent={<GoogleIcon className="w-5 h-5" />}
-        onPress={handleGoogleLogin}
-    >
-        Dkhul b Google
-    </Button>
+                            variant="bordered"
+                            className="w-full border-default-200 hover:border-default-400 font-medium"
+                            startContent={<Icon icon="logos:google-icon" className="w-5 h-5" />}
+                            onPress={handleGoogleLogin}
+                        >
+                            Sign in with Google
+                    </Button>
                     <Button
                         variant="bordered"
                         className="w-full border-default-200 hover:border-default-400 font-medium"
-                        startContent={<GithubIcon className="size-5 text-default-900" />}
+                        startContent={<Icon icon="lucide:github" className="size-5 text-default-900" />}
                         onPress={handleGithubLogin}
                     >
                         Sign in with GitHub

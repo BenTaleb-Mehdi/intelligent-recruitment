@@ -12,15 +12,26 @@ export default function AuthPage() {
     const [view, setView] = useState<AuthView>("login");
     const { data: session, isPending } = authClient.useSession();
     const router = useRouter();
+    const [mounted, setMounted] = useState(false);
 
     useEffect(() => {
-        if (session) {
-            router.push("/dashboard");
-        }
-    }, [session, router]);
+        setMounted(true);
+    }, []);
 
-    if (isPending) {
-        return <Spinner size="lg" label="Checking session..." />;
+    useEffect(() => {
+        if (!mounted) return;
+        if (session) {
+            const isOnboarded = (session.user as any).isOnboarded;
+            if (isOnboarded) {
+                router.push("/dashboard");
+            } else {
+                router.push("/welcome");
+            }
+        }
+    }, [session, router, mounted]);
+
+    if (!mounted || isPending) {
+        return null;
     }
 
     return (
