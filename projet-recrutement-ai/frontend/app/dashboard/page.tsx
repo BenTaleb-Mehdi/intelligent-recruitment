@@ -1,6 +1,6 @@
 "use client";
-import React, { useEffect } from "react";
-import { authClient } from "@/lib/auth-client";
+import React, { useEffect, useState } from "react";
+import { authClient,   } from "@/lib/auth-client";
 import { useRouter } from "next/navigation";
 import { Spinner, Card } from "@heroui/react";
 import { Sidebar } from "@/components/ui/sidebar";
@@ -10,14 +10,27 @@ import DashboardNavbar from "@/components/DashboardNavbar";
 export default function DashboardPage() {
     const { data: session, isPending } = authClient.useSession();
     const router = useRouter();
+    const [mounted, setMounted] = useState(false);
 
     useEffect(() => {
-        if (!isPending && !session) {
-            router.push("/");
-        }
-    }, [session, isPending, router]);
+        setMounted(true);
+    }, []);
 
-    if (isPending) return <div className="h-screen w-screen flex justify-center items-center"><Spinner size="lg" /></div>;
+    useEffect(() => {
+        if (!mounted || isPending) return;
+
+        if (!session) {
+            router.push("/");
+            return;
+        }
+
+        const isOnboarded = (session.user as any)?.isOnboarded;
+        if (!isOnboarded) {
+            router.push("/welcome");
+        }
+    }, [session, isPending, router, mounted]);
+
+    if (!mounted || isPending) return <div className="h-screen w-screen flex justify-center items-center"><Spinner size="lg" /></div>;
     if (!session) return null;
 
     return (

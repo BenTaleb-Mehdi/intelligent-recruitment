@@ -15,13 +15,13 @@ export const auth = betterAuth({
             clientId: process.env.GITHUB_CLIENT_ID,
             clientSecret: process.env.GITHUB_CLIENT_SECRET,
         },
-        // 👈 هاهي تفركسات هنا رجعات ساطة ونقية
+     
         google: {
             clientId: process.env.GOOGLE_CLIENT_ID,
             clientSecret: process.env.GOOGLE_CLIENT_SECRET, 
         },
     },
-    // 💡 تفادى مشاكل account_not_linked مستقبلاً
+  
     account: {
         accountLinking: {
             enabled: true,
@@ -31,12 +31,31 @@ export const auth = betterAuth({
         additionalFields: {
             role: {
                 type: "string",
-                required: true,
+                required: false,
                 defaultValue: "candidat",
+                input: true,
+            },
+            isOnboarded: {
+                type: "boolean",
+                required: false,
+                defaultValue: false,
                 input: true,
             },
         },
     },
+
+    session: {
+        customSession: async ({ session, user }) => {
+            return {
+                ...session,
+                user: {
+                    ...user,
+                    isOnboarded: user.isOnboarded ?? false,
+                }
+            }
+        }
+    },
+
     basePath: "/api/auth",
     trustedOrigins: ["http://localhost:3000"],
 });
