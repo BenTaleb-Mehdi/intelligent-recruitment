@@ -1,0 +1,92 @@
+@startuml
+' --- Configuration du Design ---
+left to right direction
+skinparam backgroundcolor #FFFFFF
+skinparam shadowing false
+skinparam packageStyle rectangle
+
+' Style des Acteurs
+skinparam actor {
+    BackgroundColor #FFFFFF
+    BorderColor #2B6CB0
+    FontName Arial
+    FontSize 12
+    FontColor #2D3748
+}
+
+' Style des Use Cases
+skinparam usecase {
+    BackgroundColor #F7FAFC
+    BorderColor #CBD5E0
+    FontName Arial
+    FontSize 12
+    FontColor #2D3748
+    ArrowColor #4A5568
+}
+
+' --- Les Acteurs (Sans Icônes Custom) ---
+actor "Candidat" as Candidate
+actor "Recruteur" as Recruiter
+actor "Administrateur" as Admin
+
+' --- Le Système ---
+rectangle "Plateforme de Recrutement IA" {
+    
+    '--- Bloc Authentification ---
+    rectangle "Authentification & Profil" #EDF2F7 {
+        usecase "S'authentifier (Social / Manuel)" as UC_Auth
+        usecase "Compléter l'Onboarding (Choix du Rôle)" as UC_Onboard
+    }
+    
+    '--- Espace Candidat ---
+    rectangle "Espace Candidat" #EBF8FF {
+        usecase "Gérer le Profil (CV & Synchro GitHub/Portfolio)" as UC_UploadData
+        usecase "Consulter les Offres Recommandées (Score %)" as UC_ViewJobs
+        usecase "Postuler à une Offre d'Emploi" as UC_Apply
+        usecase "Passer le Quiz Technique Automatique" as UC_TakeQuiz
+        usecase "Suivre le Statut des Candidatures" as UC_TrackApps
+    }
+    
+    '--- Espace Recruteur ---
+    rectangle "Espace Recruteur" #F0FFF4 {
+        usecase "Créer une Offre d'Emploi" as UC_CreateJob
+        usecase "Générer Automatiquement un Quiz (IA)" as UC_GenQuiz
+        usecase "Consulter le Ranking des Candidats" as UC_RankApplicants
+        usecase "Visualiser le Dashboard Analytics" as UC_RecruiterDash
+    }
+    
+    '--- Espace Admin ---
+    rectangle "Espace Administration" #FFF5F5 {
+        usecase "Modérer les Utilisateurs" as UC_ManageUsers
+        usecase "Modérer les Offres d'Emploi" as UC_ModerateJobs
+        usecase "Suivre les Statistiques Globales" as UC_AdminDash
+    }
+}
+
+' --- Les Liaisons (Relations) ---
+
+' Relations Candidat
+Candidate --> UC_Auth
+Candidate --> UC_Onboard
+Candidate --> UC_UploadData
+Candidate --> UC_ViewJobs
+Candidate --> UC_Apply
+Candidate --> UC_TakeQuiz
+Candidate --> UC_TrackApps
+
+' Relations Recruteur
+Recruiter --> UC_Auth
+Recruiter --> UC_Onboard
+Recruiter --> UC_CreateJob
+Recruiter --> UC_RankApplicants
+Recruiter --> UC_RecruiterDash
+
+' Relations Admin
+Admin --> UC_ManageUsers
+Admin --> UC_ModerateJobs
+Admin --> UC_AdminDash
+
+' Relation Spécifique entre Use Cases
+UC_CreateJob ..> UC_GenQuiz : <<include>>
+
+@enduml

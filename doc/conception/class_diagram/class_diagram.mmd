@@ -1,0 +1,147 @@
+classDiagram
+    %% ==========================================================
+    %% 🟦 BLOC 1: MYSQL DATABASE (DONNÉES RELATIONNELLES)
+    %% ==========================================================
+    %% Had l-bloc fih l-data li khssha strict structure w relations
+    
+    class User {
+        +String id
+        +String name
+        +String email
+        +Boolean emailVerified
+        +String image
+        +String role
+        +Boolean isOnboarded
+        +DateTime createdAt
+    }
+
+    class Session {
+        +String id
+        +DateTime expiresAt
+        +String token
+        +String userId
+    }
+
+    class Account {
+        +String id
+        +String accountId
+        +String providerId
+        +String userId
+        +String accessToken
+    }
+
+    class Candidate {
+        +String id
+        +String userId
+        +String title
+        +String bio
+        +int employabilityScore
+    }
+
+    class Recruiter {
+        +String id
+        +String userId
+        +String companyName
+        +String industry
+    }
+
+    class JobOffer {
+        +String id
+        +String recruiterId
+        +String title
+        +String description
+        +int experienceYears
+        +String location
+        +String status
+    }
+
+    class Skill {
+        +String id
+        +String name
+    }
+
+    class Application {
+        +String id
+        +String candidateId
+        +String jobOfferId
+        +String status
+        +int matchScore
+        +String matchExplanation
+    }
+
+    class Quiz {
+        +String id
+        +String jobOfferId
+        +String title
+        +String skillTarget
+    }
+
+    class Question {
+        +String id
+        +String quizId
+        +String text
+        +Json options
+        +String correctAnswer
+    }
+
+    class TestResult {
+        +String id
+        +String candidateId
+        +String quizId
+        +int score
+        +Boolean passed
+    }
+
+    %% ==========================================================
+    %% 🟩 BLOC 2: MONGODB DATABASE (DONNÉES NON-RELATIONNELLES)
+    %% ==========================================================
+    %% Had l-bloc fih les JSON documents kbar w les données dynamiques
+    
+    class ParsedCV {
+        +ObjectId _id
+        +String userId
+        +String rawCvText
+        +Json aiParsedData
+    }
+
+    class GitHubData {
+        +ObjectId _id
+        +String userId
+        +Array repositories
+        +int totalStars
+    }
+
+    class PortfolioData {
+        +ObjectId _id
+        +String userId
+        +String portfolioUrl
+        +Array projects
+        +Array extractedSkills
+    }
+
+    %% ==========================================
+    %% 🔗 RELATIONS & LINKS
+    %% ==========================================
+    
+    %% Relations inner MySQL
+    User "1" -- "0..*" Session : has
+    User "1" -- "0..*" Account : has
+    User "1" -- "0..1" Candidate : has
+    User "1" -- "0..1" Recruiter : has
+
+    Recruiter "1" -- "0..*" JobOffer : posts
+    Candidate "1" -- "0..*" Application : applies
+    JobOffer "1" -- "0..*" Application : receives
+
+    Candidate "0..*" -- "0..*" Skill : knows
+    JobOffer "0..*" -- "0..*" Skill : requires
+
+    JobOffer "1" -- "0..1" Quiz : generates_automatic
+    Quiz "1" -- "0..*" Question : contains
+    Quiz "1" -- "0..*" TestResult : records
+    Candidate "1" -- "0..*" TestResult : passes
+
+    %% ⚡ Relations Inter-Databases (Dynamic dynamic links via userId)
+    User "1" ..> "0..1" ParsedCV : "Mappé via userId f l-Backend"
+    User "1" ..> "0..1" GitHubData : "Mappé via userId f l-Backend"
+    User "1" ..> "0..1" PortfolioData : "Mappé via userId f l-Backend"
