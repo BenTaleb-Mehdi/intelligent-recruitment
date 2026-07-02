@@ -1,73 +1,70 @@
 # 📋 Sprint Backlog - Plateforme Intelligente de Recrutement IA
 
-**Méthodologie :** Agile (Scrum)
-**Durée d'un Sprint :** 2 semaines
-**Architecture Target :** React · Node.js · Express.js · MySQL · Better Auth · Python · Ray
-**Objectif :** Livrer un MVP fonctionnel et intelligent
+**Méthodologie :** Agile (Scrum)  
+**Durée d'un Sprint :** 2 semaines  
+**Architecture Target :** Next.js (App Router) · Express.js · Prisma · MySQL · MongoDB · Better Auth · Python · Ray Serve  
+**Objectif du Projet :** Livrer un MVP fonctionnel, intelligent et basé sur une persistance polyglotte (SQL + NoSQL).
 
 ---
 
-## 🏃‍♂️ Sprint 1 : Architecture de Base & Authentification (Semaines 1-2)
-**🎯 Objectif du Sprint :** Mettre en place le socle technique et la gestion des comptes pour les 3 acteurs.
+## 🏃‍♂️ Sprint 1 : Conception, Authentification & Charte Graphique / Design System (Semaines 1-2)
+**🎯 Objectif du Sprint :** Valider la conception technique, installer le socle d'authentification, et créer l'ensemble du Design System (Atomic Design).
 
-*   **Task 1.1 [Backend] :** Configuration initiale du serveur **Node.js + Express.js** et connexion sécurisée à la base de données **MySQL** (via le driver `mysql2`).
-*   **Task 1.2 [Database] :** Création du schéma initial de la base de données MySQL : tables `users`, `sessions`, `profiles`.
-*   **Task 1.3 [Auth] :** Intégration et configuration de **Better Auth** (inscription, connexion, sessions sécurisées via cookies `httpOnly`).
-*   **Task 1.4 [Auth] :** Configuration du plugin **RBAC de Better Auth** pour la gestion des rôles (`candidate`, `recruiter`, `admin`) et protection des routes Express.
-*   **Task 1.5 [Frontend] :** Initialisation de l'application **React** et intégration des pages Login / Register connectées au client Better Auth.
-
----
-
-## 🏃‍♂️ Sprint 2 : Gestion des Profils & Offres d'Emploi (Semaines 3-4)
-**🎯 Objectif du Sprint :** Permettre aux candidats de remplir leurs informations et aux recruteurs de publier des annonces.
-
-*   **Task 2.1 [Candidat] :** Interface React de création de profil complet et système d'upload de fichiers CV (PDF / DOC).
-*   **Task 2.2 [Recruteur] :** Formulaire React de création, modification et suppression d'offres d'emploi.
-*   **Task 2.3 [Backend] :** Création de la table MySQL `job_offers` et développement des routes CRUD Express correspondantes.
-*   **Task 2.4 [Backend] :** Implémentation du système de stockage de fichiers (local ou S3) pour sauvegarder les CVs téléversés et enregistrer leurs URLs en base MySQL.
-*   **Task 2.5 [Frontend] :** Intégration du flux d'affichage des offres d'emploi côté candidat avec React Query / Axios.
+* [ ] **Task 1.1 [Conception] :** Validation finale, ajustements et documentation du Diagramme de Cas d'Utilisation et du Diagramme de Classe Hybride (MySQL/MongoDB).
+* [ ] **Task 1.2 [Auth Setup] :** Initialisation du serveur Node.js/Express, configuration de Better Auth (Social Logins + configuration du plugin RBAC pour les rôles `candidate`, `recruiter`, `admin`).
+* [ ] **Task 1.3 [Charte Graphique] :** Configuration de la palette de couleurs (Tokens), des polices globales, et initialisation de Shadcn UI dans le projet Next.js.
+* [ ] **Task 1.4 [Atomic Design Components] :** Création des composants UI réutilisables (Atoms & Molecules) : boutons customisés, inputs intelligents, alertes, cartes (Cards) et menus de navigation.
+* [ ] **Task 1.5 [Global Layouts] :** Intégration de la Landing Page publique et des structures de base (Shells/Layouts de navigation) intégrant la Sidebar et la Navbar pour l'Admin, le Recruteur et le Candidat.
 
 ---
 
-## 🏃‍♂️ Sprint 3 : Moteur IA - NLP & Extraction de Compétences (Semaines 5-6)
-**🎯 Objectif du Sprint :** Initialiser le microservice Python pour analyser textuellement les CVs et les offres.
+## 🏃‍♂️ Sprint 2 : Développement Full Frontend - Toutes les Pages Next.js (Semaines 3-4)
+**🎯 Objectif du Sprint :** Intégrer toutes les maquettes graphiques et créer le squelette complet et navigable des interfaces pour les 3 acteurs (avec Mock Data).
 
-*   **Task 3.1 [AI Service] :** Initialisation du microservice **Python** avec **Ray Serve** (exposition des endpoints d'analyse IA via une API HTTP).
-*   **Task 3.2 [NLP Parsing] :** Développement du **Ray Actor** de parsing automatique des CVs avec `spaCy` / `Transformers` pour extraire les compétences.
-*   **Task 3.3 [NLP Parsing] :** Développement du **Ray Actor** d'analyse et de parsing des descriptions d'offres d'emploi.
-*   **Task 3.4 [Embeddings] :** Intégration d'un modèle NLP (BERT/GPT) pour transformer CVs et offres en vecteurs numériques (`cv_embeddings` & `offer_embeddings`), stockés dans MySQL (colonne `TEXT` / JSON).
-*   **Task 3.5 [Bridge] :** Connexion et communication API entre le backend **Node.js/Express** et le microservice **Python/Ray Serve** (requêtes HTTP internes).
-
----
-
-## 🏃‍♂️ Sprint 4 : Moteur IA - Scoring Bidirectionnel & IA Explicable (Semaines 7-8)
-**🎯 Objectif du Sprint :** Implémenter l'algorithme de matching et le ranking intelligent.
-
-*   **Task 4.1 [Algorithme] :** Implémentation du calcul de **Similarité Cosinus** en Python/Ray pour comparer les vecteurs CV / Offres.
-*   **Task 4.2 [Matching] :** Développement du système de scoring bidirectionnel (Top 10 candidats pour un recruteur / Top 10 jobs pour un candidat) orchestré par Ray.
-*   **Task 4.3 [IA Explicable] :** Développement du module textuel qui explique pourquoi un candidat est recommandé (extraction des points forts / compétences manquantes).
-*   **Task 4.4 [Applications] :** Création de la table MySQL `applications` pour gérer la soumission des candidatures avec stockage du score final (%).
-*   **Task 4.5 [Frontend] :** Affichage visuel du score d'adéquation dynamique et de l'explication IA sur les interfaces Candidat et Recruteur.
+* [ ] **Task 2.1 [Espace Candidat UI] :** Intégration complète des pages `/candidate/dashboard`, `/profile` (avec zone drag & drop pour le CV), `/jobs` (feed des offres d'emploi) et la page d'examen interactive `/quizzes/[id]`.
+* [ ] **Task 2.2 [Espace Recruteur UI] :** Intégration des interfaces `/recruiter/dashboard`, `/jobs/create` (formulaire de publication d'offres), `/jobs/[id]/applicants` (tableau de classement des candidats) et `/jobs/[id]/quiz` (visualisation du quiz généré par l'IA).
+* [ ] **Task 2.3 [Espace Admin UI] :** Création des vues d'administration : `/admin/users` (Table de gestion et modération des comptes), `/admin/jobs-moderation` et `/admin/quizzes-moderation`.
+* [ ] **Task 2.4 [Routing & Guards] :** Configuration finale du routage Next.js via les Route Groups et gestion des redirections logiques liées à l'état d'Onboarding de l'utilisateur.
 
 ---
 
-## 🏃‍♂️ Sprint 5 : Intégrations Externes & Module d'Évaluation (Semaines 9-10)
-**🎯 Objectif du Sprint :** Connecter les plateformes de portfolios et mettre en place les tests techniques de validation.
+## 🏃‍♂️ Sprint 3 : Développement Backend, Modèles Prisma & CRUDs (Semaines 5-6)
+**🎯 Objectif du Sprint :** Connecter l'architecture hybride des bases de données et développer toutes les APIs REST pour rendre les pages Next.js dynamiques.
 
-*   **Task 5.1 [API Integration] :** Connexion avec l'API **GitHub** pour récupérer et analyser les projets techniques des candidats.
-*   **Task 5.2 [API Integration] :** Connexion avec l'API **BidigitalHub** (et/ou LinkedIn) pour importer automatiquement les données du portfolio digital.
-*   **Task 5.3 [Evaluations] :** Création du module de tests techniques automatiques et quiz de compétences ; table MySQL `quiz_results`.
-*   **Task 5.4 [Scoring Global] :** Algorithme de calcul du **score d'employabilité global** combinant (CV + Projets Portfolio + Résultats des Quiz), traitement distribué via **Ray**.
-*   **Task 5.5 [Frontend] :** Interface React pour passer les quiz et visualiser la progression des compétences.
+* [ ] **Task 3.1 [Database Setup] :** Configuration et initialisation du client Prisma pour MySQL et du client Mongoose pour MongoDB dans le backend Express.
+* [ ] **Task 3.2 [Prisma Migrations] :** Écriture et exécution des schémas relationnels dans MySQL via Prisma (`JobOffer`, `Skill`, `Application`, `Quiz`, `Question`, `TestResult`).
+* [ ] **Task 3.3 [Mongoose Schemas] :** Création et déploiement des collections MongoDB non-relationnelles (`ParsedCV`, `GitHubData`, `PortfolioData`) indexées par `userId`.
+* [ ] **Task 3.4 [APIs Espace Candidat] :** Développement des endpoints pour uploader le fichier PDF (Multer/S3), sauvegarder les données du profil et récupérer l'historique des candidatures et des tests passés.
+* [ ] **Task 3.5 [APIs Recruteur & Admin] :** Implémentation des routes CRUD pour la création/gestion des offres d'emploi, la soumission des dossiers (`Application`) et les fonctionnalités de modération (bannissement/vérification) pour l'Admin.
 
 ---
 
-## 🏃‍♂️ Sprint 6 : Tableaux de Bord, Sécurité & Tests Finaux (Semaines 11-12)
-**🎯 Objectif du Sprint :** Finaliser les interfaces analytics, sécuriser l'application, et préparer la livraison du projet.
+## 🏃‍♂️ Sprint 4 : Moteur IA - NLP, Scoring & Génération de Quiz GenAI (Semaines 7-8)
+**🎯 Objectif du Sprint :** Connecter le microservice Python/Ray pour injecter l'intelligence artificielle (Parsing de documents, algorithme de matching et génération automatique de tests).
 
-*   **Task 6.1 [Dashboard] :** Tableau de bord Analytics Recruteur (nombre de candidatures, performance des offres, temps moyen de recrutement) — données agrégées depuis MySQL.
-*   **Task 6.2 [Dashboard] :** Tableau de bord Candidat (historique des candidatures, offres recommandées, score de profil).
-*   **Task 6.3 [Admin] :** Interface Administrateur pour la modération des comptes et la détection / protection anti-fake CV.
-*   **Task 6.4 [Sécurité] :** Validation finale : conformité RGPD, chiffrement des données sensibles en MySQL, audit des sessions **Better Auth**, et tests de pénétration.
-*   **Task 6.5 [QA] :** Tests de bout en bout (End-to-End) avec Postman / Playwright, correction des bugs, et déploiement de la solution sur le cloud (AWS / Render / Vercel).
-
+* [ ] **Task 4.1 [Python Infrastructure] :** Configuration du microservice Python avec Ray Serve et sécurisation des requêtes HTTP internes avec le backend Express.
+* [ ] **Task 4.2 [CV NLP Parser] :** Implémentation du Ray Actor d'extraction textuelle des CVs (PDF) à l'aide de `spaCy` / `Transformers` et persistance du payload JSON dans **MongoDB (`ParsedCV`)**.
+* [ ] **Task 4.3 [GenAI Quiz Generation] :** Développement de la logique automatique : à la publication d'une offre côté Express, le service Python génère par IA un QCM technique de 5 questions inséré directement dans MySQL via Prisma.
+* [ ] **Task 4.4 [Scoring Engine] :** Développement du calcul distribué de la **Similarité Cosinus** sur Ray (Vecteurs d'embeddings BERT/GPT) pour générer le score d'adéquation dynamique (%).
+* [ ] **Task 4.5 [IA Explicable] :** Module d'analyse comparative textuelle extrayant les points forts et les compétences manquantes du candidat par rapport à l'offre (destiné au modal du recruteur).
+
+---
+
+## 🏃‍♂️ Sprint 5 : Intégrations Externes APIs & Connectivité Globale (Semaines 9-10)
+**🎯 Objectif du Sprint :** Connecter les APIs des plateformes tierces et lier définitivement les requêtes du Frontend Next.js avec le Backend Express.
+
+* [ ] **Task 5.1 [GitHub API Sync] :** Connexion à l'API GitHub via le token OAuth pour aspirer l'arborescence des projets techniques du candidat et stocker les données brutes dans la collection **MongoDB (`GitHubData`)**.
+* [ ] **Task 5.2 [Portfolio Sync] :** Intégration avec l'API BidigitalHub pour centraliser et structurer les données du portfolio numérique dans **MongoDB (`PortfolioData`)**.
+* [ ] **Task 5.3 [Quiz Frontend Sync] :** Liaison frontend/backend pour l'envoi des réponses aux quiz en temps réel, calcul automatique de la note et enregistrement sécurisé dans la table MySQL `TestResult`.
+* [ ] **Task 5.4 [Score Global Ray Actor] :** Implémentation de l'algorithme Ray qui fusionne les données hétérogènes (Score CV + Projets GitHub + Portfolio + Note Quiz) pour mettre à jour le champ `employabilityScore` dans MySQL.
+
+---
+
+## 🏃‍♂️ Sprint 6 : Dashboards Avancés, Sécurité & Préparation Livraison (Semaines 11-12)
+**🎯 Objectif du Sprint :** Finaliser les graphiques analytiques, sécuriser l'application par contrôle d'accès strict (Middleware) et préparer la soutenance.
+
+* [ ] **Task 6.1 [Charts & Analytics UI] :** Intégration de graphiques dynamiques et interactifs (Next.js Recharts) dans les dashboards Recruteur (KPIs de recrutement) et Admin.
+* [ ] **Task 6.2 [Middleware de Sécurité] :** Implémentation finale du Next.js Middleware pour le contrôle d'accès basé sur les rôles (RBAC) pour bloquer hermétiquement les routes (`/admin`, `/recruiter`, `/candidate`).
+* [ ] **Task 6.3 [Audit & Conformité] :** Chiffrement des données sensibles en base de données, application des politiques RGPD (suppression définitive de compte) et optimisation des index MySQL/MongoDB.
+* [ ] **Task 6.4 [QA & Bug Fixing] :** Phase intensive de tests de bout en bout (E2E) via Postman / Playwright et résolution des anomalies critiques.
+* [ ] **Task 6.5 [Deployment & Cloud] :** Déploiement de l'infrastructure hybride : Frontend Next.js sur Vercel, Backend Express et service Python sur AWS ou Render, bases de données sur instances managées cloud.
