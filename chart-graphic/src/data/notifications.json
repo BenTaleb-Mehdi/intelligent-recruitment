@@ -1,0 +1,44 @@
+{
+  "notifications": [
+    {
+      "id": 1,
+      "title": "Nouvelle candidature reçue",
+      "description": "Amine El Amrani a postulé pour le poste de Développeur Fullstack.",
+      "time": "Il y a 5 min",
+      "type": "applicant",
+      "unread": true,
+      "icon": "solar:user-linear",
+      "color": "bg-blue-50 text-blue-600 border-blue-100"
+    },
+    {
+      "id": 2,
+      "title": "Excellent matching IA",
+      "description": "Youssef Ait Ali correspond à 94% à votre offre de DevOps Engineer.",
+      "time": "Il y a 1 heure",
+      "type": "matching",
+      "unread": true,
+      "icon": "solar:magic-stick-3-linear",
+      "color": "bg-purple-50 text-purple-600 border-purple-100"
+    },
+    {
+      "id": 3,
+      "title": "Quiz complété",
+      "description": "Sarah Mansouri a terminé le quiz technique avec un score de 87%.",
+      "time": "Il y a 3 heures",
+      "type": "quiz",
+      "unread": false,
+      "icon": "solar:document-text-linear",
+      "color": "bg-emerald-50 text-emerald-600 border-emerald-100"
+    },
+    {
+      "id": 4,
+      "title": "Nouvelle offre publiée",
+      "description": "L'offre \"Product Manager Tech\" a été publiée avec succès.",
+      "time": "Il y a 5 heures",
+      "type": "job",
+      "unread": false,
+      "icon": "solar:case-linear",
+      "color": "bg-amber-50 text-amber-600 border-amber-100"
+    }
+  ]
+}
