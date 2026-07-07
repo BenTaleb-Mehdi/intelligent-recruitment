@@ -2,21 +2,9 @@
 
 import React, { useState } from "react";
 import { Icon } from "@iconify/react";
+import analyticsData from "@/data/analytics.json";
 
-const weeklyData = [
-  { week: "S-1", value: 2.4 },
-  { week: "S-2", value: 1.9 },
-  { week: "S-3", value: 2.1 },
-  { week: "S-4", value: 1.6 },
-  { week: "S-5", value: 1.8 },
-];
-
-const funnelStages = [
-  { label: "Profils identifiés (IA)", count: 248, pct: 100 },
-  { label: "Quiz techniques réussis", count: 142, pct: 57 },
-  { label: "Retenus pour entretien", count: 86, pct: 35 },
-  { label: "Offres acceptées", count: 41, pct: 17 },
-];
+const { weeklyData, funnelStages } = analyticsData;
 
 export default function AnalyticsPage() {
   const [hoveredWeek, setHoveredWeek] = useState<number | null>(null);
@@ -64,7 +52,7 @@ export default function AnalyticsPage() {
         <div className="bg-white rounded-2xl border border-slate-200/70 shadow-sm p-5 space-y-3">
           <div className="flex items-center gap-2">
             <div className="w-9 h-9 bg-purple-100 rounded-xl flex items-center justify-center">
-              <Icon icon="solar:clock-rewind-linear" className="w-4 h-4 text-purple-600" />
+              <Icon icon="solar:stopwatch-linear" className="w-4 h-4 text-purple-600" />
             </div>
             <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Temps économisé (pré-screening)</span>
           </div>

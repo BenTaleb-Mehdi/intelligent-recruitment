@@ -161,33 +161,20 @@ export default function SidebarRecruiter({ isOpen, onClose }: SidebarRecruiterPr
             )}
           </div>
         ) : (
-          <>
-            <Link
-              href="/recruiter/analytics"
-              className={`flex items-center transition-all duration-200 w-10 h-10 justify-center mx-auto rounded-xl ${
-                isActive("/recruiter/analytics")
-                  ? "bg-slate-100 text-slate-900 shadow-sm"
-                  : "text-slate-600 hover:bg-slate-100/70 hover:text-slate-900"
-              }`}
-              title="Analytiques"
-            >
-              <Icon icon="solar:chart-2-linear" className="w-5 h-5 flex-shrink-0" />
-            </Link>
-            <Link
-              href="/recruiter/jobs"
-              onClick={() => {
-                if (window.innerWidth < 768) onClose();
-              }}
-              className={`flex items-center transition-all duration-200 w-10 h-10 justify-center mx-auto rounded-xl ${
-                isJobsActive
-                  ? "bg-slate-100 text-slate-900 shadow-sm"
-                  : "text-slate-600 hover:bg-slate-100/70 hover:text-slate-900"
-              }`}
-              title="Offres d'emploi"
-            >
-              <Icon icon="solar:letter-opened-linear" className="w-5 h-5 flex-shrink-0" />
-            </Link>
-          </>
+          <Link
+            href="/recruiter/jobs"
+            onClick={() => {
+              if (window.innerWidth < 768) onClose();
+            }}
+            className={`flex items-center transition-all duration-200 w-10 h-10 justify-center mx-auto rounded-xl ${
+              isJobsActive
+                ? "bg-slate-100 text-slate-900 shadow-sm"
+                : "text-slate-600 hover:bg-slate-100/70 hover:text-slate-900"
+            }`}
+            title="Offres d'emploi"
+          >
+            <Icon icon="solar:letter-opened-linear" className="w-5 h-5 flex-shrink-0" />
+          </Link>
         )}
 
         {/* Candidates Matching (with "New" badge when open) */}

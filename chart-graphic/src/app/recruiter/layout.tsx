@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import SidebarRecruiter from "@/components/recruiter/sidebar-recruiter";
 import NavbarRecruiter from "@/components/recruiter/navbar-recruiter";
 
@@ -11,6 +11,12 @@ export default function RecruiterLayout({
 }) {
   // Sidebar state: open by default on desktop, can be closed.
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+
+  useEffect(() => {
+    if (typeof window !== "undefined" && window.innerWidth < 768) {
+      setIsSidebarOpen(false);
+    }
+  }, []);
 
   const toggleSidebar = () => {
     setIsSidebarOpen(!isSidebarOpen);

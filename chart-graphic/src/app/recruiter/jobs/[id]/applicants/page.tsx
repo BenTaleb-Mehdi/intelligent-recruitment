@@ -74,22 +74,24 @@ export default function JobApplicantsPage() {
 
   return (
     <div className="space-y-6 font-sans">
-      <div className="flex items-center gap-3">
-        <Link
-          href="/recruiter/jobs"
-          className="p-2 text-slate-400 hover:text-slate-800 hover:bg-slate-100 rounded-lg transition-colors"
-        >
-          <Icon icon="solar:alt-arrow-left-linear" className="w-5 h-5" />
-        </Link>
-        <div>
-          <h2 className="text-2xl font-bold text-slate-900 tracking-tight">
-            Candidats - Offre #{jobId}
-          </h2>
-          <p className="text-sm text-slate-500 mt-1">
-            Consultez et gérez les candidatures reçues pour cette offre.
-          </p>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="flex items-center gap-3">
+          <Link
+            href="/recruiter/jobs"
+            className="p-2 text-slate-400 hover:text-slate-800 hover:bg-slate-100 rounded-lg transition-colors flex-shrink-0"
+          >
+            <Icon icon="solar:alt-arrow-left-linear" className="w-5 h-5" />
+          </Link>
+          <div>
+            <h2 className="text-2xl font-bold text-slate-900 tracking-tight">
+              Candidats - Offre #{jobId}
+            </h2>
+            <p className="text-sm text-slate-500 mt-1">
+              Consultez et gérez les candidatures reçues pour cette offre.
+            </p>
+          </div>
         </div>
-        <div className="ml-auto bg-slate-100 text-slate-700 text-xs font-bold px-3 py-1.5 rounded-full">
+        <div className="self-start sm:self-center bg-slate-100 text-slate-700 text-xs font-bold px-3 py-1.5 rounded-full whitespace-nowrap">
           {filteredApplicants.length} candidat{filteredApplicants.length > 1 ? "s" : ""}
         </div>
       </div>

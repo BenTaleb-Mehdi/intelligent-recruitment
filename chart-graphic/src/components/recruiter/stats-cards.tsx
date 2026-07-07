@@ -3,54 +3,10 @@
 import React from "react";
 import Link from "next/link";
 import { Icon } from "@iconify/react";
+import statsData from "@/data/stats.json";
 
 export default function StatsCards() {
-  const stats = [
-    {
-      title: "Total Offres Actives",
-      value: "5",
-      icon: "solar:case-linear",
-      iconBg: "bg-emerald-50/70 text-emerald-600 dark:bg-emerald-950/20 dark:text-emerald-400",
-      trend: "↑ +1",
-      trendBg: "bg-emerald-50 dark:bg-emerald-950/25",
-      trendColor: "text-emerald-600 dark:text-emerald-400",
-      linkText: "Voir les offres",
-      href: "/recruiter/jobs",
-    },
-    {
-      title: "Candidatures Reçues",
-      value: "124",
-      icon: "solar:users-group-two-rounded-linear",
-      iconBg: "bg-amber-50/70 text-amber-600 dark:bg-amber-950/20 dark:text-amber-400",
-      trend: "↑ +12",
-      trendBg: "bg-emerald-50 dark:bg-emerald-950/25",
-      trendColor: "text-emerald-600 dark:text-emerald-400",
-      linkText: "Voir les candidats",
-      href: "/recruiter/jobs/1/applicants",
-    },
-    {
-      title: "Temps de Recrutement",
-      value: "14 jrs",
-      icon: "solar:clock-circle-linear",
-      iconBg: "bg-blue-50/70 text-blue-600 dark:bg-blue-950/20 dark:text-blue-400",
-      trend: "↓ -2 jrs",
-      trendBg: "bg-emerald-50 dark:bg-emerald-950/25",
-      trendColor: "text-emerald-600 dark:text-emerald-400",
-      linkText: "Voir le rapport",
-      href: "/recruiter/dashboard",
-    },
-    {
-      title: "Matching Élevé IA",
-      value: "32",
-      icon: "solar:stars-linear",
-      iconBg: "bg-purple-50/70 text-purple-600 dark:bg-purple-950/20 dark:text-purple-400",
-      trend: "↑ +8",
-      trendBg: "bg-emerald-50 dark:bg-emerald-950/25",
-      trendColor: "text-emerald-600 dark:text-emerald-400",
-      linkText: "Voir les profils",
-      href: "/recruiter/jobs/1/applicants",
-    },
-  ];
+  const stats = statsData.stats;
 
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">

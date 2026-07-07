@@ -4,6 +4,8 @@ import React, { useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { Icon } from "@iconify/react";
+import { Calendar } from "@heroui/react";
+import { parseDate } from "@internationalized/date";
 
 interface QuizQuestion {
   id: string;
@@ -108,6 +110,10 @@ export default function JobQuizPage() {
   const [validating, setValidating] = useState(false);
   const [validated, setValidated] = useState(quiz?.status === "Validé");
   const [rejected, setRejected] = useState(quiz?.status === "Refusé");
+
+  const [endDate, setEndDate] = useState(parseDate("2026-07-14"));
+  const [endTime, setEndTime] = useState("23:59");
+  const [duration, setDuration] = useState("30");
 
   if (!quiz) {
     return (
@@ -220,6 +226,134 @@ export default function JobQuizPage() {
           <p className="text-xs text-purple-600/80 mt-0.5">
             Examinez les questions, modifiez-les si nécessaire, puis validez le quiz pour l&apos;associer à l&apos;offre.
           </p>
+        </div>
+      </div>
+
+      {/* Access & Time Settings Card */}
+      <div className="bg-white rounded-2xl border border-slate-200/70 shadow-sm p-6 sm:p-8 space-y-6">
+        <h3 className="text-sm font-bold text-slate-800 border-b border-slate-100 pb-2 flex items-center gap-2">
+          <Icon icon="solar:calendar-date-linear" className="w-4 h-4 text-purple-600" />
+          Paramètres d&apos;accès & Temps
+        </h3>
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-start">
+          {/* Calendar Picker Column */}
+          <div className="flex flex-col items-center sm:items-start space-y-3">
+            <span className="text-xs font-bold text-slate-500 uppercase tracking-wider self-start">
+              Date limite de passage
+            </span>
+            <div className="quiz-calendar bg-slate-50 p-3 rounded-2xl border border-slate-200/50 w-full max-w-[280px] sm:max-w-none flex justify-center">
+              <Calendar 
+                aria-label="Date limite du quiz" 
+                value={endDate} 
+                onChange={(date) => {
+                  if (date) setEndDate(date);
+                }}
+              >
+                <Calendar.Header>
+                  <Calendar.Heading />
+                  <Calendar.NavButton slot="previous" />
+                  <Calendar.NavButton slot="next" />
+                </Calendar.Header>
+                <Calendar.Grid>
+                  <Calendar.GridHeader>
+                    {(day) => <Calendar.HeaderCell>{day}</Calendar.HeaderCell>}
+                  </Calendar.GridHeader>
+                  <Calendar.GridBody>{(date) => <Calendar.Cell date={date} />}</Calendar.GridBody>
+                </Calendar.Grid>
+              </Calendar>
+              <style dangerouslySetInnerHTML={{ __html: `
+                /* Heading (e.g., July 2026) */
+                .quiz-calendar [data-slot="calendar-heading"] {
+                  color: #1e293b !important;
+                }
+                /* Weekday headers (Sun, Mon...) */
+                .quiz-calendar [data-slot="calendar-header-cell"] {
+                  color: #64748b !important;
+                }
+                /* Calendar day cells */
+                .quiz-calendar [data-slot="calendar-cell"] {
+                  color: #1e293b !important;
+                }
+                /* Selected calendar day cell */
+                .quiz-calendar [data-slot="calendar-cell"][data-selected="true"] {
+                  color: #ffffff !important;
+                }
+                /* Outside month / disabled cells */
+                .quiz-calendar [data-slot="calendar-cell"][data-outside-month="true"],
+                .quiz-calendar [data-slot="calendar-cell"][data-outside-visible-range="true"],
+                .quiz-calendar [data-slot="calendar-cell"][data-disabled="true"] {
+                  color: #cbd5e1 !important;
+                  opacity: 0.5;
+                }
+              `}} />
+            </div>
+          </div>
+
+          {/* Time & Duration settings Column */}
+          <div className="space-y-5">
+            {/* End Time */}
+            <div className="space-y-2">
+              <label className="text-xs font-bold text-slate-500 uppercase tracking-wider block">
+                Heure limite de passage
+              </label>
+              <div className="relative">
+                <input
+                  type="time"
+                  value={endTime}
+                  onChange={(e) => setEndTime(e.target.value)}
+                  className="w-full bg-slate-50 border border-slate-200/80 rounded-xl px-4 py-2.5 text-xs font-semibold text-slate-700 focus:outline-none focus:bg-white focus:ring-1 focus:ring-purple-600 transition-all"
+                />
+              </div>
+            </div>
+
+            {/* Duration select */}
+            <div className="space-y-2">
+              <label className="text-xs font-bold text-slate-500 uppercase tracking-wider block">
+                Durée limite du test
+              </label>
+              <div className="grid grid-cols-3 gap-2">
+                {["15", "30", "45", "60", "90"].map((timeOption) => (
+                  <button
+                    key={timeOption}
+                    type="button"
+                    onClick={() => setDuration(timeOption)}
+                    className={`py-2 px-3 text-xs font-semibold rounded-xl border transition-all ${
+                      duration === timeOption
+                        ? "bg-purple-50 border-purple-200 text-purple-700 shadow-sm"
+                        : "bg-slate-50 border-slate-200/60 text-slate-600 hover:bg-slate-100"
+                    }`}
+                  >
+                    {timeOption} min
+                  </button>
+                ))}
+                {/* Custom input */}
+                <div className="relative flex items-center bg-slate-50 border border-slate-200/60 rounded-xl px-2.5 focus-within:bg-white focus-within:ring-1 focus-within:ring-purple-600">
+                  <input
+                    type="number"
+                    min="1"
+                    placeholder="Autre"
+                    value={!["15", "30", "45", "60", "90"].includes(duration) ? duration : ""}
+                    onChange={(e) => setDuration(e.target.value)}
+                    className="w-full bg-transparent border-none text-xs font-semibold text-slate-700 placeholder-slate-400 p-0 focus:ring-0 outline-none"
+                  />
+                  <span className="text-[10px] text-slate-400 font-medium ml-1">min</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Dynamic Info Panel */}
+            <div className="bg-purple-50/50 border border-purple-100/50 rounded-xl p-4 space-y-2">
+              <div className="flex gap-2 items-center text-purple-800">
+                <Icon icon="solar:info-circle-linear" className="w-4.5 h-4.5 flex-shrink-0" />
+                <span className="text-xs font-bold">Récapitulatif des règles</span>
+              </div>
+              <p className="text-xs text-purple-700/80 leading-relaxed">
+                Le test prendra fin le <strong className="text-purple-900">{endDate ? `${endDate.day}/${endDate.month}/${endDate.year}` : ""}</strong> à <strong className="text-purple-900">{endTime}</strong>.
+                Chaque candidat disposera de <strong className="text-purple-900">{duration || "0"} minutes</strong> pour répondre aux questions une fois le test lancé.
+              </p>
+            </div>
+          </div>
         </div>
       </div>
 

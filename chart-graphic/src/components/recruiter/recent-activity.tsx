@@ -1,11 +1,7 @@
+import recentActivityData from "@/data/recent-activity.json";
+
 export default function RecentActivity() {
-  const candidates = [
-    { name: "Amine El Amrani", role: "Développeur Fullstack Node/Next", time: "Il y a 10 min", score: 94, status: "bg-emerald-50 text-emerald-700 border-emerald-200" },
-    { name: "Sarah Mansouri", role: "UI/UX Designer", time: "Il y a 1 heure", score: 87, status: "bg-emerald-50 text-emerald-700 border-emerald-200" },
-    { name: "Youssef Ait Ali", role: "Développeur Next.js Junior", time: "Il y a 3 heures", score: 72, status: "bg-amber-50 text-amber-700 border-amber-200" },
-    { name: "Sanaa Bennani", role: "DevOps Engineer", time: "Hier", score: 48, status: "bg-rose-50 text-rose-700 border-rose-200" },
-    { name: "Karim Rachidi", role: "Product Manager", time: "Il y a 2 jours", score: 81, status: "bg-emerald-50 text-emerald-700 border-emerald-200" },
-  ];
+  const candidates = recentActivityData.candidates;
 
   return (
     <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
@@ -30,7 +26,7 @@ export default function RecentActivity() {
                 <td className="px-6 py-4 text-slate-500">{cand.role}</td>
                 <td className="px-6 py-4 text-slate-400 text-xs">{cand.time}</td>
                 <td className="px-6 py-4 text-right">
-                  <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold border ${cand.status}`}>
+                  <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold border ${cand.statusClass}`}>
                     {cand.score}% match
                   </span>
                 </td>
