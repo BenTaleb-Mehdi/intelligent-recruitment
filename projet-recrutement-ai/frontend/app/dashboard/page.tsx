@@ -1,6 +1,6 @@
 "use client";
 import React, { useEffect, useState } from "react";
-import { authClient,   } from "@/lib/auth-client";
+import { authClient } from "@/lib/auth-client";
 import { useRouter } from "next/navigation";
 import { Spinner, Card } from "@heroui/react";
 import { Sidebar } from "@/components/ui/sidebar";
@@ -24,6 +24,12 @@ export default function DashboardPage() {
             return;
         }
 
+        const role = (session.user as any)?.role;
+        if (role === "admin") {
+            router.push("/admin/dashboard");
+            return;
+        }
+
         const isOnboarded = (session.user as any)?.isOnboarded;
         if (!isOnboarded) {
             router.push("/welcome");
@@ -34,21 +40,14 @@ export default function DashboardPage() {
     if (!session) return null;
 
     return (
-        <Sidebar.Provider
-            variant="sidebar"
-            collapsible="icon"
-            defaultOpen
-            navigate={router.push}
-        >
+        <Sidebar.Provider variant="sidebar" collapsible="icon" defaultOpen navigate={router.push}>
             <DashboardSidebar />
             <Sidebar.Main>
                 <DashboardNavbar userName={session?.user?.name} />
-                <div className="p-6 flex-1 bg-default-50 min-h-[calc(100vh-64px)]">
+                <div className="min-h-[calc(100vh-64px)] flex-1 bg-background p-6">
                     <Card className="p-6 shadow-sm">
                         <h2 className="text-2xl font-bold mb-4">Welcome to your Dashboard! 🎉</h2>
-                        <p className="text-default-500">
-                            This page is built with TypeScript (TSX) and HeroUI components.
-                        </p>
+                        <p className="text-default-500">This page is built with TypeScript (TSX) and HeroUI components.</p>
                     </Card>
                 </div>
             </Sidebar.Main>
