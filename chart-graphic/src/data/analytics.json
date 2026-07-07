@@ -1,0 +1,44 @@
+{
+  "weeklyData": [
+    { "week": "S-1", "value": 2.4 },
+    { "week": "S-2", "value": 1.9 },
+    { "week": "S-3", "value": 2.1 },
+    { "week": "S-4", "value": 1.6 },
+    { "week": "S-5", "value": 1.8 }
+  ],
+  "funnelStages": [
+    { "label": "Profils identifiés (IA)", "count": 248, "pct": 100 },
+    { "label": "Quiz techniques réussis", "count": 142, "pct": 57 },
+    { "label": "Retenus pour entretien", "count": 86, "pct": 35 },
+    { "label": "Offres acceptées", "count": 41, "pct": 17 }
+  ],
+  "kpis": [
+    {
+      "label": "Temps de réponse moyen",
+      "value": "1.8",
+      "unit": "jours",
+      "trend": "-12% vs mois dernier",
+      "trendType": "positive",
+      "icon": "solar:clock-circle-linear",
+      "iconBg": "bg-blue-100 text-blue-600"
+    },
+    {
+      "label": "Taux d'acceptation Top Match",
+      "value": "84.5",
+      "unit": "%",
+      "trend": "+5.2% vs mois dernier",
+      "trendType": "positive",
+      "icon": "solar:target-linear",
+      "iconBg": "bg-emerald-100 text-emerald-600"
+    },
+    {
+      "label": "Temps économisé (pré-screening)",
+      "value": "12.5",
+      "unit": "h/offre",
+      "trend": "Automatisé par l'IA",
+      "trendType": "info",
+      "icon": "solar:stopwatch-linear",
+      "iconBg": "bg-purple-100 text-purple-600"
+    }
+  ]
+}
