@@ -1,8 +1,8 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import SidebarCandidate from "@/components/charts/molecules/sidebar-candidate";
-import NavbarCandidate from "@/components/charts/molecules/navbar-candidate";
+import SidebarCandidate from "@/components/candidate/sidebar-candidate";
+import NavbarCandidate from "@/components/candidate/navbar-candidate";
 
 export default function CandidateLayout({
   children,

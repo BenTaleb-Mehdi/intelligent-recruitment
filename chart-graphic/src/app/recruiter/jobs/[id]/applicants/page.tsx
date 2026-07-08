@@ -6,7 +6,7 @@ import { useParams } from "next/navigation";
 import Link from "next/link";
 import { Icon } from "@iconify/react";
 import data from "@/data/applicants.json";
-import ApplicantsTable, { Applicant } from "@/components/charts/molecules/ApplicantsTable";
+import ApplicantsTable, { Applicant } from "@/components/recruiter/ApplicantsTable";
 import SearchInput from "@/components/charts/atoms/SearchInput";
 import Dropdown from "@/components/charts/molecules/Dropdown";
 import Pagination from "@/components/charts/molecules/Pagination";

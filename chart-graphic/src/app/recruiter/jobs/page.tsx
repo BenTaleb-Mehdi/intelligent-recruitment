@@ -1,9 +1,9 @@
 "use client";
 
 import React, { useState, useMemo } from "react";
-import JobsHeader from "@/components/charts/molecules/jobs-header";
-import JobsFilters from "@/components/charts/molecules/jobs-filters";
-import JobsTable, { JobOffer } from "@/components/charts/molecules/jobs-table";
+import JobsHeader from "@/components/recruiter/jobs-header";
+import JobsFilters from "@/components/recruiter/jobs-filters";
+import JobsTable, { JobOffer } from "@/components/recruiter/jobs-table";
 import jobsData from "@/data/jobs.json";
 
 export default function JobsPage() {

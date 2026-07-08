@@ -6,7 +6,7 @@ import Link from "next/link";
 import { Icon } from "@iconify/react";
 import { Calendar } from "@heroui/react";
 import { parseDate } from "@internationalized/date";
-import QuizQuestionCard, { QuizQuestion } from "@/components/charts/molecules/QuizQuestionCard";
+import QuizQuestionCard, { QuizQuestion } from "@/components/recruiter/QuizQuestionCard";
 
 interface QuizData {
   jobTitle: string;

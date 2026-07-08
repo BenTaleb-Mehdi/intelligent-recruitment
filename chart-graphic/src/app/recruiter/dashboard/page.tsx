@@ -1,7 +1,7 @@
 import React from "react";
-import StatsCards from "@/components/charts/molecules/stats-cards";
-import ChartsSection from "@/components/charts/molecules/charts-section";
-import RecentActivity from "@/components/charts/molecules/recent-activity";
+import StatsCards from "@/components/recruiter/stats-cards";
+import ChartsSection from "@/components/recruiter/charts-section";
+import RecentActivity from "@/components/recruiter/recent-activity";
 
 export default function RecruiterDashboard() {
   return (

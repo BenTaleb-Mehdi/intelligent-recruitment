@@ -3,8 +3,8 @@
 import React, { useState } from "react";
 import { Icon } from "@iconify/react";
 import analyticsData from "@/data/analytics.json";
-import ResponseTimeChart from "@/components/charts/molecules/ResponseTimeChart";
-import RecruitmentFunnel from "@/components/charts/molecules/RecruitmentFunnel";
+import ResponseTimeChart from "@/components/recruiter/ResponseTimeChart";
+import RecruitmentFunnel from "@/components/recruiter/RecruitmentFunnel";
 
 const { weeklyData, funnelStages } = analyticsData;
 
