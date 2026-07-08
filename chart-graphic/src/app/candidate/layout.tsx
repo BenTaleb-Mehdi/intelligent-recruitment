@@ -1,10 +1,10 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import SidebarRecruiter from "@/components/recruiter/sidebar-recruiter";
-import NavbarRecruiter from "@/components/recruiter/navbar-recruiter";
+import SidebarCandidate from "@/components/candidate/sidebar-candidate";
+import NavbarCandidate from "@/components/candidate/navbar-candidate";
 
-export default function RecruiterLayout({
+export default function CandidateLayout({
   children,
 }: {
   children: React.ReactNode;
@@ -37,15 +37,15 @@ export default function RecruiterLayout({
       )}
 
       {/* Sidebar Layout component */}
-      <SidebarRecruiter isOpen={isSidebarOpen} onClose={closeSidebar} />
+      <SidebarCandidate isOpen={isSidebarOpen} onClose={closeSidebar} />
       
       {/* Main Content Area */}
-      <div className="flex flex-1 flex-col">
-        {/* Navbar Layout component — fixed at top */}
-        <NavbarRecruiter onToggleSidebar={toggleSidebar} />
+      <div className="flex flex-1 flex-col overflow-hidden">
+        {/* Navbar Layout component */}
+        <NavbarCandidate onToggleSidebar={toggleSidebar} />
         
-        {/* Render space dyal dashboard / jobs */}
-        <main className="flex-1 overflow-y-auto p-4 md:p-6 bg-slate-50">
+        {/* Render space dyal candidate page view */}
+        <main className="flex-1 overflow-y-auto">
           {children}
         </main>
       </div>

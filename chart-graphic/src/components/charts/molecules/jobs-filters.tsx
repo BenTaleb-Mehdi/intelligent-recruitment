@@ -1,8 +1,8 @@
 "use client";
 
 import React from "react";
-import SearchInput from "@/components/recruiter/SearchInput";
-import Dropdown from "@/components/recruiter/Dropdown";
+import SearchInput from "@/components/charts/atoms/SearchInput";
+import Dropdown from "@/components/charts/molecules/Dropdown";
 
 interface JobsFiltersProps {
   searchQuery: string;

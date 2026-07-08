@@ -6,6 +6,7 @@ import { Icon } from "@iconify/react";
 import candidatesData from "@/data/candidates.json";
 import LandingNavbar from "@/components/landing/navbar";
 import Footer from "@/components/landing/footer";
+import SearchInput from "@/components/charts/atoms/SearchInput";
 
 const allSkills = [...new Set(candidatesData.candidates.flatMap((c) => c.skills))].sort();
 const allLocations = [...new Set(candidatesData.candidates.map((c) => c.location))].sort();
@@ -80,16 +81,12 @@ export default function CandidatsPage() {
               </div>
 
               <div>
-                <div className="relative">
-                  <Icon icon="solar:magnifer-linear" className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4" />
-                  <input
-                    type="text"
-                    value={search}
-                    onChange={(e) => setSearch(e.target.value)}
-                    placeholder="Rechercher..."
-                    className="w-full bg-slate-50 border border-slate-200 rounded-xl pl-9 pr-3 py-2 text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-blue-500 transition-all font-medium"
-                  />
-                </div>
+                <SearchInput
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  placeholder="Rechercher..."
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl pl-9 pr-3 py-2 text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-blue-500 transition-all font-medium"
+                />
               </div>
 
               <div className="space-y-2">

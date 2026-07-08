@@ -4,7 +4,7 @@ import React, { useMemo, useState } from "react";
 import Link from "next/link";
 import { Icon } from "@iconify/react";
 import { Chip, Table } from "@heroui/react";
-import Pagination from "@/components/recruiter/Pagination";
+import Pagination from "@/components/charts/molecules/Pagination";
 import type { SortDescriptor } from "@heroui/react";
 
 export interface JobOffer {
