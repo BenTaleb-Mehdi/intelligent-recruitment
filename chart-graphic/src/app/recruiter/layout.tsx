@@ -1,8 +1,8 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import SidebarRecruiter from "@/components/recruiter/sidebar-recruiter";
-import NavbarRecruiter from "@/components/recruiter/navbar-recruiter";
+import SidebarRecruiter from "@/components/charts/molecules/sidebar-recruiter";
+import NavbarRecruiter from "@/components/charts/molecules/navbar-recruiter";
 
 export default function RecruiterLayout({
   children,

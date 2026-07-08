@@ -4,9 +4,9 @@ import React, { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Icon } from "@iconify/react";
-import SkillsTagInput from "@/components/recruiter/skills-tag-input";
-import LocationSelector from "@/components/recruiter/location-selector";
-import CustomSelect from "@/components/recruiter/custom-select";
+import SkillsTagInput from "@/components/charts/molecules/skills-tag-input";
+import LocationSelector from "@/components/charts/molecules/location-selector";
+import CustomSelect from "@/components/charts/atoms/custom-select";
 
 export default function CreateJobPage() {
   const router = useRouter();

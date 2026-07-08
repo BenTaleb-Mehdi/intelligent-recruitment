@@ -3,7 +3,8 @@
 import React, { useMemo, useState } from "react";
 import Link from "next/link";
 import { Icon } from "@iconify/react";
-import { Chip, Pagination, Table } from "@heroui/react";
+import { Chip, Table } from "@heroui/react";
+import Pagination from "@/components/charts/molecules/Pagination";
 import type { SortDescriptor } from "@heroui/react";
 
 export interface JobOffer {
@@ -294,41 +295,14 @@ export default function JobsTable({ jobs, onToggleStatus }: JobsTableProps) {
         
         {jobs.length > 0 && (
           <Table.Footer>
-            <Pagination size="sm">
-              <Pagination.Summary>
-                {start} à {end} sur {jobs.length} résultats
-              </Pagination.Summary>
-              <Pagination.Content>
-                <Pagination.Item>
-                  <Pagination.Previous
-                    isDisabled={pageIndex === 0}
-                    onPress={() => setPageIndex((prev) => Math.max(0, prev - 1))}
-                  >
-                    <Pagination.PreviousIcon />
-                    Précédent
-                  </Pagination.Previous>
-                </Pagination.Item>
-                {pages.map((p) => (
-                  <Pagination.Item key={p}>
-                    <Pagination.Link
-                      isActive={p === pageIndex + 1}
-                      onPress={() => setPageIndex(p - 1)}
-                    >
-                      {p}
-                    </Pagination.Link>
-                  </Pagination.Item>
-                ))}
-                <Pagination.Item>
-                  <Pagination.Next
-                    isDisabled={pageIndex >= pageCount - 1}
-                    onPress={() => setPageIndex((prev) => Math.min(pageCount - 1, prev + 1))}
-                  >
-                    Suivant
-                    <Pagination.NextIcon />
-                  </Pagination.Next>
-                </Pagination.Item>
-              </Pagination.Content>
-            </Pagination>
+            <Pagination
+              pageIndex={pageIndex}
+              pageCount={pageCount}
+              totalResults={jobs.length}
+              pageSize={PAGE_SIZE}
+              onPageChange={setPageIndex}
+              ariaLabel="Pagination des offres d'emploi"
+            />
           </Table.Footer>
         )}
       </Table>

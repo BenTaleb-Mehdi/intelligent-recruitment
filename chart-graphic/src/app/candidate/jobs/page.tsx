@@ -7,6 +7,7 @@ import { Button } from "@/components/charts/atoms/Button";
 import { Chip } from "@/components/charts/atoms/Chip";
 import { Slider } from "@/components/charts/atoms/Slider";
 import Link from "next/link";
+import SearchInput from "@/components/charts/atoms/SearchInput";
 
 const JOBS_DATA = [
   {
@@ -90,16 +91,12 @@ export default function CandidateJobsFeed() {
         {/* Search */}
         <div className="md:col-span-2 space-y-1.5">
           <span className="text-xs font-semibold text-default-500 select-none">Search keywords, skills, companies</span>
-          <div className="relative flex items-center w-full">
-            <Icon icon="solar:magnifier-linear" className="absolute left-3 text-default-400 text-lg" />
-            <input
-              type="text"
-              placeholder="e.g. Next.js, ViteTech, Developer..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 text-sm bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent"
-            />
-          </div>
+          <SearchInput
+            placeholder="e.g. Next.js, ViteTech, Developer..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="w-full pl-10 pr-4 py-2 text-sm bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent"
+          />
         </div>
 
         {/* Min Match Rating */}
