@@ -9,6 +9,8 @@ import { ProgressCircle } from "@/components/charts/atoms/ProgressCircle";
 import { Chip } from "@/components/charts/atoms/Chip";
 import { Alert } from "@/components/charts/molecules/Alert";
 import Link from "next/link";
+import RecommendedJobs from "@/components/candidate/RecommendedJobs";
+import ActionChecklist from "@/components/candidate/ActionChecklist";
 
 export default function CandidateDashboard() {
   return (
@@ -129,84 +131,22 @@ export default function CandidateDashboard() {
         {/* Recommended jobs lists */}
         <div className="lg:col-span-2 space-y-4">
           <h3 className="font-bold text-base text-default-800 dark:text-default-200 select-none">AI-Recommended Positions</h3>
-          <div className="space-y-4">
-            {[
+          <RecommendedJobs
+            jobs={[
               { company: "ViteTech Solutions", title: "Senior React & Next.js Engineer", match: 98, salary: "$85k - $110k", tags: ["Next.js", "HeroUI", "Tailwind"] },
               { company: "CognitiveAI Systems", title: "Lead Frontend Systems Engineer", match: 89, salary: "$100k - $130k", tags: ["React 19", "Typescript", "GraphQL"] },
-            ].map((job, idx) => (
-              <Card key={idx} className="hover:border-slate-300 dark:hover:border-slate-700 transition-all duration-200">
-                <Card.Content className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 p-5">
-                  <div className="space-y-1.5">
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs font-semibold text-accent">{job.company}</span>
-                      <span className="text-default-300">•</span>
-                      <span className="text-xs text-default-450">{job.salary}</span>
-                    </div>
-                    <h4 className="font-bold text-base text-default-900 dark:text-default-50">{job.title}</h4>
-                    <div className="flex gap-1.5 mt-2">
-                      {job.tags.map((t, i) => (
-                        <Chip key={i} variant="soft">{t}</Chip>
-                      ))}
-                    </div>
-                  </div>
-                  <div className="flex sm:flex-col items-end gap-3 sm:gap-1.5 w-full sm:w-auto border-t sm:border-t-0 pt-3 sm:pt-0 mt-2 sm:mt-0 justify-between">
-                    <div className="text-right">
-                      <span className="text-sm font-bold text-success">{job.match}% Match</span>
-                      <p className="text-[10px] text-default-400 font-semibold uppercase">Compatibility</p>
-                    </div>
-                    <Link href={`/candidate/jobs/${idx}`}>
-                      <Button size="sm" variant="outline">
-                        View Details
-                      </Button>
-                    </Link>
-                  </div>
-                </Card.Content>
-              </Card>
-            ))}
-          </div>
+            ]}
+          />
         </div>
 
         {/* Action checklist */}
         <div className="space-y-4">
           <h3 className="font-bold text-base text-default-800 dark:text-default-200 select-none">Action Checklist</h3>
-          <Card>
-            <Card.Content className="p-5 space-y-4">
-              <div className="flex items-start gap-3">
-                <div className="p-1.5 bg-success/15 text-success rounded-lg mt-0.5">
-                  <Icon icon="solar:check-circle-bold" className="text-base" />
-                </div>
-                <div>
-                  <h5 className="text-sm font-bold text-default-800 dark:text-default-200">Upload CV (PDF)</h5>
-                  <p className="text-xs text-default-450 mt-0.5">AI parsing complete. 24 skills extracted.</p>
-                </div>
-              </div>
-
-              <div className="flex items-start gap-3">
-                <div className="p-1.5 bg-success/15 text-success rounded-lg mt-0.5">
-                  <Icon icon="solar:check-circle-bold" className="text-base" />
-                </div>
-                <div>
-                  <h5 className="text-sm font-bold text-default-800 dark:text-default-200">GitHub Synchronization</h5>
-                  <p className="text-xs text-default-450 mt-0.5">Synced 14 repositories. Top language: TypeScript.</p>
-                </div>
-              </div>
-
-              <div className="flex items-start gap-3">
-                <div className="p-1.5 bg-warning/15 text-warning rounded-lg mt-0.5">
-                  <Icon icon="solar:bell-bold" className="text-base animate-bounce" />
-                </div>
-                <div>
-                  <h5 className="text-sm font-bold text-default-800 dark:text-default-200">Complete AI Tech Quiz</h5>
-                  <p className="text-xs text-default-450 mt-0.5">React core evaluation assigned by ViteTech.</p>
-                  <Link href="/candidate/quizzes">
-                    <Button size="sm" variant="primary" className="mt-2.5">
-                      Start Quiz Now
-                    </Button>
-                  </Link>
-                </div>
-              </div>
-            </Card.Content>
-          </Card>
+          <ActionChecklist
+            cvUploaded={true}
+            githubConnected={true}
+            hasPendingQuiz={true}
+          />
         </div>
       </div>
     </div>
