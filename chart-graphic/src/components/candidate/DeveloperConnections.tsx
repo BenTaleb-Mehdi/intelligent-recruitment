@@ -37,9 +37,24 @@ export default function DeveloperConnections({
             </div>
             <div>
               <h5 className="text-sm font-bold text-default-900 dark:text-default-50">GitHub Workspace</h5>
-              <p className="text-xs text-default-450 mt-0.5">
-                {isGitHubConnected ? "Connected to github.com/mehdi-bentaleb" : "Not connected"}
-              </p>
+              <div className="text-xs text-default-450 mt-0.5">
+                {isGitHubConnected ? (
+                  <span>
+                    Connected to{" "}
+                    <a 
+                      href="https://github.com/mehdi-bentaleb" 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="text-blue-600 dark:text-blue-450 hover:underline inline-flex items-center gap-0.5"
+                    >
+                      github.com/mehdi-bentaleb
+                      <Icon icon="solar:arrow-right-up-linear" className="w-3 h-3 inline-block" />
+                    </a>
+                  </span>
+                ) : (
+                  "Not connected"
+                )}
+              </div>
             </div>
           </div>
           <div className="flex items-center gap-3 self-end sm:self-auto">
@@ -62,9 +77,24 @@ export default function DeveloperConnections({
             </div>
             <div>
               <h5 className="text-sm font-bold text-default-900 dark:text-default-50">BidigitalHub Portfolio</h5>
-              <p className="text-xs text-default-450 mt-0.5">
-                {isPortfolioConnected ? "Connected to bidigitalhub.com/user/bentaleb" : "Not connected"}
-              </p>
+              <div className="text-xs text-default-450 mt-0.5">
+                {isPortfolioConnected ? (
+                  <span>
+                    Connected to{" "}
+                    <a 
+                      href="https://bidigitalhub.com/user/bentaleb" 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="text-blue-600 dark:text-blue-450 hover:underline inline-flex items-center gap-0.5"
+                    >
+                      bidigitalhub.com/user/bentaleb
+                      <Icon icon="solar:arrow-right-up-linear" className="w-3 h-3 inline-block" />
+                    </a>
+                  </span>
+                ) : (
+                  "Not connected"
+                )}
+              </div>
             </div>
           </div>
           <div className="flex items-center gap-3 self-end sm:self-auto">
