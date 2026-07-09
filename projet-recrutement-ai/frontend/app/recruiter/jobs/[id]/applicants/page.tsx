@@ -125,12 +125,11 @@ export default function JobApplicantsPage() {
       <ApplicantsTable applicants={paginatedApplicants} jobId={jobId} />
 
       <Pagination
-        pageIndex={pageIndex}
-        pageCount={pageCount}
-        totalResults={filteredApplicants.length}
-        pageSize={PAGE_SIZE}
-        onPageChange={setPageIndex}
-        ariaLabel="Pagination des candidats"
+        page={pageIndex + 1}
+        totalPages={pageCount}
+        totalItems={filteredApplicants.length}
+        itemsPerPage={PAGE_SIZE}
+        onPageChange={(p) => setPageIndex(p - 1)}
       />
     </div>
   );
