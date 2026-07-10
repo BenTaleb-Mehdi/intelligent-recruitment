@@ -53,6 +53,9 @@ export default function NavbarRecruiter({ onToggleSidebar }: NavbarRecruiterProp
     if (pathname.includes("/recruiter/settings")) {
       return "Paramètres";
     }
+    if (pathname.includes("/recruiter/messages")) {
+      return "Messages";
+    }
     return "Dashboard";
   };
 

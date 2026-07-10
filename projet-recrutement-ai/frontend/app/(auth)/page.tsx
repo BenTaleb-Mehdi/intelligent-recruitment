@@ -22,8 +22,9 @@ export default function AuthPage() {
         if (!mounted) return;
         if (session) {
             const isOnboarded = (session.user as any).isOnboarded;
+            const role = (session.user as any).role;
             if (isOnboarded) {
-                router.push("/dashboard");
+                router.push(role === "recruteur" ? "/recruiter/dashboard" : "/dashboard");
             } else {
                 router.push("/welcome");
             }

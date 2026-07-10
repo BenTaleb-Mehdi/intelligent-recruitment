@@ -27,6 +27,12 @@ export default function DashboardPage() {
         const isOnboarded = (session.user as any)?.isOnboarded;
         if (!isOnboarded) {
             router.push("/welcome");
+            return;
+        }
+
+        const role = (session.user as any).role;
+        if (role === "recruteur") {
+            router.replace("/recruiter/dashboard");
         }
     }, [session, isPending, router, mounted]);
 

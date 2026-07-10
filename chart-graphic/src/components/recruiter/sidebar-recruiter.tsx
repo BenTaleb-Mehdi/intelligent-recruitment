@@ -177,6 +177,30 @@ export default function SidebarRecruiter({ isOpen, onClose }: SidebarRecruiterPr
           </Link>
         )}
 
+        {/* Messages Link */}
+        <Link 
+          href="/recruiter/messages" 
+          onClick={() => {
+            if (window.innerWidth < 768) onClose();
+          }}
+          className={`flex items-center transition-all duration-200 ${
+            isOpen 
+              ? "px-3 py-2 text-xs font-semibold rounded-lg gap-3" 
+              : "w-10 h-10 justify-center mx-auto rounded-xl"
+          } ${
+            isActive("/recruiter/messages")
+              ? "bg-slate-100 text-slate-900 shadow-sm"
+              : "text-slate-600 hover:bg-slate-100/70 hover:text-slate-900"
+          }`}
+          title={!isOpen ? "Messages" : undefined}
+        >
+          <Icon 
+            icon="solar:chat-round-dots-linear" 
+            className="w-5 h-5 flex-shrink-0" 
+          />
+          {isOpen && <span className="truncate">Messages</span>}
+        </Link>
+
         {/* Candidates Matching (with "New" badge when open) */}
         <Link 
           href="/recruiter/jobs/1/applicants" 
