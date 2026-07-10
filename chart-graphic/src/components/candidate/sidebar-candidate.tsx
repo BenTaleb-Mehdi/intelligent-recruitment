@@ -16,6 +16,7 @@ const NAVIGATION_ITEMS = [
   { href: "/candidate/jobs", label: "Job Feed (AI)", icon: "solar:case-linear" },
   { href: "/candidate/applications", label: "Applications", icon: "solar:document-linear" },
   { href: "/candidate/quizzes", label: "Skills Assessments", icon: "solar:clipboard-list-linear" },
+  { href: "/candidate/settings", label: "Settings", icon: "solar:settings-linear" },
 ];
 
 export default function SidebarCandidate({ isOpen, onClose }: SidebarCandidateProps) {

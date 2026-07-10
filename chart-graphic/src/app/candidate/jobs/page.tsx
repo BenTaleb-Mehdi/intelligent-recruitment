@@ -5,7 +5,6 @@ import { Icon } from "@iconify/react";
 import { Card } from "@/components/charts/molecules/Card";
 import { Button } from "@/components/charts/atoms/Button";
 import { Chip } from "@/components/charts/atoms/Chip";
-import { Slider } from "@/components/charts/atoms/Slider";
 import Link from "next/link";
 import SearchInput from "@/components/charts/atoms/SearchInput";
 
@@ -58,18 +57,16 @@ const JOBS_DATA = [
 
 export default function CandidateJobsFeed() {
   const [search, setSearch] = useState("");
-  const [minMatch, setMinMatch] = useState(60);
 
   const filteredJobs = useMemo(() => {
     return JOBS_DATA.filter((job) => {
-      const matchSearch =
+      return (
         job.title.toLowerCase().includes(search.toLowerCase()) ||
         job.company.toLowerCase().includes(search.toLowerCase()) ||
-        job.tags.some((t) => t.toLowerCase().includes(search.toLowerCase()));
-      const matchScoreVal = job.matchScore >= minMatch;
-      return matchSearch && matchScoreVal;
-    });
-  }, [search, minMatch]);
+        job.tags.some((t) => t.toLowerCase().includes(search.toLowerCase()))
+      );
+    }).sort((a, b) => b.matchScore - a.matchScore);
+  }, [search]);
 
   return (
     <div className="p-8 max-w-5xl mx-auto space-y-8">
@@ -87,32 +84,32 @@ export default function CandidateJobsFeed() {
       </div>
 
       {/* Filters block */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-end bg-white dark:bg-[#1f2633] p-5 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm">
-        {/* Search */}
-        <div className="md:col-span-2 space-y-1.5">
-          <span className="text-xs font-semibold text-default-500 select-none">Search keywords, skills, companies</span>
-          <SearchInput
-            placeholder="e.g. Next.js, ViteTech, Developer..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 text-sm bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent"
-          />
-        </div>
-
-        {/* Min Match Rating */}
-        <div className="space-y-1.5 pb-0.5">
-          <div className="flex justify-between select-none">
-            <span className="text-xs font-semibold text-default-500">Min Compatibility</span>
-            <span className="text-xs font-bold text-accent">{minMatch}% Match</span>
+      <div className="bg-white dark:bg-[#1f2633] p-5 rounded-2xl border border-slate-200/80 dark:border-slate-850 shadow-sm">
+        <div className="flex flex-col md:flex-row gap-4 items-stretch md:items-center justify-between">
+          {/* Search */}
+          <div className="flex-1 space-y-1.5">
+            <label className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider flex items-center gap-1.5 select-none">
+              <Icon icon="solar:magnifer-linear" className="w-3.5 h-3.5 text-blue-500" />
+              Sourcing keywords, skills, or companies
+            </label>
+            <SearchInput
+              placeholder="e.g. Next.js, FastAPI, Python, Developer..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
           </div>
-          <input
-            type="range"
-            min="30"
-            max="95"
-            value={minMatch}
-            onChange={(e) => setMinMatch(Number(e.target.value))}
-            className="w-full cursor-pointer accent-accent py-2"
-          />
+
+          {/* AI Sorting Status Badge */}
+          <div className="flex items-center gap-2.5 px-4 py-2 bg-slate-50 dark:bg-slate-900/50 rounded-xl border border-slate-200/60 dark:border-slate-800 self-end md:self-auto shrink-0 select-none">
+            <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse" />
+            <div className="space-y-0.5">
+              <p className="text-[9px] font-bold text-slate-400 uppercase tracking-wide">AI Sorting Engine</p>
+              <p className="text-xs font-semibold text-slate-700 dark:text-slate-350 flex items-center gap-1">
+                Highest Match First
+                <Icon icon="solar:magic-stick-3-bold" className="w-3.5 h-3.5 text-purple-500" />
+              </p>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -184,8 +181,8 @@ export default function CandidateJobsFeed() {
         {filteredJobs.length === 0 && (
           <div className="text-center py-12 bg-white dark:bg-[#1f2633] rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm text-default-400">
             <Icon icon="solar:box-search-broken" className="text-4xl mx-auto mb-3 text-default-300" />
-            <p className="font-bold text-sm">No jobs match your active filters</p>
-            <p className="text-xs text-default-500 mt-1">Try lowering the minimum compatibility limit or changing the keyword query.</p>
+            <p className="font-bold text-sm">No jobs match your query</p>
+            <p className="text-xs text-default-500 mt-1">Try changing the keywords to find other compatible opportunities.</p>
           </div>
         )}
       </div>
