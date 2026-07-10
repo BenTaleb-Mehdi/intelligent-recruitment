@@ -2,8 +2,9 @@
 
 import React, { useState } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { Icon } from "@iconify/react";
+import { authClient } from "@/lib/auth-client";
 
 interface SidebarRecruiterProps {
   isOpen: boolean;
@@ -11,8 +12,14 @@ interface SidebarRecruiterProps {
 }
 
 export default function SidebarRecruiter({ isOpen, onClose }: SidebarRecruiterProps) {
+  const router = useRouter();
   const pathname = usePathname() || "";
   const [isJobsOpen, setIsJobsOpen] = useState(true);
+
+  const handleLogout = async () => {
+    await authClient.signOut();
+    router.push("/");
+  };
 
   // Helper to determine if a link is active
   const isActive = (path: string) => pathname === path;
@@ -285,7 +292,7 @@ export default function SidebarRecruiter({ isOpen, onClose }: SidebarRecruiterPr
         </Link>
 
         <button 
-          onClick={() => console.log("Logout")}
+          onClick={handleLogout}
           className={`flex items-center text-slate-500 hover:text-rose-600 hover:bg-rose-50 transition-all duration-200 ${
             isOpen 
               ? "w-full px-3 py-2 text-xs font-semibold rounded-lg gap-3" 

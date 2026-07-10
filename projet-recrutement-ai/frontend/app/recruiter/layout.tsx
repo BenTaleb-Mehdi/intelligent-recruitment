@@ -1,6 +1,9 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { Spinner } from "@heroui/react";
+import { authClient } from "@/lib/auth-client";
 import SidebarRecruiter from "@/components/recruiter/sidebar-recruiter";
 import NavbarRecruiter from "@/components/recruiter/navbar-recruiter";
 
@@ -9,7 +12,8 @@ export default function RecruiterLayout({
 }: {
   children: React.ReactNode;
 }) {
-  // Sidebar state: open by default on desktop, can be closed.
+  const router = useRouter();
+  const { data: session, isPending } = authClient.useSession();
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
 
   useEffect(() => {
@@ -17,6 +21,28 @@ export default function RecruiterLayout({
       setIsSidebarOpen(false);
     }
   }, []);
+
+  useEffect(() => {
+    if (!isPending) {
+      if (!session) {
+        router.replace("/");
+      } else if ((session.user as any).role !== "recruteur") {
+        router.replace("/recruiter/dashboard");
+      }
+    }
+  }, [session, isPending, router]);
+
+  if (isPending) {
+    return (
+      <div className="h-screen flex items-center justify-center">
+        <Spinner size="lg" />
+      </div>
+    );
+  }
+
+  if (!session || (session.user as any).role !== "recruteur") {
+    return null;
+  }
 
   const toggleSidebar = () => {
     setIsSidebarOpen(!isSidebarOpen);

@@ -4,18 +4,37 @@ import React, { useState, useEffect, useRef } from "react";
 import { usePathname } from "next/navigation";
 import { Icon } from "@iconify/react";
 import notificationsData from "@/data/notifications.json";
+import { authClient } from "@/lib/auth-client";
 
 interface NavbarRecruiterProps {
   onToggleSidebar: () => void;
 }
-
+// Helper function to extract initials from a name
+const getInitials = (name?: string) => {
+  if (!name) return "U"; // Default fallback if no name
+  const words = name.trim().split(/\s+/); // Split by spaces
+  if (words.length >= 2) {
+    // If 2 or more words, take the first letter of the first two words
+    return (words[0][0] + words[1][0]).toUpperCase();
+  }
+  // If only 1 word, take the first two letters of that word
+  return name.substring(0, 2).toUpperCase();
+};
 export default function NavbarRecruiter({ onToggleSidebar }: NavbarRecruiterProps) {
   const pathname = usePathname() || "";
   const dropdownRef = useRef<HTMLDivElement>(null);
-
+const [user, setUser] = useState<{ name?: string } | null>(null);
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
   const [notifications, setNotifications] = useState(notificationsData.notifications);
-
+useEffect(() => {
+    const fetchUser = async () => {
+      const { data } = await authClient.getSession();
+      if (data?.user) {
+        setUser(data.user);
+      }
+    };
+    fetchUser();
+  }, []);
   // Click outside to close notifications dropdown
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -173,10 +192,10 @@ export default function NavbarRecruiter({ onToggleSidebar }: NavbarRecruiterProp
         {/* User Info */}
         <div className="flex items-center gap-2">
           <div className="w-7 h-7 rounded-full bg-slate-100 border border-slate-200/80 flex items-center justify-center text-slate-700 font-semibold text-xs select-none">
-            HR
+          {getInitials(user?.name)}
           </div>
           <span className="text-xs font-medium text-slate-600 hidden sm:inline-block">
-            Iksatech Corporate
+            {user?.name || "Loading..."}
           </span>
         </div>
       </div>
