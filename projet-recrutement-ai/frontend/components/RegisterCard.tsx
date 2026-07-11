@@ -44,9 +44,6 @@ export default function RegisterCard({ setView }: RegisterCardProps) {
     return (
         <Card className="w-full shadow-none border-none bg-transparent p-0">
             <CardHeader className="flex flex-col items-center gap-3 pb-2">
-                <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-primary/20 to-primary/10 flex items-center justify-center ring-1 ring-primary/20">
-                    <Icon icon="lucide:user-plus" className="w-7 h-7 text-primary" />
-                </div>
                 <div className="text-center space-y-1">
                     <h1 className="text-2xl font-bold tracking-tight">Create an account</h1>
                     <p className="text-sm text-default-500">Sign up to get started</p>
