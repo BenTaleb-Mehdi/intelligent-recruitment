@@ -4,6 +4,7 @@ import { Card, CardHeader, CardContent, CardFooter, TextField, Label, Input, But
 import { authClient } from "@/lib/auth-client";
 import { useRouter } from "next/navigation";
 import { Icon } from "@iconify/react";
+import Alert from "@/components/ui/Alert";
 
 interface LoginCardProps {
     setView: (view: "login" | "register") => void;
@@ -73,14 +74,7 @@ export default function LoginCard({ setView }: LoginCardProps) {
             </CardHeader>
             <CardContent className="px-6 pt-4">
                 <form onSubmit={handleLogin} className="flex flex-col gap-4">
-                    {error && (
-                        <div className="flex items-start gap-2.5 bg-danger-50 border border-danger-200 rounded-xl px-4 py-3">
-                            <div className="w-6 h-6 rounded-full bg-danger/10 flex items-center justify-center shrink-0 mt-0.5">
-                                <Icon icon="lucide:x" className="w-3.5 h-3.5 text-danger" />
-                            </div>
-                            <p className="text-sm text-danger">{error}</p>
-                        </div>
-                    )}
+                    {error && <Alert variant="danger" message={error} />}
                     <TextField isRequired value={email} onChange={setEmail}>
                         <Label>Email</Label>
                         <Input type="email" placeholder="you@example.com" />

@@ -3,6 +3,7 @@ import React, { useState } from "react";
 import { Card, CardHeader, CardContent, CardFooter, TextField, Label, Input, Button, Link } from "@heroui/react";
 import { authClient } from "@/lib/auth-client";
 import { Icon } from "@iconify/react";
+import Alert from "@/components/ui/Alert";
 
 interface RegisterCardProps {
     setView: (view: "login" | "register") => void;
@@ -51,28 +52,8 @@ export default function RegisterCard({ setView }: RegisterCardProps) {
             </CardHeader>
             <CardContent className="px-6 pt-4">
                 <form onSubmit={handleRegister} className="flex flex-col gap-4">
-                    {error && (
-                        <div className="flex items-start gap-2.5 bg-danger-50 border border-danger-200 rounded-xl px-4 py-3">
-                            <div className="w-6 h-6 rounded-full bg-danger/10 flex items-center justify-center shrink-0 mt-0.5">
-                                <Icon icon="lucide:x" className="w-3.5 h-3.5 text-danger" />
-                            </div>
-                            <div>
-                                <p className="text-sm font-semibold text-danger">Registration failed</p>
-                                <p className="text-sm text-danger">{error}</p>
-                            </div>
-                        </div>
-                    )}
-                    {success && (
-                        <div className="flex items-start gap-2.5 bg-success-50 border border-success-200 rounded-xl px-4 py-3">
-                            <div className="w-6 h-6 rounded-full bg-success/10 flex items-center justify-center shrink-0 mt-0.5">
-                                <Icon icon="lucide:check" className="w-3.5 h-3.5 text-success" />
-                            </div>
-                            <div>
-                                <p className="text-sm font-semibold text-success">Account created!</p>
-                                <p className="text-sm text-success">{success}</p>
-                            </div>
-                        </div>
-                    )}
+                    {error && <Alert variant="danger" title="Registration failed" message={error} />}
+                    {success && <Alert variant="success" title="Account created!" message={success} />}
                     <TextField isRequired value={name} onChange={setName}>
                         <Label>Full Name</Label>
                         <Input type="text" placeholder="John Doe" />
