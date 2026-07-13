@@ -22,7 +22,7 @@ export default function WelcomePage() {
     useEffect(() => {
         if (!mounted) return;
         if (isOnboarded) {
-            router.push(role === "recruteur" ? "/recruiter/dashboard" : "/dashboard");
+            router.push(role === "recruteur" ? "/recruiter/dashboard" : "/candidate/dashboard");
         }
     }, [isOnboarded, role, router, mounted]);
 
@@ -39,7 +39,7 @@ export default function WelcomePage() {
             });
 
             if (response.ok) {
-                window.location.href = role === "recruteur" ? "/recruiter/dashboard" : "/dashboard";
+                window.location.href = role === "recruteur" ? "/recruiter/dashboard" : "/candidate/dashboard";
             }
         } catch (error) {
             console.error("Error updating role:", error);

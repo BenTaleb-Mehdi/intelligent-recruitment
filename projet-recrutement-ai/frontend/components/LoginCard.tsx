@@ -30,7 +30,7 @@ export default function LoginCard({ setView }: LoginCardProps) {
             setLoading(false);
         } else if (data) {
             const role = (data.user as any).role;
-            router.push(role === "recruteur" ? "/recruiter/dashboard" : "/dashboard");
+            router.push(role === "recruteur" ? "/recruiter/dashboard" : "/candidate/dashboard");
         }
     };
 
