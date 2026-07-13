@@ -5,7 +5,7 @@ import ChatConversations from "@/components/recruiter/ChatConversations";
 import ChatArea from "@/components/recruiter/ChatArea";
 import ChatInput from "@/components/recruiter/ChatInput";
 import messagesData from "@/data/messages.json";
-import type { Conversation, Message } from "@/types/chat";
+import type { Conversation, Message } from "@/lib/chat";
 
 export type { Conversation, Message };
 

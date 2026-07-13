@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 import { Icon } from "@iconify/react";
-import type { Conversation } from "@/types/chat";
+import type { Conversation } from "@/lib/chat";
 
 interface ChatConversationsProps {
   conversations: Conversation[];
