@@ -5,7 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { Icon } from "@iconify/react";
 import { Calendar } from "@heroui/react";
-import { parseDate } from "@internationalized/date";
+import { parseDate, DateValue } from "@internationalized/date";
 import QuizQuestionCard, { QuizQuestion } from "@/components/recruiter/QuizQuestionCard";
 
 interface QuizData {
@@ -105,7 +105,7 @@ export default function JobQuizPage() {
   const [validated, setValidated] = useState(quiz?.status === "Validé");
   const [rejected, setRejected] = useState(quiz?.status === "Refusé");
 
-  const [endDate, setEndDate] = useState(parseDate("2026-07-14"));
+  const [endDate, setEndDate] = useState<DateValue>(parseDate("2026-07-14"));
   const [endTime, setEndTime] = useState("23:59");
   const [duration, setDuration] = useState("30");
 
