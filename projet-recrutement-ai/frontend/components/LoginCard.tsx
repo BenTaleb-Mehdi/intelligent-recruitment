@@ -37,14 +37,14 @@ export default function LoginCard({ setView }: LoginCardProps) {
     const handleGithubLogin = async () => {
         await authClient.signIn.social({
             provider: "github",
-            callbackURL: "http://localhost:3000/dashboard"
+            callbackURL: window.location.origin
         });
     };
     const handleGoogleLogin = async () => {
     try {
         await authClient.signIn.social({
             provider: "google",
-            callbackURL: "http://localhost:3000/dashboard"
+            callbackURL: window.location.origin
         });
     } catch (error) {
         console.error("Error signing in with Google:", error);
@@ -56,7 +56,7 @@ export default function LoginCard({ setView }: LoginCardProps) {
         sessionStorage.setItem("is_signing_up", "false");
         await authClient.signIn.social({
             provider: "linkedin",
-            callbackURL: "http://localhost:3000/dashboard"
+            callbackURL: window.location.origin
         });
     } catch (error) {
         console.error("Kh6a2 f dkhul b LinkedIn:", error);

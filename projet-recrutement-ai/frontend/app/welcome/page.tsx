@@ -17,13 +17,14 @@ export default function WelcomePage() {
     }, []);
 
     const isOnboarded = (session?.user as any)?.isOnboarded;
+    const role = (session?.user as any)?.role;
 
     useEffect(() => {
         if (!mounted) return;
         if (isOnboarded) {
-            router.push("/dashboard");
+            router.push(role === "recruteur" ? "/recruiter/dashboard" : "/dashboard");
         }
-    }, [isOnboarded, router, mounted]);
+    }, [isOnboarded, role, router, mounted]);
 
     const handleSelectRole = async (role: "candidat" | "recruteur") => {
         if (!session?.user?.id) return;
@@ -38,7 +39,7 @@ export default function WelcomePage() {
             });
 
             if (response.ok) {
-                window.location.href = "/dashboard";
+                window.location.href = role === "recruteur" ? "/recruiter/dashboard" : "/dashboard";
             }
         } catch (error) {
             console.error("Error updating role:", error);

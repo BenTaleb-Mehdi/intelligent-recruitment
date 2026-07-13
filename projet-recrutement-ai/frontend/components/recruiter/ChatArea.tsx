@@ -2,7 +2,7 @@
 
 import React, { useEffect, useRef } from "react";
 import { Icon } from "@iconify/react";
-import type { Conversation } from "@/types/chat";
+import type { Conversation } from "@/lib/chat";
 
 interface ChatAreaProps {
   conversation: Conversation;
