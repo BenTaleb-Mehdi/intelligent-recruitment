@@ -2,11 +2,11 @@
 
 import React from "react";
 import { Calendar as HeroUICalendar } from "@heroui/react";
-import type { DateValue } from "@internationalized/date";
+import { CalendarDate } from "@internationalized/date";
 
 export interface CalendarProps {
-  value: DateValue | null;
-  onChange: (date: DateValue | null) => void;
+  value: CalendarDate | null;
+  onChange: (date: CalendarDate | null) => void;
   ariaLabel?: string;
   className?: string;
 }
@@ -34,7 +34,7 @@ export default function Calendar({
             )}
           </HeroUICalendar.GridHeader>
           <HeroUICalendar.GridBody>
-            {(date: DateValue) => <HeroUICalendar.Cell date={date} />}
+            {(date: CalendarDate) => <HeroUICalendar.Cell date={date} />}
           </HeroUICalendar.GridBody>
         </HeroUICalendar.Grid>
       </HeroUICalendar>
