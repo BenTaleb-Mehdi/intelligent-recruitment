@@ -17,6 +17,8 @@ export interface JobOffer {
   date: string;
   status: "Ouverte" | "Fermée";
   applicants: number;
+  skills?: { id: string; name: string }[];
+  recruiterId?: string;
 }
 
 interface JobsTableProps {

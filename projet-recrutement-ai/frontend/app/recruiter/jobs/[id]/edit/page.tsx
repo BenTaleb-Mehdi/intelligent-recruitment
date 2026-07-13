@@ -1,69 +1,125 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { Icon } from "@iconify/react";
 import SkillsTagInput from "@/components/recruiter/skills-tag-input";
 import LocationSelector from "@/components/recruiter/location-selector";
 import CustomSelect from "@/components/recruiter/custom-select";
-
-const OFFERS_DB: Record<string, {
-  title: string;
-  contractType: string;
-  location: string;
-  salary: string;
-  experience: string;
-  description: string;
-  skills: string[];
-}> = {
-  "1": {
-    title: "Développeur Fullstack Node/Next.js",
-    contractType: "CDI (Contrat à Durée Indéterminée)",
-    location: "Casablanca, Maroc (Sur site)",
-    salary: "18 000 - 25 000 DH/mois",
-    experience: "+3 à 5 ans d'expérience",
-    description:
-      "Nous recherchons un développeur Fullstack talentueux pour rejoindre notre équipe technique. Vous serez responsable de la conception, du développement et de la maintenance d'applications web modernes en utilisant Node.js et Next.js. Vous travaillerez en étroite collaboration avec l'équipe produit pour livrer des fonctionnalités de haute qualité.",
-    skills: ["Node.js", "Next.js", "React", "TypeScript", "PostgreSQL", "Docker"],
-  },
-  "2": {
-    title: "UI/UX Designer Senior",
-    contractType: "CDI (Contrat à Durée Indéterminée)",
-    location: "Rabat, Maroc (Hybride)",
-    salary: "15 000 - 20 000 DH/mois",
-    experience: "+5 ans d'expérience (Senior)",
-    description:
-      "Nous cherchons un UI/UX Designer Senior pour concevoir des expériences utilisateur exceptionnelles. Vous serez en charge de la recherche utilisateur, de la création de wireframes, de prototypes interactifs et de la conception d'interfaces intuitives.",
-    skills: ["Figma", "Design System", "Prototyping", "User Research", "Design Thinking", "Adobe XD"],
-  },
-};
+import { api, ApiJobOffer } from "@/lib/api";
 
 export default function EditJobPage() {
   const params = useParams();
   const router = useRouter();
   const jobId = params.id as string;
-  const existing = OFFERS_DB[jobId];
 
-  const [title, setTitle] = useState(existing?.title ?? "");
-  const [contractType, setContractType] = useState(existing?.contractType ?? "");
-  const [locationType, setLocationType] = useState(existing?.location ?? "");
-  const [salary, setSalary] = useState(existing?.salary ?? "");
-  const [experience, setExperience] = useState(existing?.experience ?? "");
-  const [description, setDescription] = useState(existing?.description ?? "");
-  const [skills, setSkills] = useState<string[]>(existing?.skills ?? []);
+  const [loading, setLoading] = useState(true);
+  const [notFound, setNotFound] = useState(false);
+
+  const [title, setTitle] = useState("");
+  const [contractType, setContractType] = useState("");
+  const [locationType, setLocationType] = useState("");
+  const [salary, setSalary] = useState("");
+  const [experience, setExperience] = useState("");
+  const [description, setDescription] = useState("");
+  const [skills, setSkills] = useState<string[]>([]);
 
   const [isSaving, setIsSaving] = useState(false);
   const [showToast, setShowToast] = useState(false);
 
-  if (!existing) {
+  useEffect(() => {
+    const fetchOffer = async () => {
+      try {
+        const { data: offer } = await api.get<{ data: ApiJobOffer }>(
+          `/api/job-offers/${jobId}`
+        );
+        if (!offer) {
+          setNotFound(true);
+          return;
+        }
+
+        setTitle(offer.title);
+        setContractType(offer.contractType);
+        setLocationType(offer.locationType || offer.location || "");
+        setSalary(offer.salary || "");
+        setSkills(offer.skills?.map((s) => s.name) || []);
+        setDescription(offer.description);
+
+        const expMap: Record<number, string> = {
+          0: "Débutant (Sans expérience)",
+          1: "+1 à 2 ans d'expérience",
+          3: "+3 à 5 ans d'expérience",
+          5: "+5 ans d'expérience (Senior)",
+        };
+        setExperience(expMap[offer.experienceYears] || "");
+      } catch (error) {
+        console.error("Error fetching job offer:", error);
+        setNotFound(true);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchOffer();
+  }, [jobId]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!title || !contractType || !locationType || !experience || !description || skills.length === 0) {
+      alert("Veuillez remplir tous les champs obligatoires et ajouter au moins une compétence.");
+      return;
+    }
+
+    setIsSaving(true);
+
+    try {
+      const experienceYearsMap: Record<string, number> = {
+        "Débutant (Sans expérience)": 0,
+        "+1 à 2 ans d'expérience": 1,
+        "+3 à 5 ans d'expérience": 3,
+        "+5 ans d'expérience (Senior)": 5,
+      };
+
+      await api.put(`/api/job-offers/${jobId}`, {
+        title,
+        description,
+        contractType,
+        locationType,
+        salary: salary || undefined,
+        experienceYears: experienceYearsMap[experience] ?? 0,
+        location: locationType,
+        skills,
+      });
+
+      setShowToast(true);
+      setTimeout(() => {
+        router.push("/recruiter/jobs");
+      }, 1500);
+    } catch (error) {
+      console.error("Error updating job offer:", error);
+      alert("Erreur lors de la mise à jour de l'offre.");
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-20">
+        <div className="w-8 h-8 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
+
+  if (notFound) {
     return (
       <div className="max-w-2xl mx-auto text-center py-20 space-y-4">
         <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto">
           <Icon icon="solar:file-remove-linear" className="w-8 h-8 text-slate-400" />
         </div>
         <h2 className="text-xl font-bold text-slate-700">Offre introuvable</h2>
-        <p className="text-sm text-slate-400">Aucune offre trouvée avec l&apos;identifiant #{jobId}.</p>
+        <p className="text-sm text-slate-400">Aucune offre trouvée avec l'identifiant #{jobId}.</p>
         <Link
           href="/recruiter/jobs"
           className="inline-flex items-center gap-2 text-sm font-semibold text-blue-600 hover:text-blue-700"
@@ -74,25 +130,6 @@ export default function EditJobPage() {
       </div>
     );
   }
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!title || !contractType || !locationType || !experience || !description || skills.length === 0) {
-      alert("Veuillez remplir tous les champs obligatoires et ajouter au moins une compétence.");
-      return;
-    }
-
-    setIsSaving(true);
-
-    setTimeout(() => {
-      setIsSaving(false);
-      setShowToast(true);
-
-      setTimeout(() => {
-        router.push("/recruiter/jobs");
-      }, 1500);
-    }, 800);
-  };
 
   return (
     <div className="max-w-4xl mx-auto space-y-6 font-sans relative">
@@ -111,8 +148,8 @@ export default function EditJobPage() {
           <Icon icon="solar:alt-arrow-left-linear" className="w-5 h-5" />
         </Link>
         <div>
-          <h2 className="text-2xl font-bold text-slate-900 tracking-tight">Modifier l&apos;offre</h2>
-          <p className="text-sm text-slate-500 mt-1">Mettez à jour les informations de cette offre d&apos;emploi.</p>
+          <h2 className="text-2xl font-bold text-slate-900 tracking-tight">Modifier l'offre</h2>
+          <p className="text-sm text-slate-500 mt-1">Mettez à jour les informations de cette offre d'emploi.</p>
         </div>
       </div>
 
@@ -156,10 +193,7 @@ export default function EditJobPage() {
             </div>
 
             <div className="space-y-1.5 flex flex-col justify-end">
-              <LocationSelector
-                value={locationType}
-                onChange={setLocationType}
-              />
+              <LocationSelector value={locationType} onChange={setLocationType} />
             </div>
 
             <div className="space-y-1.5 md:col-span-2">

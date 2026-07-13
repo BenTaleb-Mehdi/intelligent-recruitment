@@ -26,8 +26,8 @@ export default function RecruiterLayout({
     if (!isPending) {
       if (!session) {
         router.replace("/");
-      } else if ((session.user as any).role !== "recruteur") {
-        router.replace("/recruiter/dashboard");
+      } else if ((session.user as any).role !== "RECRUITER") {
+        router.replace("/");
       }
     }
   }, [session, isPending, router]);
@@ -40,7 +40,7 @@ export default function RecruiterLayout({
     );
   }
 
-  if (!session || (session.user as any).role !== "recruteur") {
+  if (!session || (session.user as any).role !== "RECRUITER") {
     return null;
   }
 

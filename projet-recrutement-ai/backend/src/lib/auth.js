@@ -96,7 +96,7 @@ sendResetPassword: async ({ user, url }) => {
             role: {
                 type: "string",
                 required: false,
-                defaultValue: "candidat",
+                defaultValue: "CANDIDATE",
                 input: true,
             },
             isOnboarded: {

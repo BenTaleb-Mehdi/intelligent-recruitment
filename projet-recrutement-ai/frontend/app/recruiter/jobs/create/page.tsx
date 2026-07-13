@@ -8,11 +8,12 @@ import SkillsTagInput from "@/components/recruiter/skills-tag-input";
 import LocationSelector from "@/components/recruiter/location-selector";
 import ContractTypeSelector from "@/components/recruiter/contract-type-selector";
 import ExperienceSelector from "@/components/recruiter/experience-selector";
+import { api, ApiRecruiter } from "@/lib/api";
+import { authClient } from "@/lib/auth-client";
 
 export default function CreateJobPage() {
   const router = useRouter();
 
-  // Form State
   const [title, setTitle] = useState("");
   const [contractType, setContractType] = useState<string>("");
   const [locationType, setLocationType] = useState<string>("");
@@ -20,12 +21,11 @@ export default function CreateJobPage() {
   const [experience, setExperience] = useState<string>("");
   const [description, setDescription] = useState("");
   const [skills, setSkills] = useState<string[]>([]);
-  
-  // Interaction State
+
   const [isPublishing, setIsPublishing] = useState(false);
   const [showToast, setShowToast] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!title || !contractType || !locationType || !experience || !description || skills.length === 0) {
       alert("Veuillez remplir tous les champs obligatoires et ajouter au moins une compétence.");
@@ -34,24 +34,47 @@ export default function CreateJobPage() {
 
     setIsPublishing(true);
 
-    // Simulate API publication
-    setTimeout(() => {
-      setIsPublishing(false);
+    try {
+      const { data: session } = await authClient.getSession();
+      if (!session?.user?.id) return;
+
+      const { data: recruiters } = await api.get<{ data: ApiRecruiter[] }>("/api/recruiters");
+      const recruiter = recruiters?.find((r) => r.userId === session.user.id);
+      if (!recruiter) return;
+
+      const experienceYearsMap: Record<string, number> = {
+        "Débutant (Sans expérience)": 0,
+        "+1 à 2 ans d'expérience": 1,
+        "+3 à 5 ans d'expérience": 3,
+        "+5 ans d'expérience (Senior)": 5,
+      };
+
+      await api.post("/api/job-offers", {
+        recruiterId: recruiter.id,
+        title,
+        description,
+        contractType,
+        locationType,
+        salary: salary || undefined,
+        experienceYears: experienceYearsMap[experience] ?? 0,
+        location: locationType,
+        skills,
+      });
+
       setShowToast(true);
-      
-      // Redirect back to offers list after 2 seconds
       setTimeout(() => {
         router.push("/recruiter/jobs");
       }, 1500);
-    }, 1200);
+    } catch (error: any) {
+      console.error("Error creating job offer:", error);
+      alert(error?.message || "Erreur lors de la publication de l'offre.");
+    } finally {
+      setIsPublishing(false);
+    }
   };
-
-
 
   return (
     <div className="max-w-4xl mx-auto space-y-6 font-sans relative">
-      
-      {/* Toast Notification Simulation */}
       {showToast && (
         <div className="fixed bottom-5 right-5 z-50 bg-emerald-600 text-white px-5 py-3.5 rounded-xl shadow-lg flex items-center gap-3 animate-slide-in select-none">
           <Icon icon="solar:check-circle-bold" className="w-5 h-5 flex-shrink-0" />
@@ -59,10 +82,9 @@ export default function CreateJobPage() {
         </div>
       )}
 
-      {/* Header */}
       <div className="flex items-center gap-3">
-        <Link 
-          href="/recruiter/jobs" 
+        <Link
+          href="/recruiter/jobs"
           className="p-2 text-slate-400 hover:text-slate-800 hover:bg-slate-100 rounded-lg transition-colors"
         >
           <Icon icon="solar:alt-arrow-left-linear" className="w-5 h-5" />
@@ -74,15 +96,12 @@ export default function CreateJobPage() {
       </div>
 
       <form onSubmit={handleSubmit} className="bg-white rounded-2xl border border-slate-200/70 shadow-sm p-6 sm:p-8 space-y-8">
-        
-        {/* ── SECTION 1: INFORMATIONS GENERALES ── */}
         <div className="space-y-4">
           <h3 className="text-sm font-bold text-slate-800 border-b border-slate-100 pb-2">
             1. Informations Générales
           </h3>
-          
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-            {/* Title */}
             <div className="space-y-1.5 md:col-span-2">
               <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
                 Titre de l'offre *
@@ -97,23 +116,14 @@ export default function CreateJobPage() {
               />
             </div>
 
-            {/* Contract Type */}
             <div className="space-y-1.5 flex flex-col justify-end">
-              <ContractTypeSelector
-                value={contractType}
-                onChange={setContractType}
-              />
+              <ContractTypeSelector value={contractType} onChange={setContractType} />
             </div>
 
-            {/* Location Type - Smart Search Selector */}
             <div className="space-y-1.5 flex flex-col justify-end">
-              <LocationSelector
-                value={locationType}
-                onChange={setLocationType}
-              />
+              <LocationSelector value={locationType} onChange={setLocationType} />
             </div>
 
-            {/* Salary */}
             <div className="space-y-1.5 md:col-span-2">
               <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
                 Salaire proposé (Optionnel)
@@ -129,22 +139,16 @@ export default function CreateJobPage() {
           </div>
         </div>
 
-        {/* ── SECTION 2: DESCRIPTION & EXIGENCES ── */}
         <div className="space-y-4">
           <h3 className="text-sm font-bold text-slate-800 border-b border-slate-100 pb-2">
             2. Description de l'emploi & Exigences
           </h3>
-          
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-            {/* Experience Selection */}
             <div className="space-y-1.5 flex flex-col justify-end">
-              <ExperienceSelector
-                value={experience}
-                onChange={setExperience}
-              />
+              <ExperienceSelector value={experience} onChange={setExperience} />
             </div>
 
-            {/* Description Textarea */}
             <div className="space-y-1.5 md:col-span-2">
               <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
                 Description de l'emploi & Rôles *
@@ -161,7 +165,6 @@ export default function CreateJobPage() {
           </div>
         </div>
 
-        {/* ── SECTION 3: SKILLS TAG INPUT ── */}
         <div className="space-y-4">
           <h3 className="text-sm font-bold text-slate-800 border-b border-slate-100 pb-2">
             3. Compétences & Indexation IA
@@ -169,7 +172,6 @@ export default function CreateJobPage() {
           <SkillsTagInput skills={skills} onChange={setSkills} />
         </div>
 
-        {/* ── SECTION 4: ACTIONS BUTTONS ── */}
         <div className="flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-end gap-3 pt-6 border-t border-slate-100">
           <Link
             href="/recruiter/jobs"
@@ -195,7 +197,6 @@ export default function CreateJobPage() {
             )}
           </button>
         </div>
-
       </form>
     </div>
   );
