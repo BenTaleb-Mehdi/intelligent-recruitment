@@ -125,19 +125,42 @@ model Candidate {
   @@map("candidate")
 }
 
+enum DropdownType {
+  CONTRACT_TYPE
+  LOCATION
+  EXPERIENCE_LEVEL
+}
+
 model Recruiter {
-  id           String     @id @default(uuid())
-  userId       String     @unique
-  user         User       @relation(fields: [userId], references: [id], onDelete: Cascade)
-  companyName  String?
-  website      String?
-  industry     String?
-  teamSize     String?
-  headquarters String?
-  description  String?    @db.Text
-  jobOffers    JobOffer[]
+  id               String     @id @default(uuid())
+  userId           String     @unique
+  user             User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  companyName      String?
+  website          String?
+  industry         String?
+  teamSize         String?
+  headquarters     String?
+  description      String?    @db.Text
+  logo             String?    @db.LongText
+  contractTypes    String?    @db.LongText
+  locations        String?    @db.LongText
+  experienceLevels String?    @db.LongText
+  jobOffers        JobOffer[]
+  dropdownLists    DropdownList[]
 
   @@map("recruiter")
+}
+
+model DropdownList {
+  id           String       @id @default(uuid())
+  recruiterId  String
+  recruiter    Recruiter    @relation(fields: [recruiterId], references: [id], onDelete: Cascade)
+  type         DropdownType
+  value        String
+  createdAt    DateTime     @default(now())
+
+  @@unique([recruiterId, type, value])
+  @@map("dropdown_list")
 }
 
 model JobOffer {

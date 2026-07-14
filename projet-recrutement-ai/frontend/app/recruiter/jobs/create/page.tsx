@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect, useMemo, useCallback } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Icon } from "@iconify/react";
@@ -8,8 +8,31 @@ import SkillsTagInput from "@/components/recruiter/skills-tag-input";
 import LocationSelector from "@/components/recruiter/location-selector";
 import ContractTypeSelector from "@/components/recruiter/contract-type-selector";
 import ExperienceSelector from "@/components/recruiter/experience-selector";
-import { api, ApiRecruiter } from "@/lib/api";
+import { api, ApiRecruiter, ApiDropdownItem, DropdownType } from "@/lib/api";
 import { authClient } from "@/lib/auth-client";
+
+const DEFAULT_CONTRACT_TYPES = [
+  "CDI (Contrat à Durée Indéterminée)",
+  "CDD (Contrat à Durée Déterminée)",
+  "Stage / Alternance",
+  "Freelance / Indépendant",
+];
+
+const DEFAULT_LOCATIONS = [
+  "Casablanca, Maroc",
+  "Rabat, Maroc",
+  "Tanger, Maroc",
+  "Marrakech, Maroc",
+  "100% Télétravail (Remote)",
+  "Hybride (Casablanca / Distanciel)",
+];
+
+const DEFAULT_EXPERIENCE_LEVELS = [
+  "Débutant (Sans expérience)",
+  "+1 à 2 ans d'expérience",
+  "+3 à 5 ans d'expérience",
+  "+5 ans d'expérience (Senior)",
+];
 
 export default function CreateJobPage() {
   const router = useRouter();
@@ -24,6 +47,89 @@ export default function CreateJobPage() {
 
   const [isPublishing, setIsPublishing] = useState(false);
   const [showToast, setShowToast] = useState(false);
+
+  const [recruiterId, setRecruiterId] = useState<string | null>(null);
+  const [dropdownItems, setDropdownItems] = useState<ApiDropdownItem[]>([]);
+
+  const refreshDropdownItems = useCallback(async (rid: string) => {
+    try {
+      const { data: items } = await api.get<{ data: ApiDropdownItem[] }>(
+        `/api/dropdown-lists/${rid}`
+      );
+      if (items) setDropdownItems(items);
+    } catch {
+      // ignore
+    }
+  }, []);
+
+  useEffect(() => {
+    const fetchRecruiter = async () => {
+      try {
+        const { data: session } = await authClient.getSession();
+        if (!session?.user?.id) return;
+
+        const { data: recruiters } = await api.get<{ data: ApiRecruiter[] }>("/api/recruiters");
+        const recruiter = recruiters?.find((r) => r.userId === session.user.id);
+        if (!recruiter) return;
+
+        setRecruiterId(recruiter.id);
+        await refreshDropdownItems(recruiter.id);
+      } catch (error) {
+        console.error("Error fetching recruiter:", error);
+      }
+    };
+
+    fetchRecruiter();
+  }, [refreshDropdownItems]);
+
+  const contractTypeItems = useMemo(() => {
+    const db = dropdownItems
+      .filter((i) => i.type === "CONTRACT_TYPE")
+      .map((i) => ({ id: i.id, value: i.value }));
+    return db.length > 0 ? db : DEFAULT_CONTRACT_TYPES.map((v) => ({ value: v }));
+  }, [dropdownItems]);
+
+  const locationItems = useMemo(() => {
+    const db = dropdownItems
+      .filter((i) => i.type === "LOCATION")
+      .map((i) => ({ id: i.id, value: i.value }));
+    return db.length > 0 ? db : DEFAULT_LOCATIONS.map((v) => ({ value: v }));
+  }, [dropdownItems]);
+
+  const experienceItems = useMemo(() => {
+    const db = dropdownItems
+      .filter((i) => i.type === "EXPERIENCE_LEVEL")
+      .map((i) => ({ id: i.id, value: i.value }));
+    return db.length > 0 ? db : DEFAULT_EXPERIENCE_LEVELS.map((v) => ({ value: v }));
+  }, [dropdownItems]);
+
+  const handleAddDropdown = async (type: DropdownType, value: string) => {
+    if (!recruiterId) return;
+    try {
+      await api.post(`/api/dropdown-lists/${recruiterId}`, { type, value });
+      await refreshDropdownItems(recruiterId);
+    } catch (error) {
+      console.error("Error adding dropdown item:", error);
+    }
+  };
+
+  const handleUpdateDropdown = async (id: string, value: string) => {
+    try {
+      await api.put(`/api/dropdown-lists/${id}`, { value });
+      if (recruiterId) await refreshDropdownItems(recruiterId);
+    } catch (error) {
+      console.error("Error updating dropdown item:", error);
+    }
+  };
+
+  const handleDeleteDropdown = async (id: string) => {
+    try {
+      await api.delete(`/api/dropdown-lists/${id}`);
+      if (recruiterId) await refreshDropdownItems(recruiterId);
+    } catch (error) {
+      console.error("Error deleting dropdown item:", error);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -91,7 +197,7 @@ export default function CreateJobPage() {
         </Link>
         <div>
           <h2 className="text-2xl font-bold text-slate-900 tracking-tight">Créer une nouvelle offre</h2>
-          <p className="text-sm text-slate-500 mt-1">Publiez une offre d'emploi. L'IA générera automatiquement les tests d'évaluation correspondants.</p>
+          <p className="text-sm text-slate-500 mt-1">Publiez une offre d&apos;emploi. L&apos;IA générera automatiquement les tests d&apos;évaluation correspondants.</p>
         </div>
       </div>
 
@@ -104,7 +210,7 @@ export default function CreateJobPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
             <div className="space-y-1.5 md:col-span-2">
               <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-                Titre de l'offre *
+                Titre de l&apos;offre *
               </label>
               <input
                 type="text"
@@ -117,11 +223,25 @@ export default function CreateJobPage() {
             </div>
 
             <div className="space-y-1.5 flex flex-col justify-end">
-              <ContractTypeSelector value={contractType} onChange={setContractType} />
+              <ContractTypeSelector
+                value={contractType}
+                onChange={setContractType}
+                items={contractTypeItems}
+                onAdd={(v) => handleAddDropdown("CONTRACT_TYPE", v)}
+                onUpdate={handleUpdateDropdown}
+                onDelete={handleDeleteDropdown}
+              />
             </div>
 
             <div className="space-y-1.5 flex flex-col justify-end">
-              <LocationSelector value={locationType} onChange={setLocationType} />
+              <LocationSelector
+                value={locationType}
+                onChange={setLocationType}
+                items={locationItems}
+                onAdd={(v) => handleAddDropdown("LOCATION", v)}
+                onUpdate={handleUpdateDropdown}
+                onDelete={handleDeleteDropdown}
+              />
             </div>
 
             <div className="space-y-1.5 md:col-span-2">
@@ -141,17 +261,24 @@ export default function CreateJobPage() {
 
         <div className="space-y-4">
           <h3 className="text-sm font-bold text-slate-800 border-b border-slate-100 pb-2">
-            2. Description de l'emploi & Exigences
+            2. Description de l&apos;emploi & Exigences
           </h3>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
             <div className="space-y-1.5 flex flex-col justify-end">
-              <ExperienceSelector value={experience} onChange={setExperience} />
+              <ExperienceSelector
+                value={experience}
+                onChange={setExperience}
+                items={experienceItems}
+                onAdd={(v) => handleAddDropdown("EXPERIENCE_LEVEL", v)}
+                onUpdate={handleUpdateDropdown}
+                onDelete={handleDeleteDropdown}
+              />
             </div>
 
             <div className="space-y-1.5 md:col-span-2">
               <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-                Description de l'emploi & Rôles *
+                Description de l&apos;emploi & Rôles *
               </label>
               <textarea
                 placeholder="Rédigez la description détaillée des tâches, de la mission et des rôles attendus..."
@@ -192,7 +319,7 @@ export default function CreateJobPage() {
             ) : (
               <>
                 <Icon icon="solar:rocket-linear" className="w-4 h-4" />
-                Publier l'offre
+                Publier l&apos;offre
               </>
             )}
           </button>

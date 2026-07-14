@@ -6,7 +6,13 @@ async function request<T>(url: string, options?: RequestInit): Promise<T> {
         credentials: "include",
         ...options,
     });
-    const json = await res.json();
+    const text = await res.text();
+    let json: any;
+    try {
+        json = JSON.parse(text);
+    } catch {
+        throw new Error(`Request failed (${res.status}): ${text.slice(0, 200)}`);
+    }
     if (!res.ok) throw new Error(json.error || json.message || "Request failed");
     return json;
 }
@@ -31,6 +37,10 @@ export interface ApiRecruiter {
     teamSize?: string;
     headquarters?: string;
     description?: string;
+    logo?: string;
+    contractTypes?: string;
+    locations?: string;
+    experienceLevels?: string;
     user: { id: string; name: string; email: string; image?: string };
 }
 
@@ -74,4 +84,14 @@ export interface ApiApplication {
         user: { id: string; name: string; email: string; image?: string };
     };
     jobOffer: { id: string; title: string };
+}
+
+export type DropdownType = "CONTRACT_TYPE" | "LOCATION" | "EXPERIENCE_LEVEL";
+
+export interface ApiDropdownItem {
+    id: string;
+    recruiterId: string;
+    type: DropdownType;
+    value: string;
+    createdAt: string;
 }

@@ -52,7 +52,7 @@ export const updateRecruiter = async (req, res) => {
             return res.status(404).json({ success: false, error: "Recruiter not found" });
         }
 
-        const { companyName, website, industry, teamSize, headquarters, description } = req.body;
+        const { companyName, website, industry, teamSize, headquarters, description, logo, contractTypes, locations, experienceLevels } = req.body;
         const updated = await recruiterService.updateRecruiter(req.params.id, {
             ...(companyName !== undefined && { companyName }),
             ...(website !== undefined && { website }),
@@ -60,6 +60,10 @@ export const updateRecruiter = async (req, res) => {
             ...(teamSize !== undefined && { teamSize }),
             ...(headquarters !== undefined && { headquarters }),
             ...(description !== undefined && { description }),
+            ...(logo !== undefined && { logo }),
+            ...(contractTypes !== undefined && { contractTypes }),
+            ...(locations !== undefined && { locations }),
+            ...(experienceLevels !== undefined && { experienceLevels }),
         });
         res.status(200).json({ success: true, data: updated });
     } catch (error) {
