@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { usePathname } from "next/navigation";
 import { Icon } from "@iconify/react";
-import { Indicator } from "@/components/charts/atoms/Indicator";
+import { Indicator } from "./Indicator";
 import candidateNotificationsData from "@/data/notifications-candidate.json";
 
 interface NavbarCandidateProps {

@@ -2,8 +2,9 @@
 
 import React from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { Icon } from "@iconify/react";
+import { authClient } from "@/lib/auth-client";
 
 interface SidebarCandidateProps {
   isOpen: boolean;
@@ -16,10 +17,17 @@ const NAVIGATION_ITEMS = [
   { href: "/candidate/jobs", label: "Job Feed (AI)", icon: "solar:case-linear" },
   { href: "/candidate/applications", label: "Applications", icon: "solar:document-linear" },
   { href: "/candidate/quizzes", label: "Skills Assessments", icon: "solar:clipboard-list-linear" },
+  { href: "/candidate/settings", label: "Settings", icon: "solar:settings-linear" },
 ];
 
 export default function SidebarCandidate({ isOpen, onClose }: SidebarCandidateProps) {
+  const router = useRouter();
   const pathname = usePathname() || "";
+
+  const handleLogout = async () => {
+    await authClient.signOut();
+    router.push("/");
+  };
 
   const isActive = (path: string) => pathname === path;
 
@@ -90,9 +98,9 @@ export default function SidebarCandidate({ isOpen, onClose }: SidebarCandidatePr
       <div className={`border-t border-slate-200/65 bg-white ${
         isOpen ? "p-3 space-y-1" : "p-2 space-y-3"
       }`}>
-        <Link 
-          href="/"
-          className={`flex items-center text-slate-500 hover:text-rose-600 hover:bg-rose-50 transition-all duration-200 ${
+        <button 
+          onClick={handleLogout}
+          className={`flex items-center text-slate-500 hover:text-rose-600 hover:bg-rose-50 transition-all duration-200 cursor-pointer ${
             isOpen 
               ? "w-full px-3 py-2 text-xs font-semibold rounded-lg gap-3" 
               : "w-10 h-10 justify-center mx-auto rounded-xl"
@@ -101,7 +109,7 @@ export default function SidebarCandidate({ isOpen, onClose }: SidebarCandidatePr
         >
           <Icon icon="solar:logout-2-linear" className="w-5 h-5 flex-shrink-0 text-slate-400" />
           {isOpen && <span className="truncate">Se déconnecter</span>}
-        </Link>
+        </button>
       </div>
 
     </aside>

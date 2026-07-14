@@ -23,6 +23,7 @@ export default function WelcomePage() {
         if (!mounted) return;
         if (isOnboarded) {
             router.push(role === "RECRUITER" ? "/recruiter/dashboard" : "/dashboard");
+
         }
     }, [isOnboarded, role, router, mounted]);
 
@@ -39,7 +40,7 @@ export default function WelcomePage() {
             });
 
             if (response.ok) {
-                window.location.href = role === "recruteur" ? "/recruiter/dashboard" : "/dashboard";
+                window.location.href = role === "recruteur" ? "/recruiter/dashboard" : "/candidate/dashboard";
             }
         } catch (error) {
             console.error("Error updating role:", error);

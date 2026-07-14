@@ -26,8 +26,10 @@ export default function RecruiterLayout({
     if (!isPending) {
       if (!session) {
         router.replace("/");
+
       } else if ((session.user as any).role !== "RECRUITER") {
         router.replace("/");
+
       }
     }
   }, [session, isPending, router]);

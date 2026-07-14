@@ -2,11 +2,11 @@
 
 import React, { useState, useMemo } from "react";
 import { Icon } from "@iconify/react";
-import { Card } from "@/components/charts/molecules/Card";
-import { Button } from "@/components/charts/atoms/Button";
-import { Chip } from "@/components/charts/atoms/Chip";
+import { Card } from "@/components/candidate/Card";
+import { Button } from "@/components/candidate/Button";
+import { Chip } from "@/components/candidate/Chip";
 import Link from "next/link";
-import SearchInput from "@/components/charts/atoms/SearchInput";
+import SearchInput from "@/components/candidate/SearchInput";
 
 const JOBS_DATA = [
   {

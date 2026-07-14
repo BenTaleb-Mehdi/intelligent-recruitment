@@ -2,9 +2,9 @@
 
 import React from "react";
 import { Icon } from "@iconify/react";
-import { Card } from "@/components/charts/molecules/Card";
-import { Button } from "@/components/charts/atoms/Button";
-import { Chip } from "@/components/charts/atoms/Chip";
+import { Card } from "./Card";
+import { Button } from "./Button";
+import { Chip } from "./Chip";
 
 interface DeveloperConnectionsProps {
   isGitHubConnected: boolean;

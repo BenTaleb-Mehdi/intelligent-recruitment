@@ -2,10 +2,10 @@
 
 import React, { useState, useEffect, useRef } from "react";
 import { Icon } from "@iconify/react";
-import { Card } from "@/components/charts/molecules/Card";
-import { Chip } from "@/components/charts/atoms/Chip";
-import { Switch } from "@/components/charts/atoms/Switch";
-import { Button } from "@/components/charts/atoms/Button";
+import { Card } from "@/components/candidate/Card";
+import { Chip } from "@/components/candidate/Chip";
+import { Switch } from "@/components/candidate/Switch";
+import { Button } from "@/components/candidate/Button";
 import CvUploader from "@/components/candidate/CvUploader";
 import DeveloperConnections from "@/components/candidate/DeveloperConnections";
 
@@ -560,7 +560,7 @@ export default function CandidateProfile() {
                   <h5 className="text-sm font-semibold text-default-800 dark:text-default-200">Auto-Update Profile</h5>
                   <p className="text-[10px] text-default-450 mt-0.5">Rescan connected accounts daily</p>
                 </div>
-                <Switch isSelected={autoSync} onChange={(checked) => setAutoSync(checked)} color="accent" />
+                <Switch isSelected={autoSync} onChange={(checked) => setAutoSync(checked)} color="accent" aria-label="Auto-Update Profile" />
               </div>
             </Card.Content>
           </Card>

@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { usePathname } from "next/navigation";
 import { Icon } from "@iconify/react";
 import { Indicator } from "@/components/charts/atoms/Indicator";
@@ -11,6 +11,44 @@ interface NavbarCandidateProps {
 
 export default function NavbarCandidate({ onToggleSidebar }: NavbarCandidateProps) {
   const pathname = usePathname() || "";
+  const [candidateName, setCandidateName] = useState("Mehdi Ben Taleb");
+  const [avatarUrl, setAvatarUrl] = useState("/avatar-mehdi.png");
+
+  // Load and listen to profile changes
+  useEffect(() => {
+    const loadProfile = () => {
+      const stored = localStorage.getItem("candidate-profile");
+      if (stored) {
+        try {
+          const parsed = JSON.parse(stored);
+          if (parsed.name) setCandidateName(parsed.name);
+          if (parsed.personalInfo?.avatarUrl) setAvatarUrl(parsed.personalInfo.avatarUrl);
+          else if (parsed.avatarUrl) setAvatarUrl(parsed.avatarUrl);
+        } catch (e) {
+          console.error(e);
+        }
+      }
+    };
+    loadProfile();
+
+    const handleProfileUpdate = () => {
+      loadProfile();
+    };
+
+    window.addEventListener("candidate-profile-updated", handleProfileUpdate);
+    return () => {
+      window.removeEventListener("candidate-profile-updated", handleProfileUpdate);
+    };
+  }, []);
+
+  const getInitials = (name: string) => {
+    return name
+      .split(" ")
+      .map((n) => n[0] || "")
+      .join("")
+      .toUpperCase()
+      .slice(0, 2);
+  };
 
   // Dynamic breadcrumb label mapping
   const getBreadcrumbLabel = () => {
@@ -55,11 +93,32 @@ export default function NavbarCandidate({ onToggleSidebar }: NavbarCandidateProp
         </div>
       </div>
 
-      {/* Right side: AI Matcher Sync Indicator */}
+      {/* Right side: AI Matcher Sync Indicator & User Info */}
       <div className="flex items-center space-x-4">
         <div className="flex items-center gap-1.5 px-3 py-1 bg-emerald-50 text-emerald-700 dark:bg-emerald-950/20 dark:text-emerald-400 rounded-full text-xs font-semibold select-none border border-emerald-100/50 dark:border-emerald-900/50">
           <Indicator status="success" pulse={false} />
           AI Matcher Sync Active
+        </div>
+
+        {/* Vertical Separator */}
+        <div className="h-5 w-[1px] bg-slate-200"></div>
+
+        {/* User Info */}
+        <div className="flex items-center gap-2">
+          <div className="w-7 h-7 rounded-full overflow-hidden bg-blue-100 border border-blue-200/80 flex items-center justify-center text-blue-750 font-bold text-[10px] select-none relative">
+            <img 
+              src={avatarUrl} 
+              alt={candidateName} 
+              className="w-full h-full object-cover absolute inset-0"
+              onError={(e) => {
+                (e.target as HTMLElement).style.display = "none";
+              }}
+            />
+            <span>{getInitials(candidateName)}</span>
+          </div>
+          <span className="text-xs font-medium text-slate-600 hidden sm:inline-block">
+            {candidateName}
+          </span>
         </div>
       </div>
     </header>
