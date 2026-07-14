@@ -22,7 +22,8 @@ export default function WelcomePage() {
     useEffect(() => {
         if (!mounted) return;
         if (isOnboarded) {
-            router.push(role === "recruteur" ? "/recruiter/dashboard" : "/candidate/dashboard");
+            router.push(role === "RECRUITER" ? "/recruiter/dashboard" : "/dashboard");
+
         }
     }, [isOnboarded, role, router, mounted]);
 

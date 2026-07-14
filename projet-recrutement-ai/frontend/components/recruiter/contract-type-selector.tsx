@@ -3,21 +3,22 @@
 import React, { useState, useMemo, useRef, useEffect } from "react";
 import { Icon } from "@iconify/react";
 
+export interface DropdownItem {
+  id?: string;
+  value: string;
+}
+
 interface ContractTypeSelectorProps {
   value: string;
   onChange: (value: string) => void;
+  items: DropdownItem[];
+  onAdd?: (value: string) => void;
+  onUpdate?: (id: string, value: string) => void;
+  onDelete?: (id: string) => void;
 }
 
-const DEFAULT_TYPES = [
-  "CDI (Contrat à Durée Indéterminée)",
-  "CDD (Contrat à Durée Déterminée)",
-  "Stage / Alternance",
-  "Freelance / Indépendant",
-];
-
-export default function ContractTypeSelector({ value, onChange }: ContractTypeSelectorProps) {
+export default function ContractTypeSelector({ value, onChange, items, onAdd, onUpdate, onDelete }: ContractTypeSelectorProps) {
   const [isOpen, setIsOpen] = useState(false);
-  const [types, setTypes] = useState<string[]>(DEFAULT_TYPES);
   const [searchQuery, setSearchQuery] = useState("");
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
   const [editingValue, setEditingValue] = useState("");
@@ -43,20 +44,20 @@ export default function ContractTypeSelector({ value, onChange }: ContractTypeSe
     }
   }, [editingIndex]);
 
-  const filteredTypes = useMemo(() => {
-    return types.filter((t) =>
-      t.toLowerCase().includes(searchQuery.toLowerCase())
+  const filteredItems = useMemo(() => {
+    return items.filter((item) =>
+      item.value.toLowerCase().includes(searchQuery.toLowerCase())
     );
-  }, [types, searchQuery]);
+  }, [items, searchQuery]);
 
   const showAddOption = useMemo(() => {
     const query = searchQuery.trim();
     if (!query) return false;
-    return !types.some((t) => t.toLowerCase() === query.toLowerCase());
-  }, [types, searchQuery]);
+    return !items.some((item) => item.value.toLowerCase() === query.toLowerCase());
+  }, [items, searchQuery]);
 
-  const handleSelect = (t: string) => {
-    onChange(t);
+  const handleSelect = (item: DropdownItem) => {
+    onChange(item.value);
     setIsOpen(false);
     setSearchQuery("");
   };
@@ -64,8 +65,7 @@ export default function ContractTypeSelector({ value, onChange }: ContractTypeSe
   const handleAddNew = () => {
     const query = searchQuery.trim();
     if (!query) return;
-    setTypes((prev) => [...prev, query]);
-    onChange(query);
+    onAdd?.(query);
     setIsOpen(false);
     setSearchQuery("");
   };
@@ -76,21 +76,22 @@ export default function ContractTypeSelector({ value, onChange }: ContractTypeSe
     setEditingValue(val);
   };
 
-  const saveEdit = (index: number, e?: React.FormEvent) => {
-    if (e) e.preventDefault();
+  const saveEdit = (item: DropdownItem) => {
     const updated = editingValue.trim();
     if (!updated) return;
-    const oldVal = types[index];
-    setTypes((prev) => prev.map((t, idx) => (idx === index ? updated : t)));
-    if (value === oldVal) onChange(updated);
+    if (item.id) {
+      onUpdate?.(item.id, updated);
+    } else {
+      onAdd?.(updated);
+    }
     setEditingIndex(null);
   };
 
-  const deleteType = (index: number, e: React.MouseEvent) => {
+  const deleteItem = (item: DropdownItem, e: React.MouseEvent) => {
     e.stopPropagation();
-    const targetVal = types[index];
-    setTypes((prev) => prev.filter((_, idx) => idx !== index));
-    if (value === targetVal) onChange("");
+    if (item.id) {
+      onDelete?.(item.id);
+    }
   };
 
   return (
@@ -129,15 +130,15 @@ export default function ContractTypeSelector({ value, onChange }: ContractTypeSe
           </div>
 
           <div className="overflow-y-auto max-h-[180px] space-y-0.5 pr-0.5">
-            {filteredTypes.map((t, idx) => {
-              const originalIndex = types.indexOf(t);
+            {filteredItems.map((item) => {
+              const originalIndex = items.indexOf(item);
               const isEditing = editingIndex === originalIndex;
-              const isSelected = value === t;
+              const isSelected = value === item.value;
 
               return (
                 <div
-                  key={idx}
-                  onClick={() => !isEditing && handleSelect(t)}
+                  key={item.id || `default-${originalIndex}`}
+                  onClick={() => !isEditing && handleSelect(item)}
                   className={`group px-3 py-2 rounded-lg text-xs font-semibold flex items-center justify-between transition-colors select-none ${
                     isEditing
                       ? "bg-slate-50"
@@ -147,38 +148,42 @@ export default function ContractTypeSelector({ value, onChange }: ContractTypeSe
                   }`}
                 >
                   {isEditing ? (
-                    <form
-                      onSubmit={(e) => saveEdit(originalIndex, e)}
-                      className="flex items-center gap-1.5 w-full"
-                    >
+                    <div className="flex items-center gap-1.5 w-full">
                       <input
                         ref={editInputRef}
                         type="text"
                         value={editingValue}
                         onChange={(e) => setEditingValue(e.target.value)}
-                        onBlur={() => saveEdit(originalIndex)}
+                        onBlur={() => saveEdit(item)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") {
+                            e.preventDefault();
+                            saveEdit(item);
+                          }
+                        }}
                         className="flex-1 bg-slate-50 border border-slate-200/80 rounded-lg px-2 py-1 text-xs text-slate-800 outline-none font-medium focus:bg-white focus:ring-1 focus:ring-blue-500 transition-all placeholder-slate-400"
                       />
                       <button
-                        type="submit"
+                        type="button"
+                        onClick={() => saveEdit(item)}
                         className="text-emerald-600 hover:text-emerald-700 p-0.5 transition-colors"
                       >
                         <Icon icon="solar:check-circle-linear" className="w-4 h-4" />
                       </button>
-                    </form>
+                    </div>
                   ) : (
                     <>
-                      <span className="truncate pr-4">{t}</span>
+                      <span className="truncate pr-4">{item.value}</span>
                       <div className="flex items-center gap-1">
                         <button
-                          onClick={(e) => startEdit(originalIndex, t, e)}
+                          onClick={(e) => startEdit(originalIndex, item.value, e)}
                           className="opacity-0 group-hover:opacity-100 p-1 text-slate-400 hover:text-blue-600 transition-all rounded hover:bg-slate-200"
                           title="Modifier"
                         >
                           <Icon icon="solar:pen-linear" className="w-3.5 h-3.5" />
                         </button>
                         <button
-                          onClick={(e) => deleteType(originalIndex, e)}
+                          onClick={(e) => deleteItem(item, e)}
                           className="opacity-0 group-hover:opacity-100 p-1 text-slate-400 hover:text-rose-600 transition-all rounded hover:bg-slate-200"
                           title="Supprimer"
                         >
@@ -191,7 +196,7 @@ export default function ContractTypeSelector({ value, onChange }: ContractTypeSe
               );
             })}
 
-            {filteredTypes.length === 0 && !showAddOption && (
+            {filteredItems.length === 0 && !showAddOption && (
               <div className="text-center py-4 text-[11px] text-slate-400">
                 Aucun type trouvé.
               </div>

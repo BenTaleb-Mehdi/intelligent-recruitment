@@ -26,7 +26,9 @@ export default function NavbarRecruiter({ onToggleSidebar }: NavbarRecruiterProp
 const [user, setUser] = useState<{ name?: string } | null>(null);
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
   const [notifications, setNotifications] = useState(notificationsData.notifications);
+  const [mounted, setMounted] = useState(false);
 useEffect(() => {
+    setMounted(true);
     const fetchUser = async () => {
       const { data } = await authClient.getSession();
       if (data?.user) {
@@ -192,10 +194,10 @@ useEffect(() => {
         {/* User Info */}
         <div className="flex items-center gap-2">
           <div className="w-7 h-7 rounded-full bg-slate-100 border border-slate-200/80 flex items-center justify-center text-slate-700 font-semibold text-xs select-none">
-          {getInitials(user?.name)}
+          {mounted ? getInitials(user?.name) : "\u00A0"}
           </div>
           <span className="text-xs font-medium text-slate-600 hidden sm:inline-block">
-            {user?.name || "Loading..."}
+            {mounted ? (user?.name || "") : "\u00A0"}
           </span>
         </div>
       </div>

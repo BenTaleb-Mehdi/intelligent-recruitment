@@ -191,12 +191,6 @@ export default function CustomSelect({
                   <div className="flex items-center justify-between w-full">
                     <span className="truncate pr-4">{opt}</span>
                     <div className="flex items-center gap-1">
-                      
-                      {/* HeroUI natively handles toggling the ItemIndicator visibility */}
-                      <ListBox.ItemIndicator>
-                        <Icon icon="solar:check-square-bold" className="w-4 h-4 text-blue-600" />
-                      </ListBox.ItemIndicator>
-
                       {allowEdit && (
                         <>
                           <button

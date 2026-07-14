@@ -2,22 +2,19 @@
 
 import React, { useState, useMemo, useRef, useEffect } from "react";
 import { Icon } from "@iconify/react";
+import { DropdownItem } from "./contract-type-selector";
 
 interface ExperienceSelectorProps {
   value: string;
   onChange: (value: string) => void;
+  items: DropdownItem[];
+  onAdd?: (value: string) => void;
+  onUpdate?: (id: string, value: string) => void;
+  onDelete?: (id: string) => void;
 }
 
-const DEFAULT_OPTIONS = [
-  "Débutant (Sans expérience)",
-  "+1 à 2 ans d'expérience",
-  "+3 à 5 ans d'expérience",
-  "+5 ans d'expérience (Senior)",
-];
-
-export default function ExperienceSelector({ value, onChange }: ExperienceSelectorProps) {
+export default function ExperienceSelector({ value, onChange, items, onAdd, onUpdate, onDelete }: ExperienceSelectorProps) {
   const [isOpen, setIsOpen] = useState(false);
-  const [options, setOptions] = useState<string[]>(DEFAULT_OPTIONS);
   const [searchQuery, setSearchQuery] = useState("");
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
   const [editingValue, setEditingValue] = useState("");
@@ -43,20 +40,20 @@ export default function ExperienceSelector({ value, onChange }: ExperienceSelect
     }
   }, [editingIndex]);
 
-  const filteredOptions = useMemo(() => {
-    return options.filter((o) =>
-      o.toLowerCase().includes(searchQuery.toLowerCase())
+  const filteredItems = useMemo(() => {
+    return items.filter((item) =>
+      item.value.toLowerCase().includes(searchQuery.toLowerCase())
     );
-  }, [options, searchQuery]);
+  }, [items, searchQuery]);
 
   const showAddOption = useMemo(() => {
     const query = searchQuery.trim();
     if (!query) return false;
-    return !options.some((o) => o.toLowerCase() === query.toLowerCase());
-  }, [options, searchQuery]);
+    return !items.some((item) => item.value.toLowerCase() === query.toLowerCase());
+  }, [items, searchQuery]);
 
-  const handleSelect = (o: string) => {
-    onChange(o);
+  const handleSelect = (item: DropdownItem) => {
+    onChange(item.value);
     setIsOpen(false);
     setSearchQuery("");
   };
@@ -64,8 +61,7 @@ export default function ExperienceSelector({ value, onChange }: ExperienceSelect
   const handleAddNew = () => {
     const query = searchQuery.trim();
     if (!query) return;
-    setOptions((prev) => [...prev, query]);
-    onChange(query);
+    onAdd?.(query);
     setIsOpen(false);
     setSearchQuery("");
   };
@@ -76,21 +72,22 @@ export default function ExperienceSelector({ value, onChange }: ExperienceSelect
     setEditingValue(val);
   };
 
-  const saveEdit = (index: number, e?: React.FormEvent) => {
-    if (e) e.preventDefault();
+  const saveEdit = (item: DropdownItem) => {
     const updated = editingValue.trim();
     if (!updated) return;
-    const oldVal = options[index];
-    setOptions((prev) => prev.map((o, idx) => (idx === index ? updated : o)));
-    if (value === oldVal) onChange(updated);
+    if (item.id) {
+      onUpdate?.(item.id, updated);
+    } else {
+      onAdd?.(updated);
+    }
     setEditingIndex(null);
   };
 
-  const deleteOption = (index: number, e: React.MouseEvent) => {
+  const deleteItem = (item: DropdownItem, e: React.MouseEvent) => {
     e.stopPropagation();
-    const targetVal = options[index];
-    setOptions((prev) => prev.filter((_, idx) => idx !== index));
-    if (value === targetVal) onChange("");
+    if (item.id) {
+      onDelete?.(item.id);
+    }
   };
 
   return (
@@ -129,15 +126,15 @@ export default function ExperienceSelector({ value, onChange }: ExperienceSelect
           </div>
 
           <div className="overflow-y-auto max-h-[180px] space-y-0.5 pr-0.5">
-            {filteredOptions.map((o, idx) => {
-              const originalIndex = options.indexOf(o);
+            {filteredItems.map((item) => {
+              const originalIndex = items.indexOf(item);
               const isEditing = editingIndex === originalIndex;
-              const isSelected = value === o;
+              const isSelected = value === item.value;
 
               return (
                 <div
-                  key={idx}
-                  onClick={() => !isEditing && handleSelect(o)}
+                  key={item.id || `default-${originalIndex}`}
+                  onClick={() => !isEditing && handleSelect(item)}
                   className={`group px-3 py-2 rounded-lg text-xs font-semibold flex items-center justify-between transition-colors select-none ${
                     isEditing
                       ? "bg-slate-50"
@@ -147,38 +144,42 @@ export default function ExperienceSelector({ value, onChange }: ExperienceSelect
                   }`}
                 >
                   {isEditing ? (
-                    <form
-                      onSubmit={(e) => saveEdit(originalIndex, e)}
-                      className="flex items-center gap-1.5 w-full"
-                    >
+                    <div className="flex items-center gap-1.5 w-full">
                       <input
                         ref={editInputRef}
                         type="text"
                         value={editingValue}
                         onChange={(e) => setEditingValue(e.target.value)}
-                        onBlur={() => saveEdit(originalIndex)}
+                        onBlur={() => saveEdit(item)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") {
+                            e.preventDefault();
+                            saveEdit(item);
+                          }
+                        }}
                         className="flex-1 bg-slate-50 border border-slate-200/80 rounded-lg px-2 py-1 text-xs text-slate-800 outline-none font-medium focus:bg-white focus:ring-1 focus:ring-blue-500 transition-all placeholder-slate-400"
                       />
                       <button
-                        type="submit"
+                        type="button"
+                        onClick={() => saveEdit(item)}
                         className="text-emerald-600 hover:text-emerald-700 p-0.5 transition-colors"
                       >
                         <Icon icon="solar:check-circle-linear" className="w-4 h-4" />
                       </button>
-                    </form>
+                    </div>
                   ) : (
                     <>
-                      <span className="truncate pr-4">{o}</span>
+                      <span className="truncate pr-4">{item.value}</span>
                       <div className="flex items-center gap-1">
                         <button
-                          onClick={(e) => startEdit(originalIndex, o, e)}
+                          onClick={(e) => startEdit(originalIndex, item.value, e)}
                           className="opacity-0 group-hover:opacity-100 p-1 text-slate-400 hover:text-blue-600 transition-all rounded hover:bg-slate-200"
                           title="Modifier"
                         >
                           <Icon icon="solar:pen-linear" className="w-3.5 h-3.5" />
                         </button>
                         <button
-                          onClick={(e) => deleteOption(originalIndex, e)}
+                          onClick={(e) => deleteItem(item, e)}
                           className="opacity-0 group-hover:opacity-100 p-1 text-slate-400 hover:text-rose-600 transition-all rounded hover:bg-slate-200"
                           title="Supprimer"
                         >
@@ -191,7 +192,7 @@ export default function ExperienceSelector({ value, onChange }: ExperienceSelect
               );
             })}
 
-            {filteredOptions.length === 0 && !showAddOption && (
+            {filteredItems.length === 0 && !showAddOption && (
               <div className="text-center py-4 text-[11px] text-slate-400">
                 Aucune option trouvée.
               </div>

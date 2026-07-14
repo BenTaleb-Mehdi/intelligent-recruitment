@@ -1,17 +1,60 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import JobsHeader from "@/components/recruiter/jobs-header";
 import JobsFilters from "@/components/recruiter/jobs-filters";
 import JobsTable, { JobOffer } from "@/components/recruiter/jobs-table";
-import jobsData from "@/data/jobs.json";
+import { api, ApiJobOffer, ApiRecruiter } from "@/lib/api";
+import { authClient } from "@/lib/auth-client";
 
 export default function JobsPage() {
-  const [jobs, setJobs] = useState<JobOffer[]>(jobsData.jobs as JobOffer[]);
+  const [jobs, setJobs] = useState<JobOffer[]>([]);
+  const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<"Toutes" | "Ouverte" | "Fermée">("Toutes");
+  const [recruiterId, setRecruiterId] = useState<string | null>(null);
 
-  // Filter logic
+  useEffect(() => {
+    const fetchJobs = async () => {
+      try {
+        const { data: session } = await authClient.getSession();
+        if (!session?.user?.id) return;
+
+        const { data: recruiters } = await api.get<{ data: ApiRecruiter[] }>("/api/recruiters");
+        const recruiter = recruiters?.find((r) => r.userId === session.user.id);
+        if (!recruiter) return;
+
+        setRecruiterId(recruiter.id);
+
+        const { data: offers } = await api.get<{ data: ApiJobOffer[] }>(
+          `/api/job-offers?recruiterId=${recruiter.id}`
+        );
+
+        const mapped: JobOffer[] = (offers || []).map((o) => ({
+          id: o.id,
+          title: o.title,
+          date: new Date(o.createdAt).toLocaleDateString("fr-FR", {
+            day: "numeric",
+            month: "long",
+            year: "numeric",
+          }),
+          status: o.status === "OPEN" ? "Ouverte" : "Fermée",
+          applicants: o._count?.applications || 0,
+          skills: o.skills,
+          recruiterId: o.recruiterId,
+        }));
+
+        setJobs(mapped);
+      } catch (error) {
+        console.error("Error fetching jobs:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchJobs();
+  }, []);
+
   const filteredJobs = useMemo(() => {
     return jobs.filter((job) => {
       const matchesSearch = job.title.toLowerCase().includes(searchQuery.toLowerCase());
@@ -20,35 +63,43 @@ export default function JobsPage() {
     });
   }, [jobs, searchQuery, statusFilter]);
 
-  // Toggle status action
-  const toggleJobStatus = (id: string) => {
-    setJobs((prevJobs) =>
-      prevJobs.map((job) =>
-        job.id === id
-          ? { ...job, status: job.status === "Ouverte" ? "Fermée" : "Ouverte" }
-          : job
-      )
-    );
+  const toggleJobStatus = async (id: string) => {
+    try {
+      const { data: updated } = await api.patch<{ data: ApiJobOffer }>(
+        `/api/job-offers/${id}/toggle-status`
+      );
+      if (updated) {
+        setJobs((prev) =>
+          prev.map((job) =>
+            job.id === id
+              ? { ...job, status: updated.status === "OPEN" ? "Ouverte" : "Fermée" }
+              : job
+          )
+        );
+      }
+    } catch (error) {
+      console.error("Error toggling status:", error);
+    }
   };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-20">
+        <div className="w-8 h-8 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
-      {/* Section 1: Header */}
       <JobsHeader />
-
-      {/* Section 2: Search Bar & Dropdown Select Filters */}
-      <JobsFilters 
+      <JobsFilters
         searchQuery={searchQuery}
         setSearchQuery={setSearchQuery}
         statusFilter={statusFilter}
         setStatusFilter={setStatusFilter}
       />
-
-      {/* Section 3: Interactive Jobs Table */}
-      <JobsTable 
-        jobs={filteredJobs} 
-        onToggleStatus={toggleJobStatus} 
-      />
+      <JobsTable jobs={filteredJobs} onToggleStatus={toggleJobStatus} />
     </div>
   );
 }

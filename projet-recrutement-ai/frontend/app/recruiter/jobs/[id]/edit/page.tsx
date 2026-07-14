@@ -1,62 +1,223 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { Icon } from "@iconify/react";
 import SkillsTagInput from "@/components/recruiter/skills-tag-input";
 import LocationSelector from "@/components/recruiter/location-selector";
-import CustomSelect from "@/components/recruiter/custom-select";
+import ContractTypeSelector from "@/components/recruiter/contract-type-selector";
+import ExperienceSelector from "@/components/recruiter/experience-selector";
+import { api, ApiJobOffer, ApiRecruiter, ApiDropdownItem, DropdownType } from "@/lib/api";
+import { authClient } from "@/lib/auth-client";
 
-const OFFERS_DB: Record<string, {
-  title: string;
-  contractType: string;
-  location: string;
-  salary: string;
-  experience: string;
-  description: string;
-  skills: string[];
-}> = {
-  "1": {
-    title: "Développeur Fullstack Node/Next.js",
-    contractType: "CDI (Contrat à Durée Indéterminée)",
-    location: "Casablanca, Maroc (Sur site)",
-    salary: "18 000 - 25 000 DH/mois",
-    experience: "+3 à 5 ans d'expérience",
-    description:
-      "Nous recherchons un développeur Fullstack talentueux pour rejoindre notre équipe technique. Vous serez responsable de la conception, du développement et de la maintenance d'applications web modernes en utilisant Node.js et Next.js. Vous travaillerez en étroite collaboration avec l'équipe produit pour livrer des fonctionnalités de haute qualité.",
-    skills: ["Node.js", "Next.js", "React", "TypeScript", "PostgreSQL", "Docker"],
-  },
-  "2": {
-    title: "UI/UX Designer Senior",
-    contractType: "CDI (Contrat à Durée Indéterminée)",
-    location: "Rabat, Maroc (Hybride)",
-    salary: "15 000 - 20 000 DH/mois",
-    experience: "+5 ans d'expérience (Senior)",
-    description:
-      "Nous cherchons un UI/UX Designer Senior pour concevoir des expériences utilisateur exceptionnelles. Vous serez en charge de la recherche utilisateur, de la création de wireframes, de prototypes interactifs et de la conception d'interfaces intuitives.",
-    skills: ["Figma", "Design System", "Prototyping", "User Research", "Design Thinking", "Adobe XD"],
-  },
-};
+const DEFAULT_CONTRACT_TYPES = [
+  "CDI (Contrat à Durée Indéterminée)",
+  "CDD (Contrat à Durée Déterminée)",
+  "Stage / Alternance",
+  "Freelance / Indépendant",
+];
+
+const DEFAULT_LOCATIONS = [
+  "Casablanca, Maroc",
+  "Rabat, Maroc",
+  "Tanger, Maroc",
+  "Marrakech, Maroc",
+  "100% Télétravail (Remote)",
+  "Hybride (Casablanca / Distanciel)",
+];
+
+const DEFAULT_EXPERIENCE_LEVELS = [
+  "Débutant (Sans expérience)",
+  "+1 à 2 ans d'expérience",
+  "+3 à 5 ans d'expérience",
+  "+5 ans d'expérience (Senior)",
+];
 
 export default function EditJobPage() {
   const params = useParams();
   const router = useRouter();
   const jobId = params.id as string;
-  const existing = OFFERS_DB[jobId];
 
-  const [title, setTitle] = useState(existing?.title ?? "");
-  const [contractType, setContractType] = useState(existing?.contractType ?? "");
-  const [locationType, setLocationType] = useState(existing?.location ?? "");
-  const [salary, setSalary] = useState(existing?.salary ?? "");
-  const [experience, setExperience] = useState(existing?.experience ?? "");
-  const [description, setDescription] = useState(existing?.description ?? "");
-  const [skills, setSkills] = useState<string[]>(existing?.skills ?? []);
+  const [loading, setLoading] = useState(true);
+  const [notFound, setNotFound] = useState(false);
+
+  const [title, setTitle] = useState("");
+  const [contractType, setContractType] = useState("");
+  const [locationType, setLocationType] = useState("");
+  const [salary, setSalary] = useState("");
+  const [experience, setExperience] = useState("");
+  const [description, setDescription] = useState("");
+  const [skills, setSkills] = useState<string[]>([]);
 
   const [isSaving, setIsSaving] = useState(false);
   const [showToast, setShowToast] = useState(false);
 
-  if (!existing) {
+  const [recruiterId, setRecruiterId] = useState<string | null>(null);
+  const [dropdownItems, setDropdownItems] = useState<ApiDropdownItem[]>([]);
+
+  const refreshDropdownItems = useCallback(async (rid: string) => {
+    try {
+      const { data: items } = await api.get<{ data: ApiDropdownItem[] }>(
+        `/api/dropdown-lists/${rid}`
+      );
+      if (items) setDropdownItems(items);
+    } catch {
+      // ignore
+    }
+  }, []);
+
+  useEffect(() => {
+    const fetchOffer = async () => {
+      try {
+        const { data: offer } = await api.get<{ data: ApiJobOffer }>(
+          `/api/job-offers/${jobId}`
+        );
+        if (!offer) {
+          setNotFound(true);
+          return;
+        }
+
+        setTitle(offer.title);
+        setContractType(offer.contractType);
+        setLocationType(offer.locationType || offer.location || "");
+        setSalary(offer.salary || "");
+        setSkills(offer.skills?.map((s) => s.name) || []);
+        setDescription(offer.description);
+
+        const expMap: Record<number, string> = {
+          0: "Débutant (Sans expérience)",
+          1: "+1 à 2 ans d'expérience",
+          3: "+3 à 5 ans d'expérience",
+          5: "+5 ans d'expérience (Senior)",
+        };
+        setExperience(expMap[offer.experienceYears] || "");
+      } catch (error) {
+        console.error("Error fetching job offer:", error);
+        setNotFound(true);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    const fetchRecruiter = async () => {
+      try {
+        const { data: session } = await authClient.getSession();
+        if (!session?.user?.id) return;
+
+        const { data: recruiters } = await api.get<{ data: ApiRecruiter[] }>("/api/recruiters");
+        const recruiter = recruiters?.find((r) => r.userId === session.user.id);
+        if (!recruiter) return;
+
+        setRecruiterId(recruiter.id);
+        await refreshDropdownItems(recruiter.id);
+      } catch (error) {
+        console.error("Error fetching recruiter:", error);
+      }
+    };
+
+    fetchOffer();
+    fetchRecruiter();
+  }, [jobId, refreshDropdownItems]);
+
+  const contractTypeItems = useMemo(() => {
+    const db = dropdownItems
+      .filter((i) => i.type === "CONTRACT_TYPE")
+      .map((i) => ({ id: i.id, value: i.value }));
+    return db.length > 0 ? db : DEFAULT_CONTRACT_TYPES.map((v) => ({ value: v }));
+  }, [dropdownItems]);
+
+  const locationItems = useMemo(() => {
+    const db = dropdownItems
+      .filter((i) => i.type === "LOCATION")
+      .map((i) => ({ id: i.id, value: i.value }));
+    return db.length > 0 ? db : DEFAULT_LOCATIONS.map((v) => ({ value: v }));
+  }, [dropdownItems]);
+
+  const experienceItems = useMemo(() => {
+    const db = dropdownItems
+      .filter((i) => i.type === "EXPERIENCE_LEVEL")
+      .map((i) => ({ id: i.id, value: i.value }));
+    return db.length > 0 ? db : DEFAULT_EXPERIENCE_LEVELS.map((v) => ({ value: v }));
+  }, [dropdownItems]);
+
+  const handleAddDropdown = async (type: DropdownType, value: string) => {
+    if (!recruiterId) return;
+    try {
+      await api.post(`/api/dropdown-lists/${recruiterId}`, { type, value });
+      await refreshDropdownItems(recruiterId);
+    } catch (error) {
+      console.error("Error adding dropdown item:", error);
+    }
+  };
+
+  const handleUpdateDropdown = async (id: string, value: string) => {
+    try {
+      await api.put(`/api/dropdown-lists/${id}`, { value });
+      if (recruiterId) await refreshDropdownItems(recruiterId);
+    } catch (error) {
+      console.error("Error updating dropdown item:", error);
+    }
+  };
+
+  const handleDeleteDropdown = async (id: string) => {
+    try {
+      await api.delete(`/api/dropdown-lists/${id}`);
+      if (recruiterId) await refreshDropdownItems(recruiterId);
+    } catch (error) {
+      console.error("Error deleting dropdown item:", error);
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!title || !contractType || !locationType || !experience || !description || skills.length === 0) {
+      alert("Veuillez remplir tous les champs obligatoires et ajouter au moins une compétence.");
+      return;
+    }
+
+    setIsSaving(true);
+
+    try {
+      const experienceYearsMap: Record<string, number> = {
+        "Débutant (Sans expérience)": 0,
+        "+1 à 2 ans d'expérience": 1,
+        "+3 à 5 ans d'expérience": 3,
+        "+5 ans d'expérience (Senior)": 5,
+      };
+
+      await api.put(`/api/job-offers/${jobId}`, {
+        title,
+        description,
+        contractType,
+        locationType,
+        salary: salary || undefined,
+        experienceYears: experienceYearsMap[experience] ?? 0,
+        location: locationType,
+        skills,
+      });
+
+      setShowToast(true);
+      setTimeout(() => {
+        router.push("/recruiter/jobs");
+      }, 1500);
+    } catch (error) {
+      console.error("Error updating job offer:", error);
+      alert("Erreur lors de la mise à jour de l'offre.");
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-20">
+        <div className="w-8 h-8 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
+
+  if (notFound) {
     return (
       <div className="max-w-2xl mx-auto text-center py-20 space-y-4">
         <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto">
@@ -74,25 +235,6 @@ export default function EditJobPage() {
       </div>
     );
   }
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!title || !contractType || !locationType || !experience || !description || skills.length === 0) {
-      alert("Veuillez remplir tous les champs obligatoires et ajouter au moins une compétence.");
-      return;
-    }
-
-    setIsSaving(true);
-
-    setTimeout(() => {
-      setIsSaving(false);
-      setShowToast(true);
-
-      setTimeout(() => {
-        router.push("/recruiter/jobs");
-      }, 1500);
-    }, 800);
-  };
 
   return (
     <div className="max-w-4xl mx-auto space-y-6 font-sans relative">
@@ -125,7 +267,7 @@ export default function EditJobPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
             <div className="space-y-1.5 md:col-span-2">
               <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-                Titre de l'offre *
+                Titre de l&apos;offre *
               </label>
               <input
                 type="text"
@@ -138,20 +280,13 @@ export default function EditJobPage() {
             </div>
 
             <div className="space-y-1.5 flex flex-col justify-end">
-              <CustomSelect
-                label="Type de contrat"
-                placeholder="Sélectionner le type..."
+              <ContractTypeSelector
                 value={contractType}
                 onChange={setContractType}
-                required
-                allowAdd
-                allowEdit
-                options={[
-                  "CDI (Contrat à Durée Indéterminée)",
-                  "CDD (Contrat à Durée Déterminée)",
-                  "Stage / Alternance",
-                  "Freelance / Indépendant",
-                ]}
+                items={contractTypeItems}
+                onAdd={(v) => handleAddDropdown("CONTRACT_TYPE", v)}
+                onUpdate={handleUpdateDropdown}
+                onDelete={handleDeleteDropdown}
               />
             </div>
 
@@ -159,6 +294,10 @@ export default function EditJobPage() {
               <LocationSelector
                 value={locationType}
                 onChange={setLocationType}
+                items={locationItems}
+                onAdd={(v) => handleAddDropdown("LOCATION", v)}
+                onUpdate={handleUpdateDropdown}
+                onDelete={handleDeleteDropdown}
               />
             </div>
 
@@ -179,31 +318,24 @@ export default function EditJobPage() {
 
         <div className="space-y-4">
           <h3 className="text-sm font-bold text-slate-800 border-b border-slate-100 pb-2">
-            2. Description de l'emploi & Exigences
+            2. Description de l&apos;emploi & Exigences
           </h3>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
             <div className="space-y-1.5 flex flex-col justify-end">
-              <CustomSelect
-                label="Expérience requise"
-                placeholder="Sélectionner l'expérience..."
+              <ExperienceSelector
                 value={experience}
                 onChange={setExperience}
-                required
-                allowAdd
-                allowEdit
-                options={[
-                  "Débutant (Sans expérience)",
-                  "+1 à 2 ans d'expérience",
-                  "+3 à 5 ans d'expérience",
-                  "+5 ans d'expérience (Senior)",
-                ]}
+                items={experienceItems}
+                onAdd={(v) => handleAddDropdown("EXPERIENCE_LEVEL", v)}
+                onUpdate={handleUpdateDropdown}
+                onDelete={handleDeleteDropdown}
               />
             </div>
 
             <div className="space-y-1.5 md:col-span-2">
               <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-                Description de l'emploi & Rôles *
+                Description de l&apos;emploi & Rôles *
               </label>
               <textarea
                 placeholder="Rédigez la description détaillée des tâches, de la mission et des rôles attendus..."
