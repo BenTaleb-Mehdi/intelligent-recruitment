@@ -27,8 +27,8 @@ export default function CandidateLayout({
         const isOnboarded = (session.user as any).isOnboarded;
         if (!isOnboarded) {
           router.replace("/welcome");
-        } else if (role !== "candidat") {
-          if (role === "recruteur") {
+        } else if (role !== "CANDIDATE") {
+          if (role === "RECRUITER") {
             router.replace("/recruiter/dashboard");
           } else {
             router.replace("/welcome");
@@ -60,7 +60,7 @@ export default function CandidateLayout({
     );
   }
 
-  if (!session || (session.user as any).role !== "candidat") {
+  if (!session || (session.user as any).role !== "CANDIDATE") {
     return null;
   }
 

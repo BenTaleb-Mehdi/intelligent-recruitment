@@ -26,7 +26,7 @@ export default function AuthPage() {
             const role = (session.user as any).role;
             if (isOnboarded) {
 
-                router.push(role === "RECRUITER" ? "/recruiter/dashboard" : "/dashboard");
+                router.push(role === "RECRUITER" ? "/recruiter/dashboard" : "/candidate/dashboard");
 
 
             } else {
