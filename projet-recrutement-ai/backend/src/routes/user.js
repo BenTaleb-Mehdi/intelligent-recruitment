@@ -25,6 +25,15 @@ router.patch("/api/user/update-role", async (req, res) => {
             data: { role: normalizedRole, isOnboarded: true },
         });
 
+        if (normalizedRole === "CANDIDATE") {
+            const existing = await prisma.candidate.findUnique({ where: { userId } });
+            if (!existing) {
+                await prisma.candidate.create({
+                    data: { userId, title: "Developer" },
+                });
+            }
+        }
+
         if (normalizedRole === "RECRUITER") {
             const existing = await prisma.recruiter.findUnique({ where: { userId } });
             if (!existing) {

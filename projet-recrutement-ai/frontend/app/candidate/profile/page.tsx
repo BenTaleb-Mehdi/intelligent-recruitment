@@ -8,6 +8,7 @@ import { Switch } from "@/components/candidate/Switch";
 import { Button } from "@/components/candidate/Button";
 import CvUploader from "@/components/candidate/CvUploader";
 import DeveloperConnections from "@/components/candidate/DeveloperConnections";
+import { api } from "@/lib/api";
 
 const getInitials = (name: string) => {
   return name
@@ -52,51 +53,79 @@ export default function CandidateProfile() {
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Load from local storage
-  useEffect(() => {
-    const stored = localStorage.getItem("candidate-profile");
-    if (stored) {
-      try {
-        const parsed = JSON.parse(stored);
-        if (parsed.personalInfo) {
-          setPersonalInfo(prev => ({
-            ...prev,
-            ...parsed.personalInfo
-          }));
-        } else if (parsed.name) {
-          setPersonalInfo(prev => ({
-            ...prev,
-            name: parsed.name,
-            email: parsed.email || prev.email,
-            headline: parsed.headline || prev.headline,
-            phone: parsed.phone || prev.phone,
-            portfolio: parsed.portfolio || prev.portfolio,
-            avatarUrl: parsed.avatarUrl || prev.avatarUrl
-          }));
-        }
-        if (parsed.skills) {
-          setSkills(parsed.skills);
-        }
-      } catch (e) {
-        console.error(e);
+  const fetchProfile = async () => {
+    try {
+      const response: any = await api.get("/api/candidates/profile");
+      if (response.success && response.data) {
+        const profile = response.data;
+        setPersonalInfo({
+          name: profile.user.name,
+          email: profile.user.email,
+          headline: profile.title || "Full-Stack Developer",
+          phone: profile.phone || "",
+          portfolio: profile.portfolioUrl || "",
+          avatarUrl: profile.user.image || ""
+        });
+        setFileName(profile.cvPath || "");
+        
+        const skillNames = profile.skills.map((s: any) => s.name);
+        setSkills({
+          core: skillNames,
+          database: [],
+          ai: []
+        });
       }
+    } catch (e) {
+      console.error("Error loading profile:", e);
     }
+  };
+
+  // Load from database on mount
+  useEffect(() => {
+    fetchProfile();
   }, []);
 
   // Save changes
-  const saveProfile = (updatedPersonalInfo: typeof personalInfo, updatedSkills: typeof skills) => {
-    const payload = {
-      name: updatedPersonalInfo.name,
-      email: updatedPersonalInfo.email,
-      headline: updatedPersonalInfo.headline,
-      phone: updatedPersonalInfo.phone,
-      portfolio: updatedPersonalInfo.portfolio,
-      avatarUrl: updatedPersonalInfo.avatarUrl,
-      personalInfo: updatedPersonalInfo,
-      skills: updatedSkills
-    };
-    localStorage.setItem("candidate-profile", JSON.stringify(payload));
-    window.dispatchEvent(new Event("candidate-profile-updated"));
+  const saveProfile = async (
+    updatedPersonalInfo: typeof personalInfo,
+    updatedSkills: typeof skills,
+    updatedFileName = fileName
+  ) => {
+    try {
+      const flatSkills = [
+        ...updatedSkills.core,
+        ...updatedSkills.database,
+        ...updatedSkills.ai
+      ];
+
+      const response: any = await api.put("/api/candidates/profile", {
+        name: updatedPersonalInfo.name,
+        image: updatedPersonalInfo.avatarUrl || undefined,
+        title: updatedPersonalInfo.headline,
+        phone: updatedPersonalInfo.phone,
+        portfolioUrl: updatedPersonalInfo.portfolio,
+        skills: flatSkills,
+        cvPath: updatedFileName
+      });
+
+      if (response.success) {
+        // Fallback sync payload for localStorage listeners
+        const payload = {
+          name: updatedPersonalInfo.name,
+          email: updatedPersonalInfo.email,
+          headline: updatedPersonalInfo.headline,
+          phone: updatedPersonalInfo.phone,
+          portfolio: updatedPersonalInfo.portfolio,
+          avatarUrl: updatedPersonalInfo.avatarUrl,
+          personalInfo: updatedPersonalInfo,
+          skills: updatedSkills
+        };
+        localStorage.setItem("candidate-profile", JSON.stringify(payload));
+        window.dispatchEvent(new Event("candidate-profile-updated"));
+      }
+    } catch (error) {
+      console.error("Error saving profile to database:", error);
+    }
   };
 
   const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -246,14 +275,8 @@ export default function CandidateProfile() {
                   </div>
                   <div className="flex justify-end gap-3 pt-2">
                     <button 
-                      onClick={() => {
-                        const stored = localStorage.getItem("candidate-profile");
-                        if (stored) {
-                          try {
-                            const parsed = JSON.parse(stored);
-                            if (parsed.personalInfo) setPersonalInfo(parsed.personalInfo);
-                          } catch (e) {}
-                        }
+                      onClick={async () => {
+                        await fetchProfile();
                         setIsEditingProfile(false);
                       }}
                       className="text-xs font-semibold text-slate-400 hover:text-slate-650 transition-colors"
@@ -304,7 +327,13 @@ export default function CandidateProfile() {
           </Card>
 
           {/* CV Drag & Drop Card */}
-          <CvUploader fileName={fileName} onChange={setFileName} />
+          <CvUploader
+            fileName={fileName}
+            onChange={(name) => {
+              setFileName(name);
+              saveProfile(personalInfo, skills, name);
+            }}
+          />
 
           {/* External Integrations */}
           <DeveloperConnections
