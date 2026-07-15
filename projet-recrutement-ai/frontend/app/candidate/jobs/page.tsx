@@ -1,72 +1,73 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import { Icon } from "@iconify/react";
 import { Card } from "@/components/candidate/Card";
 import { Button } from "@/components/candidate/Button";
 import { Chip } from "@/components/candidate/Chip";
 import Link from "next/link";
 import SearchInput from "@/components/candidate/SearchInput";
-
-const JOBS_DATA = [
-  {
-    id: "0",
-    title: "Senior React & Next.js Engineer",
-    company: "ViteTech Solutions",
-    location: "Paris, France (Hybrid)",
-    salary: "$85k - $110k",
-    experience: "5+ years",
-    matchScore: 98,
-    tags: ["Next.js", "HeroUI", "Tailwind CSS", "TypeScript", "React 19"],
-    description: "Looking for an expert Frontend Architect to design our Next.js design system framework. Responsibilities include building highly performant dashboards, loading components optimization, and type safety compliance.",
-  },
-  {
-    id: "1",
-    title: "Lead Frontend Systems Engineer",
-    company: "CognitiveAI Systems",
-    location: "Remote (Europe)",
-    salary: "$100k - $130k",
-    experience: "6+ years",
-    matchScore: 89,
-    tags: ["React 19", "Typescript", "GraphQL", "Python", "Ray Serve"],
-    description: "Join our core team linking LLM outputs to responsive, client-side React frameworks. Experience integrating client services, FastAPI, and client-side data state managers is a plus.",
-  },
-  {
-    id: "2",
-    title: "Full Stack JavaScript Developer",
-    company: "ReSync Tech Labs",
-    location: "Lyon, France",
-    salary: "$65k - $80k",
-    experience: "3+ years",
-    matchScore: 78,
-    tags: ["Node.js", "Express", "Prisma", "MySQL", "Next.js"],
-    description: "Help connect our SQL-relational schemas and prisma models to frontend app dashboards. Maintain and optimize database queries and serverless API endpoints.",
-  },
-  {
-    id: "3",
-    title: "ML / Backend Engineer",
-    company: "Vector Recruitment",
-    location: "Paris, France (On-site)",
-    salary: "$90k - $120k",
-    experience: "4+ years",
-    matchScore: 54,
-    tags: ["Python", "TensorFlow", "FastAPI", "MongoDB", "Ray"],
-    description: "Optimize our AI-based candidate matching engine using Cosine similarity models and embeddings generation. Spring Boot or Node.js middleware knowledge helpful.",
-  },
-];
+import { api } from "@/lib/api";
 
 export default function CandidateJobsFeed() {
   const [search, setSearch] = useState("");
+  const [jobs, setJobs] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const loadData = async () => {
+      try {
+        // Fetch candidate profile to get skills
+        const profileRes: any = await api.get("/api/candidates/profile");
+        let skillsList: string[] = [];
+        if (profileRes.success && profileRes.data) {
+          skillsList = profileRes.data.skills.map((s: any) => s.name.toLowerCase());
+        }
+
+        // Fetch jobs
+        const jobsRes: any = await api.get("/api/job-offers");
+        if (jobsRes.success && Array.isArray(jobsRes.data)) {
+          const mappedJobs = jobsRes.data.map((job: any) => {
+            const jobSkills = job.skills ? job.skills.map((s: any) => s.name.toLowerCase()) : [];
+            // Calculate compatibility score
+            let matchScore = 70;
+            if (jobSkills.length > 0 && skillsList.length > 0) {
+              const intersect = jobSkills.filter((s: any) => skillsList.includes(s));
+              matchScore = Math.round((intersect.length / jobSkills.length) * 100);
+              matchScore = Math.max(50, Math.min(100, matchScore));
+            }
+            return {
+              id: job.id,
+              title: job.title,
+              company: job.recruiter?.companyName || "Unknown Company",
+              location: job.location || "Hybrid",
+              salary: job.salary || "$70k - $90k",
+              experience: `${job.experienceYears}+ years`,
+              matchScore: matchScore,
+              tags: job.skills ? job.skills.map((s: any) => s.name) : [],
+              description: job.description
+            };
+          });
+          setJobs(mappedJobs);
+        }
+      } catch (err) {
+        console.error("Error loading jobs feed:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    loadData();
+  }, []);
 
   const filteredJobs = useMemo(() => {
-    return JOBS_DATA.filter((job) => {
+    return jobs.filter((job) => {
       return (
         job.title.toLowerCase().includes(search.toLowerCase()) ||
         job.company.toLowerCase().includes(search.toLowerCase()) ||
-        job.tags.some((t) => t.toLowerCase().includes(search.toLowerCase()))
+        job.tags.some((t: string) => t.toLowerCase().includes(search.toLowerCase()))
       );
     }).sort((a, b) => b.matchScore - a.matchScore);
-  }, [search]);
+  }, [search, jobs]);
 
   return (
     <div className="p-8 max-w-5xl mx-auto space-y-8">
@@ -160,7 +161,7 @@ export default function CandidateJobsFeed() {
               {/* Tags and Action row */}
               <div className="flex flex-col sm:flex-row justify-between items-stretch sm:items-center gap-4 mt-6 pt-4 border-t border-slate-100 dark:border-slate-800/80">
                 <div className="flex flex-wrap gap-1.5">
-                  {job.tags.map((t, idx) => (
+                  {(job.tags || []).map((t: string, idx: number) => (
                     <Chip key={idx} variant="soft">{t}</Chip>
                   ))}
                 </div>
