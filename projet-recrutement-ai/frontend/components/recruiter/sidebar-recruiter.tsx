@@ -9,9 +9,11 @@ import { authClient } from "@/lib/auth-client";
 interface SidebarRecruiterProps {
   isOpen: boolean;
   onClose: () => void;
+  logo?: string | null;
+  companyName?: string;
 }
 
-export default function SidebarRecruiter({ isOpen, onClose }: SidebarRecruiterProps) {
+export default function SidebarRecruiter({ isOpen, onClose, logo, companyName }: SidebarRecruiterProps) {
   const router = useRouter();
   const pathname = usePathname() || "";
   const [isJobsOpen, setIsJobsOpen] = useState(true);
@@ -37,13 +39,21 @@ export default function SidebarRecruiter({ isOpen, onClose }: SidebarRecruiterPr
       <div className={`h-16 flex items-center border-b border-slate-200/50 bg-white px-4 ${
         isOpen ? "justify-between" : "justify-center"
       }`}>
-        <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center text-white font-extrabold text-sm shadow-sm select-none">
-            SR
-          </div>
+        <div className="flex items-center gap-2.5 min-w-0">
+          {logo ? (
+            <img 
+              src={logo} 
+              alt="Logo" 
+              className="w-8 h-8 rounded-lg object-cover shadow-sm select-none flex-shrink-0" 
+            />
+          ) : (
+            <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center text-white font-extrabold text-sm shadow-sm select-none flex-shrink-0">
+              {companyName ? companyName.substring(0, 2).toUpperCase() : "SR"}
+            </div>
+          )}
           {isOpen && (
-            <span className="font-semibold text-slate-900 text-sm tracking-tight">
-              SmartRecruit IA
+            <span className="font-semibold text-slate-900 text-sm tracking-tight truncate max-w-[140px]" title={companyName || "SmartRecruit IA"}>
+              {companyName || "SmartRecruit IA"}
             </span>
           )}
         </div>

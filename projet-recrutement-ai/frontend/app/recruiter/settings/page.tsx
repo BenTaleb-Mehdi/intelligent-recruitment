@@ -76,6 +76,7 @@ export default function SettingsPage() {
         description,
         logo,
       });
+      window.dispatchEvent(new Event("recruiter-updated"));
       setShowToast(true);
       setTimeout(() => setShowToast(false), 3000);
     } catch (error) {

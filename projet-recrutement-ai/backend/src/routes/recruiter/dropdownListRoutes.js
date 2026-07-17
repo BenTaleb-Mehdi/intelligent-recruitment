@@ -1,6 +1,6 @@
 import { Router } from "express";
-import * as dropdownListController from "../controllers/dropdownListController.js";
-import { protectDashboard } from "../middleware/authMiddleware.js";
+import * as dropdownListController from "../../controllers/recruiter/dropdownListController.js";
+import { protectDashboard } from "../../middleware/authMiddleware.js";
 
 const router = Router();
 
