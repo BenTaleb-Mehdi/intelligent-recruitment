@@ -2,9 +2,10 @@ import express from "express";
 import cors from "cors";
 import authRouter from "./routes/authRoutes.js";
 import userRouter from './routes/user.js';
-import recruiterRouter from './routes/recruiterRoutes.js';
-import jobOfferRouter from './routes/jobOfferRoutes.js';
-import dropdownListRouter from './routes/dropdownListRoutes.js';
+import recruiterRouter from './routes/recruiter/recruiterRoutes.js';
+import jobOfferRouter from './routes/recruiter/jobOfferRoutes.js';
+import dropdownListRouter from './routes/recruiter/dropdownListRoutes.js';
+import candidateRouter from './routes/candidate/candidateRoutes.js';
 
 const app = express();
 
@@ -21,6 +22,7 @@ app.use(userRouter);
 app.use(recruiterRouter);
 app.use(jobOfferRouter);
 app.use(dropdownListRouter);
+app.use(candidateRouter);
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
     console.log(`Server running on http://localhost:${PORT}`);

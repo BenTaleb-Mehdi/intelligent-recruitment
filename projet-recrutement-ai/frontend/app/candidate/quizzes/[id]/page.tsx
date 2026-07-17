@@ -7,79 +7,51 @@ import { Icon } from "@iconify/react";
 import { Card } from "@/components/candidate/Card";
 import { Button } from "@/components/candidate/Button";
 import { Chip } from "@/components/candidate/Chip";
-import { Indicator } from "@/components/candidate/Indicator";
 import { Alert } from "@/components/candidate/Alert";
-
-const QUIZ_QUESTIONS = [
-  {
-    question: "What is the primary advantage of Next.js App Router Server Components over standard Client Components?",
-    options: [
-      "They allow direct access to backend resources and databases without APIs.",
-      "They reduce the bundle size sent to the client by rendering static content on the server.",
-      "They automatically cache client-side component state parameters.",
-      "They execute purely inside the user's browser runtime environment.",
-    ],
-    correctAnswer: 1,
-  },
-  {
-    question: "How does React 19's compiler handle optimization natively compared to older versions?",
-    options: [
-      "It eliminates the need for manual useMemo and useCallback hooks in most cases.",
-      "It parses external CSS styles and optimizes Tailwind color values automatically.",
-      "It wraps all components with server-side hydration scripts.",
-      "It checks prop types dynamically during runtime compilation.",
-    ],
-    correctAnswer: 0,
-  },
-  {
-    question: "What is the correct way to import HeroUI v3 global styles inside a Next.js Tailwind CSS v4 environment?",
-    options: [
-      "Add a NextUIProvider wrapper in root layout files.",
-      "Use @import \"@heroui/styles\" directly in your main CSS entry point.",
-      "Import a legacy tailwind.config.js configuration file.",
-      "Link external bootstrap stylesheets inside HTML headers.",
-    ],
-    correctAnswer: 1,
-  },
-  {
-    question: "In React Aria Components (which HeroUI is built on), how are tooltips linked to trigger buttons?",
-    options: [
-      "Using ID selectors inside standard document script queries.",
-      "Wrapping both elements inside a unified TooltipTrigger container.",
-      "Setting ref attributes and state callbacks manually on mouse events.",
-      "Passing absolute page coordinate offsets inside styling props.",
-    ],
-    correctAnswer: 1,
-  },
-  {
-    question: "Which Tailwind utility class is used to style elements only when dark mode is enabled on the document?",
-    options: [
-      "theme-dark:bg-slate-900",
-      "dark:bg-slate-900",
-      "media-dark:bg-[#151a22]",
-      "css-dark:color-slate-900",
-    ],
-    correctAnswer: 1,
-  },
-];
+import { api } from "@/lib/api";
 
 export default function CandidateQuizRoom() {
   const params = useParams();
   const router = useRouter();
+  const [quiz, setQuiz] = useState<any>(null);
+  const [questions, setQuestions] = useState<any[]>([]);
   const [currentQuestion, setCurrentQuestion] = useState(0);
   const [selectedAnswers, setSelectedAnswers] = useState<Record<number, number>>({});
   const [timeLeft, setTimeLeft] = useState(600); // 10 minutes in seconds
   const [finished, setFinished] = useState(false);
   const [score, setScore] = useState(0);
+  const [loading, setLoading] = useState(true);
+
+  // Load quiz from database
+  const loadQuiz = async () => {
+    try {
+      const res: any = await api.get("/api/candidates/quizzes");
+      if (res.success && Array.isArray(res.data)) {
+        const found = res.data.find((q: any) => q.id === params.id);
+        if (found) {
+          setQuiz(found);
+          setQuestions(found.questions || []);
+        }
+      }
+    } catch (e) {
+      console.error("Error loading quiz:", e);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadQuiz();
+  }, [params.id]);
 
   // Countdown timer effect
   useEffect(() => {
-    if (timeLeft <= 0 || finished) return;
+    if (timeLeft <= 0 || finished || loading) return;
     const interval = setInterval(() => {
       setTimeLeft((prev) => prev - 1);
     }, 1000);
     return () => clearInterval(interval);
-  }, [timeLeft, finished]);
+  }, [timeLeft, finished, loading]);
 
   // Format time (MM:SS)
   const formattedTime = useMemo(() => {
@@ -97,7 +69,7 @@ export default function CandidateQuizRoom() {
   };
 
   const handleNext = () => {
-    if (currentQuestion < QUIZ_QUESTIONS.length - 1) {
+    if (currentQuestion < questions.length - 1) {
       setCurrentQuestion((prev) => prev + 1);
     }
   };
@@ -108,17 +80,45 @@ export default function CandidateQuizRoom() {
     }
   };
 
-  const handleSubmit = () => {
-    // Calculate score
+  const handleSubmit = async () => {
+    if (questions.length === 0) return;
     let correctCount = 0;
-    QUIZ_QUESTIONS.forEach((q, idx) => {
+    questions.forEach((q, idx) => {
       if (selectedAnswers[idx] === q.correctAnswer) {
         correctCount++;
       }
     });
-    setScore(Math.round((correctCount / QUIZ_QUESTIONS.length) * 100));
-    setFinished(true);
+    const finalScore = Math.round((correctCount / questions.length) * 100);
+    setScore(finalScore);
+
+    try {
+      const response: any = await api.post(`/api/candidates/quizzes/${params.id}/submit`, {
+        score: finalScore
+      });
+      if (response.success) {
+        setFinished(true);
+      }
+    } catch (err) {
+      console.error("Error submitting quiz result:", err);
+    }
   };
+
+  if (loading) {
+    return (
+      <div className="p-8 text-center text-default-450 font-bold max-w-3xl mx-auto py-24">
+        <Icon icon="solar:spinner-bold" className="animate-spin text-3xl mx-auto mb-2 text-accent" />
+        Loading Quiz Room...
+      </div>
+    );
+  }
+
+  if (questions.length === 0) {
+    return (
+      <div className="p-8 text-center text-danger font-bold max-w-3xl mx-auto py-24">
+        No questions found for this quiz.
+      </div>
+    );
+  }
 
   return (
     <div className="p-8 max-w-3xl mx-auto space-y-8">
@@ -126,7 +126,7 @@ export default function CandidateQuizRoom() {
       <div className="flex items-center justify-between border-b border-default-100 dark:border-default-50/10 pb-4">
         <div>
           <span className="text-xs font-semibold text-default-450 uppercase tracking-wider">Assessment Room</span>
-          <h1 className="text-xl font-bold tracking-tight">React Core Architecture Quiz</h1>
+          <h1 className="text-xl font-bold tracking-tight">{quiz?.title || "React Core Architecture Quiz"}</h1>
         </div>
         {!finished && (
           <div className="flex items-center gap-2 px-4 py-2 bg-blue-50/50 dark:bg-slate-800 rounded-xl font-mono text-sm font-bold text-accent">
@@ -140,8 +140,8 @@ export default function CandidateQuizRoom() {
         // Results Screen
         <div className="space-y-6">
           <Alert
-            status={score >= 80 ? "success" : "warning"}
-            title={score >= 80 ? "Quiz Passed Successfully!" : "Quiz Completed"}
+            status={score >= 70 ? "success" : "warning"}
+            title={score >= 70 ? "Quiz Passed Successfully!" : "Quiz Completed"}
             description={`You achieved a compatibility rating of ${score}% in technical skills.`}
           />
 
@@ -154,7 +154,7 @@ export default function CandidateQuizRoom() {
             </Card.Header>
             <Card.Content className="space-y-6">
               <div className="text-center py-6 bg-blue-50/10 dark:bg-[#1a202c]/30 rounded-xl border border-blue-100/50 dark:border-slate-850">
-                <span className={`text-4xl font-black ${score >= 80 ? "text-success" : "text-warning"}`}>
+                <span className={`text-4xl font-black ${score >= 70 ? "text-success" : "text-warning"}`}>
                   {score}%
                 </span>
                 <p className="text-xs text-default-450 font-medium mt-1">Final Score Grade</p>
@@ -163,9 +163,9 @@ export default function CandidateQuizRoom() {
               <div className="space-y-3">
                 <h4 className="text-xs font-bold text-default-400 uppercase tracking-wider">Feedback Summary</h4>
                 <p className="text-sm text-default-550 leading-relaxed">
-                  {score >= 80
-                    ? "Excellent frontend capabilities. Your score confirms a high density of matching skills required by ViteTech Solutions. We have updated your employability index accordingly."
-                    : "Review some missing core principles (Next.js server-side configurations). You can retake another AI-generated skills evaluation in 7 days to improve this matching rating."}
+                  {score >= 70
+                    ? "Excellent frontend capabilities. Your score confirms a high density of matching skills required by sponsor company. We have updated your employability index accordingly."
+                    : "Review some missing core principles. You can retake another AI-generated skills evaluation in 7 days to improve this matching rating."}
                 </p>
               </div>
             </Card.Content>
@@ -190,40 +190,42 @@ export default function CandidateQuizRoom() {
           <Card>
             <Card.Content className="p-6 space-y-6">
               <div className="flex justify-between items-center text-xs font-semibold text-default-450 border-b border-default-100 dark:border-default-50/10 pb-4">
-                <span>Evaluation Question {currentQuestion + 1} of {QUIZ_QUESTIONS.length}</span>
+                <span>Evaluation Question {currentQuestion + 1} of {questions.length}</span>
                 <Chip variant="soft">Single Choice QCM</Chip>
               </div>
 
               {/* Question Text */}
               <h3 className="text-base font-bold text-default-900 dark:text-default-50 leading-relaxed">
-                {QUIZ_QUESTIONS[currentQuestion].question}
+                {questions[currentQuestion]?.text}
               </h3>
 
               {/* Options */}
               <div className="space-y-3 pt-2">
-                {QUIZ_QUESTIONS[currentQuestion].options.map((opt, optIdx) => {
-                  const isSelected = selectedAnswers[currentQuestion] === optIdx;
-                  return (
-                    <button
-                      key={optIdx}
-                      onClick={() => handleSelectOption(optIdx)}
-                      className={[
-                        "w-full text-left p-4 rounded-xl border text-sm transition-all duration-150 flex items-center justify-between",
-                        isSelected
-                          ? "border-accent bg-accent/5 text-accent font-semibold shadow-sm shadow-accent/5"
-                          : "border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-800/10 hover:border-accent/40 dark:hover:border-slate-700 hover:bg-blue-50/20 dark:hover:bg-slate-800/20",
-                      ].join(" ")}
-                    >
-                      <span>{opt}</span>
-                      <div className={[
-                        "w-4 h-4 rounded-full border flex items-center justify-center shrink-0 ml-3",
-                        isSelected ? "border-accent bg-accent" : "border-slate-300 dark:border-slate-700",
-                      ].join(" ")}>
-                        {isSelected && <div className="w-1.5 h-1.5 rounded-full bg-white" />}
-                      </div>
-                    </button>
-                  );
-                })}
+                {Array.isArray(questions[currentQuestion]?.options) && 
+                  questions[currentQuestion].options.map((opt: string, optIdx: number) => {
+                    const isSelected = selectedAnswers[currentQuestion] === optIdx;
+                    return (
+                      <button
+                        key={optIdx}
+                        onClick={() => handleSelectOption(optIdx)}
+                        className={[
+                          "w-full text-left p-4 rounded-xl border text-sm transition-all duration-150 flex items-center justify-between",
+                          isSelected
+                            ? "border-accent bg-accent/5 text-accent font-semibold shadow-sm shadow-accent/5"
+                            : "border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-800/10 hover:border-accent/40 dark:hover:border-slate-700 hover:bg-blue-50/20 dark:hover:bg-slate-800/20",
+                        ].join(" ")}
+                      >
+                        <span>{opt}</span>
+                        <div className={[
+                          "w-4 h-4 rounded-full border flex items-center justify-center shrink-0 ml-3",
+                          isSelected ? "border-accent bg-accent" : "border-slate-300 dark:border-slate-700",
+                        ].join(" ")}>
+                          {isSelected && <div className="w-1.5 h-1.5 rounded-full bg-white" />}
+                        </div>
+                      </button>
+                    );
+                  })
+                }
               </div>
             </Card.Content>
             {/* Nav controls footer */}
@@ -237,7 +239,7 @@ export default function CandidateQuizRoom() {
                 Previous
               </Button>
 
-              {currentQuestion === QUIZ_QUESTIONS.length - 1 ? (
+              {currentQuestion === questions.length - 1 ? (
                 <Button
                   startIcon="solar:verified-check-bold"
                   variant="primary"

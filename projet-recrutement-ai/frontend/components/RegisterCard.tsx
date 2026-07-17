@@ -24,11 +24,12 @@ export default function RegisterCard({ setView }: RegisterCardProps) {
         setSuccess("");
         setLoading(true);
 
+        const mappedRole = role === "recruteur" ? "RECRUITER" : "CANDIDATE";
         const { error } = await authClient.signUp.email({
             email,
             password,
             name,
-            role,
+            role: mappedRole,
             isOnboarded: true,
         } as any);
 

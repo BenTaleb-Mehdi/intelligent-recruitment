@@ -1,6 +1,6 @@
 import { Router } from "express";
-import * as jobOfferController from "../controllers/jobOfferController.js";
-import { protectDashboard } from "../middleware/authMiddleware.js";
+import * as jobOfferController from "../../controllers/recruiter/jobOfferController.js";
+import { protectDashboard } from "../../middleware/authMiddleware.js";
 
 const router = Router();
 
