@@ -26,7 +26,11 @@ export const getJobOfferById = async (id) => {
             recruiter: { select: { id: true, companyName: true } },
             skills: { select: { id: true, name: true } },
             applications: true,
-            quiz: true,
+            quiz: {
+                include: {
+                    questions: true
+                }
+            },
         },
     });
 };

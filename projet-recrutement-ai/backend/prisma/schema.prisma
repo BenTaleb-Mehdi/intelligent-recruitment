@@ -213,6 +213,8 @@ model Quiz {
   title       String
   skillTarget String
   status      QuizStatus   @default(PENDING)
+  duration    Int          @default(30)
+  deadline    DateTime?
   createdAt   DateTime     @default(now())
   questions   Question[]
   testResults TestResult[]

@@ -1,141 +1,120 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { Icon } from "@iconify/react";
 import { parseDate, CalendarDate } from "@internationalized/date";
 import Calendar from "@/components/recruiter/Calendar";
+import { api } from "@/lib/api";
 
 import QuizQuestionCard, { QuizQuestion } from "@/components/recruiter/QuizQuestionCard";
-
-interface QuizData {
-  jobTitle: string;
-  status: "En attente" | "Validé" | "Refusé";
-  aiGeneratedAt: string;
-  questions: QuizQuestion[];
-}
-
-const QUIZZES_DB: Record<string, QuizData> = {
-  "1": {
-    jobTitle: "Développeur Fullstack Node/Next.js",
-    status: "En attente",
-    aiGeneratedAt: "28 Juin 2026 à 14:32",
-    questions: [
-      {
-        id: "q1",
-        question: "En Next.js 14+ avec App Router, comment définir une route dynamique pour un profil utilisateur ?",
-        options: [
-          "pages/profile/[id].tsx",
-          "app/profile/[id]/page.tsx",
-          "app/profile/$id/page.tsx",
-          "app/profile/:id/page.tsx",
-        ],
-        correctAnswer: 1,
-      },
-      {
-        id: "q2",
-        question: "Quelle est la différence entre un Server Component et un Client Component en Next.js ?",
-        options: [
-          "Les Server Components sont plus lents au chargement initial",
-          "Les Client Components s'exécutent uniquement côté serveur",
-          "Les Server Components sont rendus sur le serveur et envoient uniquement le HTML au client",
-          "Il n'y a aucune différence",
-        ],
-        correctAnswer: 2,
-      },
-      {
-        id: "q3",
-        question: "Dans PostgreSQL, quelle est la différence entre `INNER JOIN` et `LEFT JOIN` ?",
-        options: [
-          "INNER JOIN retourne toutes les lignes de la table gauche, LEFT JOIN retourne uniquement les correspondances",
-          "LEFT JOIN retourne toutes les lignes de la table gauche même sans correspondance",
-          "Les deux sont identiques",
-          "LEFT JOIN est plus rapide que INNER JOIN",
-        ],
-        correctAnswer: 1,
-      },
-      {
-        id: "q4",
-        question: "Quelle commande Docker permet de construire une image à partir d'un Dockerfile ?",
-        options: ["docker run", "docker build", "docker compose", "docker create"],
-        correctAnswer: 1,
-      },
-      {
-        id: "q5",
-        question: "En TypeScript, que fait le mot-clé `interface` ?",
-        options: [
-          "Il crée une instance d'objet",
-          "Il définit un type personnalisé pour la structure d'un objet",
-          "Il importe un module externe",
-          "Il déclare une classe abstraite",
-        ],
-        correctAnswer: 1,
-      },
-    ],
-  },
-  "2": {
-    jobTitle: "UI/UX Designer Senior",
-    status: "Validé",
-    aiGeneratedAt: "24 Juin 2026 à 09:15",
-    questions: [
-      {
-        id: "q1",
-        question: "Quelle est la première étape du processus Design Thinking ?",
-        options: ["Prototypage", "Tests utilisateurs", "Empathie / Recherche utilisateur", "idéation"],
-        correctAnswer: 2,
-      },
-      {
-        id: "q2",
-        question: "Quel outil est le plus adapté pour créer des Design Systems collaboratifs ?",
-        options: ["Photoshop", "Figma", "Microsoft Word", "VS Code"],
-        correctAnswer: 1,
-      },
-    ],
-  },
-};
 
 export default function JobQuizPage() {
   const params = useParams();
   const router = useRouter();
   const jobId = params.id as string;
-  const quiz = QUIZZES_DB[jobId];
 
-  const [questions, setQuestions] = useState<QuizQuestion[]>(quiz?.questions ?? []);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [jobTitle, setJobTitle] = useState("");
+  const [aiGeneratedAt, setAiGeneratedAt] = useState("");
+  const [quizId, setQuizId] = useState<string | null>(null);
+
+  const [questions, setQuestions] = useState<QuizQuestion[]>([]);
   const [validating, setValidating] = useState(false);
-  const [validated, setValidated] = useState(quiz?.status === "Validé");
-  const [rejected, setRejected] = useState(quiz?.status === "Refusé");
+  const [validated, setValidated] = useState(false);
+  const [rejected, setRejected] = useState(false);
 
   const [endDate, setEndDate] = useState<CalendarDate>(parseDate("2026-07-14"));
   const [endTime, setEndTime] = useState("23:59");
   const [duration, setDuration] = useState("30");
 
-  if (!quiz) {
-    return (
-      <div className="max-w-4xl mx-auto text-center py-20 space-y-4">
-        <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto">
-          <Icon icon="solar:file-remove-linear" className="w-8 h-8 text-slate-400" />
-        </div>
-        <h2 className="text-xl font-bold text-slate-700">Quiz introuvable</h2>
-        <p className="text-sm text-slate-400">Aucun quiz généré pour cette offre.</p>
-        <Link href="/recruiter/jobs" className="inline-flex items-center gap-2 text-sm font-semibold text-blue-600 hover:text-blue-700">
-          <Icon icon="solar:alt-arrow-left-linear" className="w-4 h-4" />
-          Retour aux offres
-        </Link>
-      </div>
-    );
-  }
+  const fetchQuiz = async (showSpinner = false) => {
+    try {
+      if (showSpinner) setLoading(true);
+      const res = await api.get<{ data: any }>(`/api/job-offers/${jobId}`);
+      if (res && res.data) {
+        const offer = res.data;
+        setJobTitle(offer.title);
+        
+        if (offer.quiz) {
+          setQuizId(offer.quiz.id);
+          setValidated(offer.quiz.status === "VALIDATED");
+          setRejected(offer.quiz.status === "REJECTED");
+          
+          if (offer.quiz.duration) {
+            setDuration(String(offer.quiz.duration));
+          }
+          if (offer.quiz.deadline) {
+            const deadlineDate = new Date(offer.quiz.deadline);
+            const y = deadlineDate.getFullYear();
+            const m = String(deadlineDate.getMonth() + 1).padStart(2, "0");
+            const d = String(deadlineDate.getDate()).padStart(2, "0");
+            setEndDate(parseDate(`${y}-${m}-${d}`));
+            
+            const hours = String(deadlineDate.getHours()).padStart(2, "0");
+            const mins = String(deadlineDate.getMinutes()).padStart(2, "0");
+            setEndTime(`${hours}:${mins}`);
+          }
+          
+          if (offer.quiz.createdAt) {
+            const date = new Date(offer.quiz.createdAt);
+            setAiGeneratedAt(
+              date.toLocaleString("fr-FR", {
+                day: "numeric",
+                month: "long",
+                year: "numeric",
+                hour: "2-digit",
+                minute: "2-digit",
+              })
+            );
+          }
+          
+          if (offer.quiz.questions && Array.isArray(offer.quiz.questions)) {
+            const mappedQuestions = offer.quiz.questions.map((q: any) => ({
+              id: q.id,
+              question: q.text,
+              options: Array.isArray(q.options) ? q.options : [],
+              correctAnswer: typeof q.correctAnswer === "number" ? q.correctAnswer : 0,
+            }));
+            setQuestions(mappedQuestions);
+          } else {
+            setQuestions([]);
+          }
+        } else {
+          setQuizId(null);
+          setQuestions([]);
+        }
+      } else {
+        setError("Offre introuvable");
+      }
+    } catch (err: any) {
+      console.error("Error fetching job offer quiz:", err);
+      setError(err.message || "Erreur de chargement du quiz");
+    } finally {
+      if (showSpinner) setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (jobId) {
+      fetchQuiz(true);
+    }
+  }, [jobId]);
 
   const handleCorrectChange = (qId: string, optIndex: number) => {
     setQuestions((prev) =>
       prev.map((q) => (q.id === qId ? { ...q, correctAnswer: optIndex } : q))
     );
+    setValidated(false);
   };
 
   const handleQuestionChange = (qId: string, value: string) => {
     setQuestions((prev) =>
       prev.map((q) => (q.id === qId ? { ...q, question: value } : q))
     );
+    setValidated(false);
   };
 
   const handleOptionChange = (qId: string, optIndex: number, value: string) => {
@@ -146,30 +125,119 @@ export default function JobQuizPage() {
           : q
       )
     );
-  };
-
-  const handleValidate = () => {
-    setValidating(true);
-    setTimeout(() => {
-      setValidating(false);
-      setValidated(true);
-      setRejected(false);
-    }, 800);
-  };
-
-  const handleReject = () => {
-    setRejected(true);
     setValidated(false);
   };
 
-  const handleRegenerate = () => {
+  const handleValidate = async () => {
     setValidating(true);
-    setTimeout(() => {
-      setValidating(false);
-      setValidated(false);
+    try {
+      const computedDeadline = (() => {
+        if (!endDate) return null;
+        try {
+          const deadlineDate = new Date(endDate.year, endDate.month - 1, endDate.day);
+          const [hStr, mStr] = (endTime || "23:59").split(":");
+          const hours = parseInt(hStr || "23", 10);
+          const minutes = parseInt(mStr || "59", 10);
+          deadlineDate.setHours(isNaN(hours) ? 23 : hours, isNaN(minutes) ? 59 : minutes, 0, 0);
+          return isNaN(deadlineDate.getTime()) ? null : deadlineDate.toISOString();
+        } catch {
+          return null;
+        }
+      })();
+
+      await api.put(`/api/job-offers/${jobId}/quiz`, {
+        status: "VALIDATED",
+        duration: parseInt(duration, 10) || 30,
+        deadline: computedDeadline,
+        questions: questions.map((q) => ({
+          text: q.question,
+          options: q.options,
+          correctAnswer: q.correctAnswer,
+        })),
+      });
+      setValidated(true);
       setRejected(false);
-    }, 1200);
+    } catch (err: any) {
+      console.error("Error validating quiz:", err);
+      alert(err.message || "Erreur lors de la validation du quiz.");
+    } finally {
+      setValidating(false);
+    }
   };
+
+  const handleReject = async () => {
+    setValidating(true);
+    try {
+      await api.put(`/api/job-offers/${jobId}/quiz`, {
+        status: "REJECTED",
+      });
+      setRejected(true);
+      setValidated(false);
+    } catch (err: any) {
+      console.error("Error rejecting quiz:", err);
+      alert(err.message || "Erreur lors du rejet du quiz.");
+    } finally {
+      setValidating(false);
+    }
+  };
+
+  const handleRegenerate = async () => {
+    setValidating(true);
+    try {
+      await api.post(`/api/job-offers/${jobId}/regenerate`, {});
+      setTimeout(async () => {
+        await fetchQuiz(false);
+        setValidating(false);
+        setValidated(false);
+        setRejected(false);
+      }, 4000);
+    } catch (err: any) {
+      console.error("Error triggering regeneration:", err);
+      alert(err.message || "Erreur lors du déclenchement de la régénération.");
+      setValidating(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="max-w-4xl mx-auto py-20 flex items-center justify-center">
+        <div className="w-10 h-10 border-3 border-purple-600 border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
+
+  if (error || !quizId) {
+    return (
+      <div className="max-w-4xl mx-auto text-center py-20 space-y-4">
+        <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto">
+          <Icon icon="solar:file-remove-linear" className="w-8 h-8 text-slate-400" />
+        </div>
+        <h2 className="text-xl font-bold text-slate-700">Quiz introuvable</h2>
+        <p className="text-sm text-slate-400">
+          {error || "Aucun quiz n'a encore été généré pour cette offre d'emploi."}
+        </p>
+        <div className="flex justify-center gap-4">
+          <Link
+            href="/recruiter/jobs"
+            className="inline-flex items-center gap-2 text-sm font-semibold text-slate-500 hover:text-slate-700"
+          >
+            <Icon icon="solar:alt-arrow-left-linear" className="w-4 h-4" />
+            Retour aux offres
+          </Link>
+          {!quizId && !error && (
+            <button
+              onClick={handleRegenerate}
+              disabled={validating}
+              className="inline-flex items-center gap-2 text-sm font-semibold text-purple-600 hover:text-purple-700"
+            >
+              <Icon icon="solar:magic-stick-3-linear" className="w-4 h-4" />
+              Générer un quiz maintenant
+            </button>
+          )}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-4xl mx-auto space-y-6 font-sans">
@@ -184,7 +252,7 @@ export default function JobQuizPage() {
         <div className="flex-1">
           <div className="flex items-start gap-3 flex-wrap">
             <h2 className="text-2xl font-bold text-slate-900 tracking-tight">
-              Quiz IA - {quiz.jobTitle}
+              Quiz IA - {jobTitle}
             </h2>
             {validated && (
               <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold border leading-none bg-emerald-50 text-emerald-700 border-emerald-100/80">
@@ -206,7 +274,7 @@ export default function JobQuizPage() {
             )}
           </div>
           <p className="text-sm text-slate-500 mt-1">
-            Généré par l&apos;IA le {quiz.aiGeneratedAt} &middot; {questions.length} question{questions.length > 1 ? "s" : ""}
+            Généré par l&apos;IA le {aiGeneratedAt} &middot; {questions.length} question{questions.length > 1 ? "s" : ""}
           </p>
         </div>
       </div>
@@ -241,7 +309,10 @@ export default function JobQuizPage() {
               aria-label="Date limite du quiz"
               value={endDate}
               onChange={(date) => {
-                if (date) setEndDate(date);
+                if (date) {
+                  setEndDate(date);
+                  setValidated(false);
+                }
               }}
             />
           </div>
@@ -257,7 +328,10 @@ export default function JobQuizPage() {
                 <input
                   type="time"
                   value={endTime}
-                  onChange={(e) => setEndTime(e.target.value)}
+                  onChange={(e) => {
+                    setEndTime(e.target.value);
+                    setValidated(false);
+                  }}
                   className="w-full bg-slate-50 border border-slate-200/80 rounded-xl px-4 py-2.5 text-xs font-semibold text-slate-700 focus:outline-none focus:bg-white focus:ring-1 focus:ring-purple-600 transition-all"
                 />
               </div>
@@ -273,7 +347,10 @@ export default function JobQuizPage() {
                   <button
                     key={timeOption}
                     type="button"
-                    onClick={() => setDuration(timeOption)}
+                    onClick={() => {
+                      setDuration(timeOption);
+                      setValidated(false);
+                    }}
                     className={`py-2 px-3 text-xs font-semibold rounded-xl border transition-all ${
                       duration === timeOption
                         ? "bg-purple-50 border-purple-200 text-purple-700 shadow-sm"
@@ -290,7 +367,10 @@ export default function JobQuizPage() {
                     min="1"
                     placeholder="Autre"
                     value={!["15", "30", "45", "60", "90"].includes(duration) ? duration : ""}
-                    onChange={(e) => setDuration(e.target.value)}
+                    onChange={(e) => {
+                      setDuration(e.target.value);
+                      setValidated(false);
+                    }}
                     className="w-full bg-transparent border-none text-xs font-semibold text-slate-700 placeholder-slate-400 p-0 focus:ring-0 outline-none"
                   />
                   <span className="text-[10px] text-slate-400 font-medium ml-1">min</span>
