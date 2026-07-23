@@ -1,6 +1,6 @@
 "use client";
 import React, { useState } from "react";
-import { Card, CardHeader, CardBody, CardFooter, Input, Button, Link } from "@heroui/react";
+import { Card, CardContent, CardFooter, TextField, Label, Input, Button, Link } from "@heroui/react";
 import { authClient } from "@/lib/auth-client";
 import { Icon } from "@iconify/react";
 
@@ -16,7 +16,11 @@ export default function ResetPasswordPage() {
         setSuccess("");
         setLoading(true);
 
-        const { error } = await (authClient as any).forgetPassword({ email });
+const { error } = await authClient.requestPasswordReset({ 
+    email,
+    // Change this URL to point to /update-password
+    redirectTo: "http://localhost:3000/update-password", 
+});
 
         if (error) {
             setError(error.message || "Failed to send reset link.");
@@ -29,13 +33,13 @@ export default function ResetPasswordPage() {
 
     return (
         <Card className="w-full max-w-[400px] p-4 shadow-lg">
-            <CardHeader className="flex flex-col gap-1 items-center">
+            <Card.Header className="flex flex-col gap-1 items-center">
                 <h1 className="text-2xl font-bold">Reset Password</h1>
                 <p className="text-small text-default-500">
                     Enter your email to receive a reset link
                 </p>
-            </CardHeader>
-            <CardBody>
+            </Card.Header>
+            <CardContent>
                 <form onSubmit={handleReset} className="flex flex-col gap-4">
                     {error && (
                         <div className="flex items-start gap-2 bg-danger-50 text-danger border border-danger-200 rounded-lg p-3">
@@ -49,27 +53,25 @@ export default function ResetPasswordPage() {
                             <p className="text-sm">{success}</p>
                         </div>
                     )}
-                    <Input
-                        type="email"
-                        label="Email"
-                        placeholder="you@example.com"
-                        variant="bordered"
-                        value={email}
-                        onValueChange={setEmail}
-                        isRequired
-                    />
+                    
+                    {/* Corrected onChange to extract the target value correctly */}
+                    <TextField isRequired value={email} onChange={(value: string) => setEmail(value)}>
+                        <Label>Email</Label>
+                        <Input type="email" placeholder="you@example.com" />
+                    </TextField>
+                    
                     <Button
                         type="submit"
-                        color="warning"
+                        variant="primary"
                         className="font-medium"
-                        isLoading={loading}
+                        isDisabled={loading}
                     >
-                        Send Reset Link
+                        {loading ? "Sending..." : "Send Reset Link"}
                     </Button>
                 </form>
-            </CardBody>
+            </CardContent>
             <CardFooter className="justify-center">
-                <Link href="/" size="sm" className="cursor-pointer">
+                <Link href="/" className="cursor-pointer text-sm">
                     Back to sign in
                 </Link>
             </CardFooter>

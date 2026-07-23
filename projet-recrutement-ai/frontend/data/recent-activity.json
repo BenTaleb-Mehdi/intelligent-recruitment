@@ -1,0 +1,39 @@
+{
+  "candidates": [
+    {
+      "name": "Amine El Amrani",
+      "role": "Développeur Fullstack Node/Next",
+      "time": "Il y a 10 min",
+      "score": 94,
+      "statusClass": "bg-emerald-50 text-emerald-700 border-emerald-200"
+    },
+    {
+      "name": "Sarah Mansouri",
+      "role": "UI/UX Designer",
+      "time": "Il y a 1 heure",
+      "score": 87,
+      "statusClass": "bg-emerald-50 text-emerald-700 border-emerald-200"
+    },
+    {
+      "name": "Youssef Ait Ali",
+      "role": "Développeur Next.js Junior",
+      "time": "Il y a 3 heures",
+      "score": 72,
+      "statusClass": "bg-amber-50 text-amber-700 border-amber-200"
+    },
+    {
+      "name": "Sanaa Bennani",
+      "role": "DevOps Engineer",
+      "time": "Hier",
+      "score": 48,
+      "statusClass": "bg-rose-50 text-rose-700 border-rose-200"
+    },
+    {
+      "name": "Karim Rachidi",
+      "role": "Product Manager",
+      "time": "Il y a 2 jours",
+      "score": 81,
+      "statusClass": "bg-emerald-50 text-emerald-700 border-emerald-200"
+    }
+  ]
+}

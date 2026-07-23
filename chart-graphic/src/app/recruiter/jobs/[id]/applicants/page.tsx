@@ -7,9 +7,9 @@ import Link from "next/link";
 import { Icon } from "@iconify/react";
 import data from "@/data/applicants.json";
 import ApplicantsTable, { Applicant } from "@/components/recruiter/ApplicantsTable";
-import SearchInput from "@/components/charts/atoms/SearchInput";
-import Dropdown from "@/components/charts/molecules/Dropdown";
-import Pagination from "@/components/charts/molecules/Pagination";
+import SearchInput from "@/components/recruiter/SearchInput";
+import Dropdown from "@/components/recruiter/Dropdown";
+import Pagination from "@/components/recruiter/Pagination";
 
 const ALL_STATUSES: Applicant["status"][] = ["Nouveau", "Entretien", "En cours", "Refusé"];
 
