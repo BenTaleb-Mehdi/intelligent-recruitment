@@ -41,7 +41,7 @@ export default function RecruiterCTA() {
         staggerChildren: 0.1,
       },
     },
-  };
+  } as const;
 
   const itemVariants = {
     hidden: { opacity: 0, y: 30 },
@@ -49,7 +49,7 @@ export default function RecruiterCTA() {
       opacity: 1,
       y: 0,
       transition: {
-        type: "spring",
+        type: "spring" as const,
         stiffness: 80,
         damping: 15,
       },
