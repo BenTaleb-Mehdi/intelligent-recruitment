@@ -19,7 +19,6 @@ export default function LandingPage() {
     <main className="min-h-screen font-sans bg-white">
       <LandingNavbar />
       <Hero />
-      <About />
       <BestOffers />
       <BestCandidates />
       <RecruiterCTA />
