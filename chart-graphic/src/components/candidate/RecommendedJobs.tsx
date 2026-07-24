@@ -38,10 +38,7 @@ export default function RecommendedJobs({ jobs }: RecommendedJobsProps) {
               </div>
             </div>
             <div className="flex sm:flex-col items-end gap-3 sm:gap-1.5 w-full sm:w-auto border-t sm:border-t-0 pt-3 sm:pt-0 mt-2 sm:mt-0 justify-between">
-              <div className="text-right">
-                <span className="text-sm font-bold text-success">{job.match}% Match</span>
-                <p className="text-[10px] text-default-400 font-semibold uppercase">Compatibility</p>
-              </div>
+             
               <Link href={`/candidate/jobs/${idx}`}>
                 <Button size="sm" variant="outline">
                   View Details

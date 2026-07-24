@@ -110,10 +110,10 @@ export default function NavbarCandidate({ onToggleSidebar }: NavbarCandidateProp
         </button>
 
         {/* Separator Line */}
-        <div className="w-[1px] h-4 bg-slate-200"></div>
+        <div className="hidden sm:block w-[1px] h-4 bg-slate-200"></div>
 
         {/* Breadcrumbs */}
-        <div className="flex items-center gap-2 text-slate-400 select-none">
+        <div className="hidden sm:flex items-center gap-2 text-slate-400 select-none">
           <Icon icon="solar:user-linear" className="w-4 h-4 text-slate-400" />
           <span className="text-slate-300 font-light text-xs">/</span>
           <span className="text-slate-800 text-xs font-semibold tracking-wide">
@@ -124,7 +124,7 @@ export default function NavbarCandidate({ onToggleSidebar }: NavbarCandidateProp
 
       {/* Right side: AI Matcher Sync Indicator & Notifications Dropdown */}
       <div className="flex items-center space-x-4 relative" ref={dropdownRef}>
-        <div className="flex items-center gap-1.5 px-3 py-1 bg-emerald-50 text-emerald-700 dark:bg-emerald-950/20 dark:text-emerald-400 rounded-full text-xs font-semibold select-none border border-emerald-100/50 dark:border-emerald-900/50">
+        <div className="hidden md:flex items-center gap-1.5 px-3 py-1 bg-emerald-50 text-emerald-700 dark:bg-emerald-950/20 dark:text-emerald-400 rounded-full text-xs font-semibold select-none border border-emerald-100/50 dark:border-emerald-900/50">
           <Indicator status="success" pulse={false} />
           AI Matcher Sync Active
         </div>
