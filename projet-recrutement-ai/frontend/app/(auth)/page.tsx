@@ -19,23 +19,7 @@ export default function AuthPage() {
         setMounted(true);
     }, []);
 
-    useEffect(() => {
-        if (!mounted) return;
-        if (session) {
-            const isOnboarded = (session.user as any).isOnboarded;
-            const role = (session.user as any).role;
-            if (isOnboarded) {
-
-                router.push(role === "RECRUITER" ? "/recruiter/dashboard" : "/candidate/dashboard");
-
-
-            } else {
-                router.push("/welcome");
-            }
-        }
-    }, [session, router, mounted]);
-
-    if (!mounted || isPending) {
+    if (!mounted) {
         return null;
     }
 

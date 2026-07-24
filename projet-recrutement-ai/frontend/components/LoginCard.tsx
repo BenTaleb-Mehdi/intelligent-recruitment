@@ -30,9 +30,13 @@ export default function LoginCard({ setView }: LoginCardProps) {
             setLoading(false);
         } else if (data) {
             const role = (data.user as any).role;
-
-            router.push(role === "RECRUITER" ? "/recruiter/dashboard" : "/candidate/dashboard");
-
+            if (role === "admin" || role === "ADMIN") {
+                router.push("/admin/dashboard");
+            } else if (role === "RECRUITER" || role === "recruteur") {
+                router.push("/recruiter/dashboard");
+            } else {
+                router.push("/candidate/dashboard");
+            }
         }
     };
 

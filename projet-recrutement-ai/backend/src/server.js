@@ -6,13 +6,25 @@ import recruiterRouter from './routes/recruiter/recruiterRoutes.js';
 import jobOfferRouter from './routes/recruiter/jobOfferRoutes.js';
 import dropdownListRouter from './routes/recruiter/dropdownListRoutes.js';
 import candidateRouter from './routes/candidate/candidateRoutes.js';
+import adminRouter from "./routes/adminRoutes.js";
 
 const app = express();
 
 // Middlewares
+const allowedOrigins = [
+    "http://localhost:3000",
+    "http://localhost:3001",
+];
+
 app.use(cors({
-    origin: "http://localhost:3000", // Next.js frontend URL
-    credentials: true, // Required for cookies/sessions with Better Auth
+    origin: (origin, callback) => {
+        if (!origin || allowedOrigins.includes(origin)) {
+            callback(null, true);
+        } else {
+            callback(new Error("Not allowed by CORS"));
+        }
+    },
+    credentials: true,
 }));
 app.use(express.json({ limit: "5mb" }));
 
@@ -23,6 +35,7 @@ app.use(recruiterRouter);
 app.use(jobOfferRouter);
 app.use(dropdownListRouter);
 app.use(candidateRouter);
+app.use("/api/admin", adminRouter);
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
     console.log(`Server running on http://localhost:${PORT}`);

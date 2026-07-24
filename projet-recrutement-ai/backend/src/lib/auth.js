@@ -121,5 +121,5 @@ sendResetPassword: async ({ user, url }) => {
         }
     },
     basePath: "/api/auth",
-    trustedOrigins: ["http://localhost:3000"],
+    trustedOrigins: ["http://localhost:3000", "http://localhost:3001"],
 });

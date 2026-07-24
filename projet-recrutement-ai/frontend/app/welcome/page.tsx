@@ -22,8 +22,13 @@ export default function WelcomePage() {
     useEffect(() => {
         if (!mounted) return;
         if (isOnboarded) {
-            router.push(role === "RECRUITER" ? "/recruiter/dashboard" : "/candidate/dashboard");
-
+            if (role === "admin" || role === "ADMIN") {
+                router.push("/admin/dashboard");
+            } else if (role === "RECRUITER" || role === "recruteur") {
+                router.push("/recruiter/dashboard");
+            } else {
+                router.push("/candidate/dashboard");
+            }
         }
     }, [isOnboarded, role, router, mounted]);
 
