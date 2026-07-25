@@ -1,4 +1,5 @@
 import * as jobOfferService from "../../services/jobOfferService.js";
+import prisma from "../../config/db.js";
 
 export const getAllJobOffers = async (req, res) => {
     try {
@@ -59,6 +60,27 @@ export const createJobOffer = async (req, res) => {
         }
 
         const offer = await jobOfferService.createJobOffer(data);
+
+        if (process.env.N8N_WEBHOOK_URL) {
+            fetch(process.env.N8N_WEBHOOK_URL, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    id: offer.id,
+                    title: offer.title,
+                    skills: skills || [],
+                    contractType: offer.contractType,
+                    locationType: offer.locationType,
+                    experienceYears: offer.experienceYears,
+                    location: offer.location,
+                    salary: offer.salary,
+                    description: offer.description,
+                }),
+            }).catch((err) => {
+                console.error("Error calling n8n webhook:", err);
+            });
+        }
+
         res.status(201).json({ success: true, data: offer });
     } catch (error) {
         console.error("Error creating job offer:", error);
@@ -96,6 +118,23 @@ export const updateJobOffer = async (req, res) => {
         }
 
         const updated = await jobOfferService.updateJobOffer(req.params.id, data);
+        if (process.env.N8N_WEBHOOK_URL && (title || contractType || location || experienceYears || skills)) {
+            fetch(process.env.N8N_WEBHOOK_URL, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    id: updated.id,
+                    title: updated.title,
+                    contractType: updated.contractType,
+                    location: updated.location, 
+                    experienceYears: updated.experienceYears,
+                    skills: updated.skills ? updated.skills.map(s => s.name).join(', ') : "",
+                    salary: updated.salary
+                }),
+            }).catch((err) => {
+                console.error("Error calling n8n webhook on update:", err);
+            });
+        }
         res.status(200).json({ success: true, data: updated });
     } catch (error) {
         console.error("Error updating job offer:", error);

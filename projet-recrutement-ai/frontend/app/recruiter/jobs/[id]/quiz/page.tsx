@@ -86,12 +86,14 @@ export default function JobQuizPage() {
     setQuestions((prev) =>
       prev.map((q) => (q.id === qId ? { ...q, correctAnswer: optIndex } : q))
     );
+    setValidated(false);
   };
 
   const handleQuestionChange = (qId: string, value: string) => {
     setQuestions((prev) =>
       prev.map((q) => (q.id === qId ? { ...q, question: value } : q))
     );
+    setValidated(false);
   };
 
   const handleOptionChange = (qId: string, optIndex: number, value: string) => {
@@ -102,29 +104,77 @@ export default function JobQuizPage() {
           : q
       )
     );
-  };
-
-  const handleValidate = () => {
-    setValidating(true);
-    setTimeout(() => {
-      setValidating(false);
-      setValidated(true);
-      setRejected(false);
-    }, 800);
-  };
-
-  const handleReject = () => {
-    setRejected(true);
     setValidated(false);
   };
 
-  const handleRegenerate = () => {
+  const handleValidate = async () => {
     setValidating(true);
-    setTimeout(() => {
-      setValidating(false);
-      setValidated(false);
+    try {
+      const computedDeadline = (() => {
+        if (!endDate) return null;
+        try {
+          const deadlineDate = new Date(endDate.year, endDate.month - 1, endDate.day);
+          const [hStr, mStr] = (endTime || "23:59").split(":");
+          const hours = parseInt(hStr || "23", 10);
+          const minutes = parseInt(mStr || "59", 10);
+          deadlineDate.setHours(isNaN(hours) ? 23 : hours, isNaN(minutes) ? 59 : minutes, 0, 0);
+          return isNaN(deadlineDate.getTime()) ? null : deadlineDate.toISOString();
+        } catch {
+          return null;
+        }
+      })();
+
+      await api.put(`/api/job-offers/${jobId}/quiz`, {
+        status: "VALIDATED",
+        duration: parseInt(duration, 10) || 30,
+        deadline: computedDeadline,
+        questions: questions.map((q) => ({
+          text: q.question,
+          options: q.options,
+          correctAnswer: q.correctAnswer,
+        })),
+      });
+      setValidated(true);
       setRejected(false);
-    }, 1200);
+    } catch (err: any) {
+      console.error("Error validating quiz:", err);
+      alert(err.message || "Erreur lors de la validation du quiz.");
+    } finally {
+      setValidating(false);
+    }
+  };
+
+  const handleReject = async () => {
+    setValidating(true);
+    try {
+      await api.put(`/api/job-offers/${jobId}/quiz`, {
+        status: "REJECTED",
+      });
+      setRejected(true);
+      setValidated(false);
+    } catch (err: any) {
+      console.error("Error rejecting quiz:", err);
+      alert(err.message || "Erreur lors du rejet du quiz.");
+    } finally {
+      setValidating(false);
+    }
+  };
+
+  const handleRegenerate = async () => {
+    setValidating(true);
+    try {
+      await api.post(`/api/job-offers/${jobId}/regenerate`, {});
+      setTimeout(async () => {
+        await fetchQuiz(false);
+        setValidating(false);
+        setValidated(false);
+        setRejected(false);
+      }, 4000);
+    } catch (err: any) {
+      console.error("Error triggering regeneration:", err);
+      alert(err.message || "Erreur lors du déclenchement de la régénération.");
+      setValidating(false);
+    }
   };
 
   if (loading) {
@@ -221,7 +271,10 @@ export default function JobQuizPage() {
               aria-label="Date limite du quiz"
               value={endDate}
               onChange={(date) => {
-                if (date) setEndDate(date);
+                if (date) {
+                  setEndDate(date);
+                  setValidated(false);
+                }
               }}
             />
           </div>
@@ -237,7 +290,10 @@ export default function JobQuizPage() {
                 <input
                   type="time"
                   value={endTime}
-                  onChange={(e) => setEndTime(e.target.value)}
+                  onChange={(e) => {
+                    setEndTime(e.target.value);
+                    setValidated(false);
+                  }}
                   className="w-full bg-slate-50 border border-slate-200/80 rounded-xl px-4 py-2.5 text-xs font-semibold text-slate-700 focus:outline-none focus:bg-white focus:ring-1 focus:ring-purple-600 transition-all"
                 />
               </div>
@@ -253,7 +309,10 @@ export default function JobQuizPage() {
                   <button
                     key={timeOption}
                     type="button"
-                    onClick={() => setDuration(timeOption)}
+                    onClick={() => {
+                      setDuration(timeOption);
+                      setValidated(false);
+                    }}
                     className={`py-2 px-3 text-xs font-semibold rounded-xl border transition-all ${
                       duration === timeOption
                         ? "bg-purple-50 border-purple-200 text-purple-700 shadow-sm"
@@ -270,7 +329,10 @@ export default function JobQuizPage() {
                     min="1"
                     placeholder="Autre"
                     value={!["15", "30", "45", "60", "90"].includes(duration) ? duration : ""}
-                    onChange={(e) => setDuration(e.target.value)}
+                    onChange={(e) => {
+                      setDuration(e.target.value);
+                      setValidated(false);
+                    }}
                     className="w-full bg-transparent border-none text-xs font-semibold text-slate-700 placeholder-slate-400 p-0 focus:ring-0 outline-none"
                   />
                   <span className="text-[10px] text-slate-400 font-medium ml-1">min</span>
