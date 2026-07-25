@@ -37,48 +37,50 @@ export default function JobQuizPage() {
   const [endTime, setEndTime] = useState("23:59");
   const [duration, setDuration] = useState("30");
 
-  useEffect(() => {
-    const fetchQuiz = async () => {
-      try {
-        const res = await api.get<{ data: ApiJobOffer }>(`/api/job-offers/${jobId}`);
-        if (res?.data) {
-          const offer = res.data;
-          setJobTitle(offer.title);
+  const fetchQuiz = async (showMainSpinner = false) => {
+    try {
+      if (showMainSpinner) setLoading(true);
+      const res = await api.get<{ data: ApiJobOffer }>(`/api/job-offers/${jobId}`);
+      if (res?.data) {
+        const offer = res.data;
+        setJobTitle(offer.title);
 
-          if (offer.quiz) {
-            setQuestions(
-              offer.quiz.questions.map((q: any) => ({
-                id: q.id,
-                question: q.text,
-                options: Array.isArray(q.options)
-                  ? q.options
-                  : typeof q.options === "string"
-                  ? JSON.parse(q.options)
-                  : [],
-                correctAnswer: q.correctAnswer,
-              }))
-            );
-            setValidated(offer.quiz.status === "VALIDATED");
-            setRejected(offer.quiz.status === "REJECTED");
-            setAiGeneratedAt(
-              new Date(offer.quiz.createdAt).toLocaleDateString("fr-FR", {
-                day: "numeric",
-                month: "long",
-                year: "numeric",
-                hour: "2-digit",
-                minute: "2-digit",
-              })
-            );
-          }
+        if (offer.quiz) {
+          setQuestions(
+            offer.quiz.questions.map((q: any) => ({
+              id: q.id,
+              question: q.text,
+              options: Array.isArray(q.options)
+                ? q.options
+                : typeof q.options === "string"
+                ? JSON.parse(q.options)
+                : [],
+              correctAnswer: q.correctAnswer,
+            }))
+          );
+          setValidated(offer.quiz.status === "VALIDATED");
+          setRejected(offer.quiz.status === "REJECTED");
+          setAiGeneratedAt(
+            new Date(offer.quiz.createdAt).toLocaleDateString("fr-FR", {
+              day: "numeric",
+              month: "long",
+              year: "numeric",
+              hour: "2-digit",
+              minute: "2-digit",
+            })
+          );
         }
-      } catch (error) {
-        console.error("Error fetching quiz:", error);
-      } finally {
-        setLoading(false);
       }
-    };
+    } catch (error) {
+      console.error("Error fetching quiz:", error);
+    } finally {
+      if (showMainSpinner) setLoading(false);
+    }
+  };
+
+  useEffect(() => {
     if (jobId) {
-      fetchQuiz();
+      fetchQuiz(true);
     }
   }, [jobId]);
 
@@ -164,12 +166,40 @@ export default function JobQuizPage() {
     setValidating(true);
     try {
       await api.post(`/api/job-offers/${jobId}/regenerate`, {});
-      setTimeout(async () => {
-        await fetchQuiz(false);
-        setValidating(false);
-        setValidated(false);
-        setRejected(false);
-      }, 4000);
+      
+      const originalQuestionTexts = questions.map((q) => q.question).join("|");
+      let attempts = 0;
+      const maxAttempts = 15; // 30 seconds
+
+      const pollInterval = setInterval(async () => {
+        attempts++;
+        try {
+          const res = await api.get<{ data: ApiJobOffer }>(`/api/job-offers/${jobId}`);
+          if (res?.data && res.data.quiz) {
+            const newQuestionTexts = res.data.quiz.questions.map((q: any) => q.text).join("|");
+            
+            if (newQuestionTexts !== originalQuestionTexts || (questions.length === 0 && res.data.quiz.questions.length > 0)) {
+              clearInterval(pollInterval);
+              await fetchQuiz(false);
+              setValidating(false);
+              setValidated(false);
+              setRejected(false);
+            } else if (attempts >= maxAttempts) {
+              clearInterval(pollInterval);
+              setValidating(false);
+              alert("La régénération prend plus de temps que prévu. Elle sera actualisée plus tard.");
+            }
+          } else if (attempts >= maxAttempts) {
+             clearInterval(pollInterval);
+             setValidating(false);
+          }
+        } catch (error) {
+          console.error("Error polling quiz:", error);
+          clearInterval(pollInterval);
+          setValidating(false);
+        }
+      }, 2000);
+      
     } catch (err: any) {
       console.error("Error triggering regeneration:", err);
       alert(err.message || "Erreur lors du déclenchement de la régénération.");

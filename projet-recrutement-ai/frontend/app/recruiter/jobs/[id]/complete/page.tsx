@@ -131,13 +131,33 @@ export default function OfferCompletePage() {
       setIsRegenerating(true);
       await api.post(`/api/job-offers/${offer.id}/regenerate`, {});
       console.log("Régénération déclenchée avec succès !");
-      setTimeout(async () => {
-        await fetchOffer(false);
-      }, 3000);
+
+      const currentDescription = offer.description;
+      let attempts = 0;
+      const maxAttempts = 15; // 30 seconds
+
+      const pollInterval = setInterval(async () => {
+        attempts++;
+        try {
+          const { data } = await api.get<{ data: ApiJobOffer }>(`/api/job-offers/${jobId}`);
+          if (data && data.description !== currentDescription) {
+            setOffer(data);
+            clearInterval(pollInterval);
+            setIsRegenerating(false);
+          } else if (attempts >= maxAttempts) {
+            clearInterval(pollInterval);
+            setIsRegenerating(false);
+            alert("La régénération prend plus de temps que prévu. Elle sera actualisée plus tard.");
+          }
+        } catch (error) {
+          console.error("Error polling:", error);
+          clearInterval(pollInterval);
+          setIsRegenerating(false);
+        }
+      }, 2000);
     } catch (err: any) {
       console.error("Erreur lors de la régénération:", err);
       alert(err.message || "Erreur lors de la régénération.");
-    } finally {
       setIsRegenerating(false);
     }
   };
@@ -260,7 +280,7 @@ export default function OfferCompletePage() {
       </header>
 
       {/* Main Content Grid (12 Columns with items-start for sticky functionality) */}
-      <div className="grid grid-cols-2 lg:grid-cols-12 gap-6 items-start">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
         
         {/* Left Column: L'entreprise (Sticky Sidebar) */}
         <aside className="lg:col-span-4 lg:sticky lg:top-6 space-y-6">
@@ -338,7 +358,7 @@ export default function OfferCompletePage() {
           </div>
 
           {/* Skills Required Card */}
-         <div className="bg-white p-6 sm:p-8 space-y-4">
+          <div className="bg-white rounded-2xl border border-slate-200/60 shadow-sm p-6 sm:p-8 space-y-4">
   <h3 className="text-base font-bold text-slate-800 pb-4 flex items-center gap-2">
     <Icon icon="solar:star-bold-duotone" className="w-5 h-5 text-amber-500" />
     Compétences Clés
