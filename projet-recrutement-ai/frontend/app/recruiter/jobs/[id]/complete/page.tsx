@@ -4,7 +4,8 @@ import React, { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { Icon } from "@iconify/react";
-import { api, ApiJobOffer } from "@/lib/api";
+import { api } from "@/lib/api";
+import type { ApiJobOffer } from "@/lib/api";
 
 interface DescriptionLine {
   text: string;
@@ -17,66 +18,146 @@ interface DescriptionSection {
   lines: DescriptionLine[];
 }
 
-// Dynamic parser to split plain text description into logical visual sections
-const parseDescription = (text: string): DescriptionSection[] => {
-  if (!text) return [];
+const OFFERS_DB: Record<string, CompleteOffer> = {};
 
-  const rawLines = text.split("\n");
-  const sections: DescriptionSection[] = [];
-  let currentSection: DescriptionSection | null = null;
-
-  // Recognizes common headers (e.g. ### Missions, **Missions**, Missions:, etc.)
-  const headerRegex = /^(?:#+\s*|\*+\s*|)(Missions|Responsabilités|Profil recherché|Compétences requises|Avantages|À propos|Description du poste|Mission|Profil|Requirements|Responsibilities|Benefits)(?:\s*\*+|:|\s*)$/i;
-
-  const getIconForHeader = (title: string) => {
-    const t = title.toLowerCase();
-    if (t.includes("mission") || t.includes("responsab")) return "solar:target-bold-duotone";
-    if (t.includes("profil") || t.includes("requi") || t.includes("compét")) return "solar:diploma-bold-duotone";
-    if (t.includes("avantage") || t.includes("benefit")) return "solar:gift-bold-duotone";
-    if (t.includes("propos") || t.includes("about")) return "solar:info-square-bold-duotone";
-    return "solar:clipboard-text-bold-duotone";
-  };
-
-  for (let line of rawLines) {
-    line = line.trim();
-    if (!line) continue;
-
-    const match = line.match(headerRegex);
-    if (match) {
-      if (currentSection) {
-        sections.push(currentSection);
-      }
-      currentSection = {
-        title: match[1],
-        icon: getIconForHeader(match[1]),
-        lines: []
-      };
-    } else {
-      if (!currentSection) {
-        currentSection = {
-          title: "Description du poste",
-          icon: "solar:clipboard-text-bold-duotone",
-          lines: []
-        };
-      }
-      
-      const isBullet = /^[\s*\-•+]+|^\d+\./.test(line);
-      const cleanedText = line.replace(/^[\s*\-•+]+|^\d+\.\s*/, "").trim();
-      currentSection.lines.push({ text: cleanedText, isBullet });
+function parseBoldText(text: string) {
+  const parts = text.split(/(\*\*.*?\*\*)/g);
+  return parts.map((part, i) => {
+    if (part.startsWith("**") && part.endsWith("**")) {
+      return <strong key={i} className="font-bold text-slate-800">{part.slice(2, -2)}</strong>;
     }
-  }
+    return part;
+  });
+}
 
-  if (currentSection) {
-    sections.push(currentSection);
-  }
+function formatDescription(text: string) {
+  if (!text) return null;
+  const blocks = text.split(/\n\n+/);
+  return blocks.map((block, idx) => {
+    const trimmed = block.trim();
+    if (!trimmed) return null;
 
-  return sections;
-};
+    if (trimmed.startsWith("###")) {
+      return (
+        <h4 key={idx} className="text-sm font-bold text-slate-800 mt-4 mb-2">
+          {trimmed.replace(/^###\s*/, "")}
+        </h4>
+      );
+    }
+    if (trimmed.startsWith("##")) {
+      return (
+        <h3 key={idx} className="text-base font-bold text-slate-900 mt-5 mb-2 border-b border-slate-100 pb-1">
+          {trimmed.replace(/^##\s*/, "")}
+        </h3>
+      );
+    }
+    if (trimmed.startsWith("#")) {
+      return (
+        <h2 key={idx} className="text-lg font-bold text-slate-900 mt-6 mb-3">
+          {trimmed.replace(/^#\s*/, "")}
+        </h2>
+      );
+    }
+
+    if (trimmed.includes("\n-") || trimmed.includes("\n*") || trimmed.startsWith("- ") || trimmed.startsWith("* ")) {
+      const items = trimmed
+        .split(/\n[-*]\s*/)
+        .map(item => item.trim())
+        .filter(Boolean);
+
+      let introText = "";
+      let listItems = items;
+      if (!trimmed.startsWith("- ") && !trimmed.startsWith("* ")) {
+        introText = items[0];
+        listItems = items.slice(1);
+      }
+
+      return (
+        <div key={idx} className="space-y-1.5 my-3">
+          {introText && <p className="text-sm text-slate-600">{parseBoldText(introText)}</p>}
+          <ul className="list-disc pl-5 space-y-1">
+            {listItems.map((item, itemIdx) => (
+              <li key={itemIdx} className="text-sm text-slate-600 leading-relaxed">
+                {parseBoldText(item)}
+              </li>
+            ))}
+          </ul>
+        </div>
+      );
+    }
+
+    return (
+      <p key={idx} className="text-sm text-slate-600 leading-relaxed whitespace-pre-wrap">
+        {parseBoldText(trimmed)}
+      </p>
+    );
+  });
+}
+
 
 export default function OfferCompletePage() {
   const params = useParams();
   const router = useRouter();
   const jobId = params.id as string;
+  
+  const [offer, setOffer] = React.useState<CompleteOffer | null>(null);
+  const [loading, setLoading] = React.useState(true);
+  const [regenerating, setRegenerating] = React.useState(false);
+
+  const handleRegenerate = async () => {
+    setRegenerating(true);
+    try {
+      await api.post(`/api/job-offers/${jobId}/regenerate`, {});
+      alert("La demande de régénération a été envoyée avec succès à n8n ! Elle s'actualisera sous peu.");
+    } catch (error) {
+      console.error("Error regenerating offer:", error);
+      alert("Erreur lors du lancement de la régénération.");
+    } finally {
+      setRegenerating(false);
+    }
+  };
+
+  React.useEffect(() => {
+    const fetchOffer = async () => {
+      try {
+        const res = await api.get<{ data: ApiJobOffer }>(`/api/job-offers/${jobId}`);
+        if (res?.data) {
+          const o = res.data;
+          setOffer({
+            id: o.id,
+            title: o.title,
+            contractType: o.contractType,
+            location: o.location || "Non spécifiée",
+            salary: o.salary || "Non spécifié",
+            experience: `${o.experienceYears} ${o.experienceYears > 1 ? "ans" : "an"} d'expérience`,
+            description: o.description,
+            skills: o.skills ? o.skills.map((s) => s.name) : [],
+            status: o.status === "OPEN" ? "Publiée" : "Archivée",
+            date: new Date(o.createdAt).toLocaleDateString("fr-FR", {
+              day: "numeric",
+              month: "long",
+              year: "numeric",
+            }),
+          });
+        }
+      } catch (error) {
+        console.error("Error fetching job offer:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    if (jobId) {
+      fetchOffer();
+    }
+  }, [jobId]);
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-20">
+        <div className="w-8 h-8 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
 
   const [offer, setOffer] = useState<ApiJobOffer | null>(null);
   const [loading, setLoading] = useState(true);
@@ -244,65 +325,38 @@ export default function OfferCompletePage() {
         </div>
       </div>
 
-      {/* Grid Layout: Main info left, Sidebar right */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        
-        {/* Main Details (Left Column - 2/3) */}
-        <div className="lg:col-span-2 space-y-6">
-          <div className="bg-white rounded-2xl border border-slate-200/60 shadow-sm p-6 md:p-8 space-y-6 relative overflow-hidden">
-            {/* Top decorative accent line */}
-            <div className="absolute top-0 left-0 right-0 h-[3px] bg-gradient-to-r from-blue-500 to-indigo-600" />
-            
-            <h3 className="text-base font-bold text-slate-800 pb-2 border-b border-slate-100 flex items-center gap-2">
-              <Icon icon="solar:document-text-bold-duotone" className="w-5 h-5 text-blue-500" />
-              Description du poste
-            </h3>
+      {/* Offer Details */}
+      <div className="bg-white rounded-2xl border border-slate-200/70 shadow-sm p-6 sm:p-8 space-y-6">
+        <div className="flex items-center justify-between border-b border-slate-100 pb-2">
+          <h3 className="text-sm font-bold text-slate-800 flex items-center gap-2">
+            <Icon icon="solar:document-text-linear" className="w-4 h-4 text-blue-500" />
+            Détails de l&apos;offre
+          </h3>
+          <button
+            onClick={handleRegenerate}
+            disabled={regenerating}
+            className="inline-flex items-center gap-1.5 text-xs font-semibold text-purple-600 hover:text-purple-700 bg-purple-50 hover:bg-purple-100 border border-purple-100 px-3 py-1.5 rounded-lg transition-all disabled:opacity-50"
+          >
+            <Icon
+              icon="solar:magic-stick-3-linear"
+              className={`w-3.5 h-3.5 ${regenerating ? "animate-spin" : ""}`}
+            />
+            {regenerating ? "Génération..." : "Régénérer par l'IA"}
+          </button>
+        </div>
 
-            {/* Description Render */}
-            <div className="space-y-6">
-              {parsedSections.length > 0 ? (
-                parsedSections.map((section, idx) => {
-                  const isDefaultSingleSection = parsedSections.length === 1 && section.title === "Description du poste";
-                  return (
-                    <div 
-                      key={idx} 
-                      className={`${
-                        isDefaultSingleSection 
-                          ? "p-0 border-none bg-transparent hover:bg-transparent" 
-                          : "bg-slate-50/40 hover:bg-slate-50/80 border border-slate-100/70 rounded-2xl p-6 transition-all"
-                      } space-y-4`}
-                    >
-                      {!isDefaultSingleSection && (
-                        <div className="flex items-center gap-3 pb-3 border-b border-slate-100">
-                          <div className="w-8 h-8 rounded-xl bg-blue-50/80 text-blue-600 flex items-center justify-center flex-shrink-0">
-                            <Icon icon={section.icon} className="w-4.5 h-4.5" />
-                          </div>
-                          <h4 className="text-xs font-extrabold uppercase tracking-widest text-slate-800">
-                            {section.title}
-                          </h4>
-                        </div>
-                      )}
-                      <div className="space-y-2">
-                        {section.lines.map((line, lineIdx) => (
-                          line.isBullet ? (
-                            <div key={lineIdx} className="text-sm text-slate-600 leading-relaxed flex items-start gap-2.5 pl-1.5">
-                              <span className="w-1.5 h-1.5 rounded-full bg-blue-500/80 mt-2 flex-shrink-0" />
-                              <span>{line.text}</span>
-                            </div>
-                          ) : (
-                            <p key={lineIdx} className="text-sm text-slate-600 leading-relaxed pl-1.5 whitespace-pre-wrap">
-                              {line.text}
-                            </p>
-                          )
-                        ))}
-                      </div>
-                    </div>
-                  );
-                })
-              ) : (
-                <p className="text-sm text-slate-500 italic">Aucune description détaillée fournie.</p>
-              )}
-            </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+          <div className="space-y-2">
+            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Type de contrat</span>
+            <p className="text-sm font-semibold text-slate-800">{offer.contractType}</p>
+          </div>
+          <div className="space-y-2">
+            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Localisation</span>
+            <p className="text-sm font-semibold text-slate-800">{offer.location}</p>
+          </div>
+          <div className="space-y-2">
+            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Salaire</span>
+            <p className="text-sm font-semibold text-slate-800">{offer.salary}</p>
           </div>
 
           {/* Skills Required Card */}
@@ -328,14 +382,12 @@ export default function OfferCompletePage() {
           </div>
         </div>
 
-        {/* Sidebar details (Right Column - 1/3) */}
-        <div className="space-y-6">
-          {/* Job specs checklist */}
-          <div className="bg-white rounded-2xl border border-slate-200/60 shadow-sm p-6 space-y-6">
-            <h3 className="text-sm font-bold text-slate-800 pb-2 border-b border-slate-100 flex items-center gap-2">
-              <Icon icon="solar:info-square-bold-duotone" className="w-4 h-4 text-indigo-500" />
-              Aperçu du poste
-            </h3>
+        <div className="space-y-3">
+          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Description de l&apos;offre</span>
+          <div className="space-y-4 bg-slate-50/50 rounded-2xl border border-slate-200/50 p-5 sm:p-6 text-slate-700">
+            {formatDescription(offer.description)}
+          </div>
+        </div>
 
             <div className="space-y-4">
               {/* Contract Type */}

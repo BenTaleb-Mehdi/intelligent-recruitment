@@ -7,61 +7,61 @@ import { Icon } from "@iconify/react";
 import { parseDate, CalendarDate } from "@internationalized/date";
 import Calendar from "@/components/recruiter/Calendar";
 import { api } from "@/lib/api";
+import type { ApiJobOffer } from "@/lib/api";
 
 import QuizQuestionCard, { QuizQuestion } from "@/components/recruiter/QuizQuestionCard";
+
+interface QuizData {
+  jobTitle: string;
+  status: "En attente" | "Validé" | "Refusé";
+  aiGeneratedAt: string;
+  questions: QuizQuestion[];
+}
+
+const QUIZZES_DB: Record<string, QuizData> = {};
 
 export default function JobQuizPage() {
   const params = useParams();
   const router = useRouter();
   const jobId = params.id as string;
 
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [jobTitle, setJobTitle] = useState("");
-  const [aiGeneratedAt, setAiGeneratedAt] = useState("");
-  const [quizId, setQuizId] = useState<string | null>(null);
-
   const [questions, setQuestions] = useState<QuizQuestion[]>([]);
   const [validating, setValidating] = useState(false);
   const [validated, setValidated] = useState(false);
   const [rejected, setRejected] = useState(false);
+  const [aiGeneratedAt, setAiGeneratedAt] = useState("");
+  const [loading, setLoading] = useState(true);
 
   const [endDate, setEndDate] = useState<CalendarDate>(parseDate("2026-07-14"));
   const [endTime, setEndTime] = useState("23:59");
   const [duration, setDuration] = useState("30");
 
-  const fetchQuiz = async (showSpinner = false) => {
-    try {
-      if (showSpinner) setLoading(true);
-      const res = await api.get<{ data: any }>(`/api/job-offers/${jobId}`);
-      if (res && res.data) {
-        const offer = res.data;
-        setJobTitle(offer.title);
-        
-        if (offer.quiz) {
-          setQuizId(offer.quiz.id);
-          setValidated(offer.quiz.status === "VALIDATED");
-          setRejected(offer.quiz.status === "REJECTED");
-          
-          if (offer.quiz.duration) {
-            setDuration(String(offer.quiz.duration));
-          }
-          if (offer.quiz.deadline) {
-            const deadlineDate = new Date(offer.quiz.deadline);
-            const y = deadlineDate.getFullYear();
-            const m = String(deadlineDate.getMonth() + 1).padStart(2, "0");
-            const d = String(deadlineDate.getDate()).padStart(2, "0");
-            setEndDate(parseDate(`${y}-${m}-${d}`));
-            
-            const hours = String(deadlineDate.getHours()).padStart(2, "0");
-            const mins = String(deadlineDate.getMinutes()).padStart(2, "0");
-            setEndTime(`${hours}:${mins}`);
-          }
-          
-          if (offer.quiz.createdAt) {
-            const date = new Date(offer.quiz.createdAt);
+  useEffect(() => {
+    const fetchQuiz = async () => {
+      try {
+        const res = await api.get<{ data: ApiJobOffer }>(`/api/job-offers/${jobId}`);
+        if (res?.data) {
+          const offer = res.data;
+          setJobTitle(offer.title);
+
+          if (offer.quiz) {
+            setQuestions(
+              offer.quiz.questions.map((q: any) => ({
+                id: q.id,
+                question: q.text,
+                options: Array.isArray(q.options)
+                  ? q.options
+                  : typeof q.options === "string"
+                  ? JSON.parse(q.options)
+                  : [],
+                correctAnswer: q.correctAnswer,
+              }))
+            );
+            setValidated(offer.quiz.status === "VALIDATED");
+            setRejected(offer.quiz.status === "REJECTED");
             setAiGeneratedAt(
-              date.toLocaleString("fr-FR", {
+              new Date(offer.quiz.createdAt).toLocaleDateString("fr-FR", {
                 day: "numeric",
                 month: "long",
                 year: "numeric",
@@ -70,36 +70,15 @@ export default function JobQuizPage() {
               })
             );
           }
-          
-          if (offer.quiz.questions && Array.isArray(offer.quiz.questions)) {
-            const mappedQuestions = offer.quiz.questions.map((q: any) => ({
-              id: q.id,
-              question: q.text,
-              options: Array.isArray(q.options) ? q.options : [],
-              correctAnswer: typeof q.correctAnswer === "number" ? q.correctAnswer : 0,
-            }));
-            setQuestions(mappedQuestions);
-          } else {
-            setQuestions([]);
-          }
-        } else {
-          setQuizId(null);
-          setQuestions([]);
         }
-      } else {
-        setError("Offre introuvable");
+      } catch (error) {
+        console.error("Error fetching quiz:", error);
+      } finally {
+        setLoading(false);
       }
-    } catch (err: any) {
-      console.error("Error fetching job offer quiz:", err);
-      setError(err.message || "Erreur de chargement du quiz");
-    } finally {
-      if (showSpinner) setLoading(false);
-    }
-  };
-
-  useEffect(() => {
+    };
     if (jobId) {
-      fetchQuiz(true);
+      fetchQuiz();
     }
   }, [jobId]);
 
@@ -200,41 +179,24 @@ export default function JobQuizPage() {
 
   if (loading) {
     return (
-      <div className="max-w-4xl mx-auto py-20 flex items-center justify-center">
-        <div className="w-10 h-10 border-3 border-purple-600 border-t-transparent rounded-full animate-spin" />
+      <div className="flex items-center justify-center py-20">
+        <div className="w-8 h-8 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
       </div>
     );
   }
 
-  if (error || !quizId) {
+  if (!questions.length) {
     return (
       <div className="max-w-4xl mx-auto text-center py-20 space-y-4">
         <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto">
           <Icon icon="solar:file-remove-linear" className="w-8 h-8 text-slate-400" />
         </div>
         <h2 className="text-xl font-bold text-slate-700">Quiz introuvable</h2>
-        <p className="text-sm text-slate-400">
-          {error || "Aucun quiz n'a encore été généré pour cette offre d'emploi."}
-        </p>
-        <div className="flex justify-center gap-4">
-          <Link
-            href="/recruiter/jobs"
-            className="inline-flex items-center gap-2 text-sm font-semibold text-slate-500 hover:text-slate-700"
-          >
-            <Icon icon="solar:alt-arrow-left-linear" className="w-4 h-4" />
-            Retour aux offres
-          </Link>
-          {!quizId && !error && (
-            <button
-              onClick={handleRegenerate}
-              disabled={validating}
-              className="inline-flex items-center gap-2 text-sm font-semibold text-purple-600 hover:text-purple-700"
-            >
-              <Icon icon="solar:magic-stick-3-linear" className="w-4 h-4" />
-              Générer un quiz maintenant
-            </button>
-          )}
-        </div>
+        <p className="text-sm text-slate-400">Aucun quiz généré pour cette offre.</p>
+        <Link href="/recruiter/jobs" className="inline-flex items-center gap-2 text-sm font-semibold text-blue-600 hover:text-blue-700">
+          <Icon icon="solar:alt-arrow-left-linear" className="w-4 h-4" />
+          Retour aux offres
+        </Link>
       </div>
     );
   }
