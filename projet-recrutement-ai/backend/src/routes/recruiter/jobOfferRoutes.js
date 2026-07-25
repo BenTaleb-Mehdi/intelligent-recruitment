@@ -12,6 +12,8 @@ router.put("/api/job-offers/:id", protectDashboard, jobOfferController.updateJob
 router.delete("/api/job-offers/:id", protectDashboard, jobOfferController.deleteJobOffer);
 router.patch("/api/job-offers/:id/toggle-status", protectDashboard, jobOfferController.toggleStatus);
 router.patch("/api/job-offers/description-webhook", jobOfferController.updateDescriptionFromWebhook);
+router.get("/api/job-offers/:id/applicants", jobOfferController.getJobOfferApplicants);
 router.post("/api/job-offers/:id/regenerate", protectDashboard, jobOfferController.regenerateJobOfferDescription);
+router.put("/api/job-offers/:id/quiz", protectDashboard, jobOfferController.updateJobOfferQuiz);
 
 export default router;

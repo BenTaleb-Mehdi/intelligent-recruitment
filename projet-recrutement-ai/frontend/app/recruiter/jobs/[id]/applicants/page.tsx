@@ -5,11 +5,12 @@ import type { Key } from "@heroui/react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import { Icon } from "@iconify/react";
-import data from "@/data/applicants.json";
 import ApplicantsTable, { Applicant } from "@/components/recruiter/ApplicantsTable";
 import SearchInput from "@/components/recruiter/SearchInput";
 import Dropdown from "@/components/recruiter/Dropdown";
 import Pagination from "@/components/recruiter/Pagination";
+import { api } from "@/lib/api";
+import mockData from "@/data/applicants.json";
 
 const ALL_STATUSES: Applicant["status"][] = ["Nouveau", "Entretien", "En cours", "Refusé"];
 
@@ -34,8 +35,30 @@ export default function JobApplicantsPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedStatuses, setSelectedStatuses] = React.useState<Key[]>(ALL_STATUSES);
   const [minScore, setMinScore] = React.useState<Key>("0");
+  const [applicants, setApplicants] = useState<Applicant[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const applicants = data.applicants as Applicant[];
+  useEffect(() => {
+    const fetchApplicants = async () => {
+      setLoading(true);
+      try {
+        const res = await api.get<{ success: boolean; data: Applicant[] }>(
+          `/api/job-offers/${jobId}/applicants`
+        );
+        if (res?.data) {
+          setApplicants(res.data);
+        }
+      } catch (err) {
+        console.error("Error loading applicants:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (jobId) {
+      fetchApplicants();
+    }
+  }, [jobId]);
 
   const [pageIndex, setPageIndex] = useState(0);
   const PAGE_SIZE = 5;

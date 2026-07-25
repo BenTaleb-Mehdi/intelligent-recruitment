@@ -60,6 +60,23 @@ export default function JobQuizPage() {
           );
           setValidated(offer.quiz.status === "VALIDATED");
           setRejected(offer.quiz.status === "REJECTED");
+          if (offer.quiz.duration) {
+            setDuration(String(offer.quiz.duration));
+          }
+          if (offer.quiz.deadline) {
+            const d = new Date(offer.quiz.deadline);
+            if (!isNaN(d.getTime())) {
+              const yyyy = d.getFullYear();
+              const mm = String(d.getMonth() + 1).padStart(2, "0");
+              const dd = String(d.getDate()).padStart(2, "0");
+              try {
+                setEndDate(parseDate(`${yyyy}-${mm}-${dd}`));
+              } catch {}
+              const hh = String(d.getHours()).padStart(2, "0");
+              const min = String(d.getMinutes()).padStart(2, "0");
+              setEndTime(`${hh}:${min}`);
+            }
+          }
           setAiGeneratedAt(
             new Date(offer.quiz.createdAt).toLocaleDateString("fr-FR", {
               day: "numeric",

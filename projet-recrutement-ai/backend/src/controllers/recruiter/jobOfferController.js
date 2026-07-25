@@ -278,3 +278,72 @@ export const regenerateJobOfferDescription = async (req, res) => {
         res.status(500).json({ success: false, error: "Internal server error" });
     }
 };
+
+export const getJobOfferApplicants = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const applications = await prisma.application.findMany({
+            where: { jobOfferId: id },
+            include: {
+                candidate: {
+                    include: {
+                        user: { select: { id: true, name: true, email: true, image: true } },
+                        skills: { select: { name: true } },
+                    },
+                },
+            },
+            orderBy: { appliedDate: "desc" },
+        });
+
+        const formatted = applications.map((app) => {
+            const statusMap = {
+                NEW: "Nouveau",
+                INTERVIEW: "Entretien",
+                IN_PROGRESS: "En cours",
+                REJECTED: "Refusé",
+            };
+
+            return {
+                id: app.id,
+                applicationId: app.id,
+                candidateId: app.candidateId,
+                name: app.candidate?.user?.name || "Candidat Anonyme",
+                email: app.candidate?.user?.email || "",
+                phone: app.candidate?.phone || "",
+                location: app.candidate?.location || "",
+                bio: app.candidate?.bio || "",
+                status: statusMap[app.status] || "Nouveau",
+                appliedDate: app.appliedDate ? new Date(app.appliedDate).toISOString() : "",
+                skills: app.candidate?.skills ? app.candidate.skills.map((s) => s.name) : [],
+                experience: app.candidate?.experience || "",
+                github: app.candidate?.githubUrl || "",
+                linkedin: app.candidate?.linkedinUrl || "",
+                portfolio: app.candidate?.portfolioUrl || "",
+                cv: app.candidate?.cvPath || "",
+                rating: app.matchScore ? Number((app.matchScore / 20).toFixed(1)) : 0,
+                matchScore: app.matchScore || 0,
+                matchExplanation: app.matchExplanation || "",
+            };
+        });
+
+        return res.status(200).json({ success: true, data: formatted });
+    } catch (error) {
+        console.error("Error fetching job offer applicants:", error);
+        return res.status(500).json({ success: false, error: "Internal server error" });
+    }
+};
+
+export const updateJobOfferQuiz = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const updatedQuiz = await jobOfferService.updateJobOfferQuiz(id, req.body);
+        if (!updatedQuiz) {
+            return res.status(404).json({ success: false, error: "Job offer not found" });
+        }
+        res.status(200).json({ success: true, data: updatedQuiz });
+    } catch (error) {
+        console.error("Error updating job offer quiz:", error);
+        res.status(500).json({ success: false, error: "Internal server error" });
+    }
+};
+

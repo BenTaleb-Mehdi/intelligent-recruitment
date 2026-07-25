@@ -205,3 +205,59 @@ export const updateJobOfferDescriptionAndQuiz = async (id, description, quizData
         },
     });
 };
+
+export const updateJobOfferQuiz = async (jobOfferId, quizData) => {
+    const jobOffer = await prisma.jobOffer.findUnique({
+        where: { id: jobOfferId },
+        include: { quiz: true },
+    });
+
+    if (!jobOffer) return null;
+
+    const quizTitle = quizData.title || jobOffer.quiz?.title || `Technical Quiz - ${jobOffer.title}`;
+    const skillTarget = quizData.skillTarget || jobOffer.quiz?.skillTarget || "General";
+    const status = quizData.status || "VALIDATED";
+    const duration = quizData.duration !== undefined ? Number(quizData.duration) : (jobOffer.quiz?.duration ?? 30);
+    const deadline = quizData.deadline ? new Date(quizData.deadline) : null;
+
+    const questionsCreate = Array.isArray(quizData.questions)
+        ? quizData.questions.map((q) => ({
+              text: q.text || q.question || "",
+              options: Array.isArray(q.options) ? q.options : [],
+              correctAnswer: typeof q.correctAnswer === "number" ? q.correctAnswer : parseInt(q.correctAnswer, 10) || 0,
+          }))
+        : undefined;
+
+    const updateFields = {
+        title: quizTitle,
+        skillTarget,
+        status,
+        duration,
+        deadline,
+    };
+
+    if (questionsCreate) {
+        updateFields.questions = {
+            deleteMany: {},
+            create: questionsCreate,
+        };
+    }
+
+    return prisma.quiz.upsert({
+        where: { jobOfferId },
+        create: {
+            jobOfferId,
+            title: quizTitle,
+            skillTarget,
+            status,
+            duration,
+            deadline,
+            questions: questionsCreate ? { create: questionsCreate } : undefined,
+        },
+        update: updateFields,
+        include: {
+            questions: true,
+        },
+    });
+};
+

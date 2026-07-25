@@ -8,11 +8,27 @@ import { Chip } from "@/components/candidate/Chip";
 import Link from "next/link";
 import SearchInput from "@/components/candidate/SearchInput";
 import { api } from "@/lib/api";
+import ChatBox from "@/components/chat/ChatBox";
+import { saveCandidateConversation } from "@/lib/candidateChat";
 
 export default function CandidateJobsFeed() {
   const [search, setSearch] = useState("");
   const [jobs, setJobs] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [activeChatJob, setActiveChatJob] = useState<any | null>(null);
+
+  const handleOpenChat = (job: any) => {
+    saveCandidateConversation({
+      applicationId: job.id,
+      companyName: job.company,
+      role: job.title,
+      recruiterName: `Recruteur (${job.company})`,
+      avatar: (job.company || "RE").slice(0, 2).toUpperCase(),
+      lastMessage: "Discussion démarrée",
+      lastTime: "Maintenant",
+    });
+    setActiveChatJob(job);
+  };
 
   useEffect(() => {
     const loadData = async () => {
@@ -165,15 +181,27 @@ export default function CandidateJobsFeed() {
                     <Chip key={idx} variant="soft">{t}</Chip>
                   ))}
                 </div>
-                <Link href={`/candidate/jobs/${job.id}`}>
+
+                <div className="flex items-center gap-2 w-full sm:w-auto">
                   <Button
                     size="sm"
-                    variant={job.matchScore >= 80 ? "primary" : "outline"}
-                    className="sm:w-auto text-center w-full"
+                    variant="outline"
+                    className="flex-1 sm:flex-initial text-slate-700 hover:text-blue-600 border-slate-200 hover:border-blue-300"
+                    onClick={() => handleOpenChat(job)}
                   >
-                    View Application Matches
+                    <Icon icon="solar:chat-round-dots-bold" className="w-4 h-4 mr-1 text-blue-600" />
+                    Message Recruiter
                   </Button>
-                </Link>
+                  <Link href={`/candidate/jobs/${job.id}`} className="flex-1 sm:flex-initial">
+                    <Button
+                      size="sm"
+                      variant={job.matchScore >= 80 ? "primary" : "outline"}
+                      className="w-full text-center"
+                    >
+                      View Application Matches
+                    </Button>
+                  </Link>
+                </div>
               </div>
             </Card.Content>
           </Card>
@@ -187,6 +215,35 @@ export default function CandidateJobsFeed() {
           </div>
         )}
       </div>
+
+      {/* Realtime Chat Modal with Recruiter */}
+      {activeChatJob && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-xs p-4">
+          <div className="w-full max-w-2xl bg-white rounded-3xl shadow-2xl overflow-hidden relative animate-in fade-in zoom-in-95 duration-200">
+            <div className="flex items-center justify-between px-6 py-3.5 border-b border-slate-100 bg-slate-50/50">
+              <div className="flex items-center gap-2">
+                <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse" />
+                <h3 className="text-xs font-bold text-slate-800">
+                  Chat Direct — {activeChatJob.company} ({activeChatJob.title})
+                </h3>
+              </div>
+              <button
+                onClick={() => setActiveChatJob(null)}
+                className="w-7 h-7 bg-white hover:bg-slate-200 text-slate-500 rounded-full flex items-center justify-center transition-all border border-slate-200"
+              >
+                <Icon icon="solar:close-square-linear" className="w-4 h-4" />
+              </button>
+            </div>
+            <ChatBox
+              applicationId={activeChatJob.id}
+              currentUserId="candidate-1"
+              currentUserRole="CANDIDATE"
+              currentUserName="Mehdi Ben Taleb"
+              otherUserName={`${activeChatJob.company} (Recruteur)`}
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 }

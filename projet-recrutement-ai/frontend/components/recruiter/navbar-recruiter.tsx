@@ -1,10 +1,12 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
+import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Icon } from "@iconify/react";
 import notificationsData from "@/data/notifications.json";
 import { authClient } from "@/lib/auth-client";
+import { useUnreadMessages } from "@/hooks/useUnreadMessages";
 
 interface NavbarRecruiterProps {
   onToggleSidebar: () => void;
@@ -27,6 +29,7 @@ const [user, setUser] = useState<{ name?: string } | null>(null);
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
   const [notifications, setNotifications] = useState(notificationsData.notifications);
   const [mounted, setMounted] = useState(false);
+  const { unreadCount: unreadMessageCount } = useUnreadMessages("RECRUITER");
 useEffect(() => {
     setMounted(true);
     const fetchUser = async () => {
@@ -107,7 +110,22 @@ useEffect(() => {
       </div>
 
       {/* Right side: Actions & User Info */}
-      <div className="flex items-center space-x-4 relative" ref={dropdownRef}>
+      <div className="flex items-center space-x-3 relative" ref={dropdownRef}>
+        {/* Messages Shortcut Button */}
+        <Link
+          href="/recruiter/messages"
+          className="relative p-2 text-slate-500 hover:text-blue-600 rounded-full hover:bg-blue-50 transition-colors"
+          aria-label="Messages Directs"
+          title="Messagerie Recruteur"
+        >
+          {unreadMessageCount > 0 && (
+            <span className="absolute top-1 right-1 px-1 min-w-[16px] h-4 bg-blue-600 text-white text-[9px] font-bold rounded-full flex items-center justify-center border border-white animate-pulse">
+              {unreadMessageCount > 99 ? "99+" : unreadMessageCount}
+            </span>
+          )}
+          <Icon icon="solar:chat-round-dots-linear" className="w-5 h-5" />
+        </Link>
+
         {/* Notification Bell Button */}
         <button 
           onClick={() => setIsNotificationsOpen(!isNotificationsOpen)}

@@ -1,10 +1,11 @@
 "use client";
 
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import { Icon } from "@iconify/react";
 import data from "@/data/applicants.json";
+import { api } from "@/lib/api";
 
 const statusStyles: Record<string, string> = {
   Nouveau: "bg-blue-50 text-blue-700 border-blue-100/80",
@@ -18,7 +19,48 @@ export default function ApplicantDetailPage() {
   const jobId = params.id as string;
   const applicantId = params.applicantId as string;
 
-  const applicant = (data.applicants as any[]).find((a) => a.id === applicantId);
+  const [applicant, setApplicant] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchApplicant = async () => {
+      setLoading(true);
+      try {
+        const res = await api.get<{ success: boolean; data: any[] }>(
+          `/api/job-offers/${jobId}/applicants`
+        );
+        if (res?.data && Array.isArray(res.data)) {
+          const found = res.data.find(
+            (a) => a.id === applicantId || a.applicationId === applicantId || a.candidateId === applicantId
+          );
+          if (found) {
+            setApplicant(found);
+            setLoading(false);
+            return;
+          }
+        }
+      } catch (err) {
+        console.error("Error fetching applicant from API:", err);
+      }
+
+      // Fallback to JSON mock data if not found in backend DB
+      const mockFound = (data.applicants as any[]).find((a) => a.id === applicantId);
+      setApplicant(mockFound || null);
+      setLoading(false);
+    };
+
+    if (jobId && applicantId) {
+      fetchApplicant();
+    }
+  }, [jobId, applicantId]);
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-20">
+        <div className="w-8 h-8 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
 
   if (!applicant) {
     return (
@@ -55,7 +97,7 @@ export default function ApplicantDetailPage() {
               {applicant.name}
             </h2>
             <span
-              className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold border leading-none ${statusStyles[applicant.status]}`}
+              className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold border leading-none ${statusStyles[applicant.status] || statusStyles["Nouveau"]}`}
             >
               <span className={`w-1.5 h-1.5 rounded-full ${
                 applicant.status === "Nouveau" ? "bg-blue-500" :
@@ -81,24 +123,30 @@ export default function ApplicantDetailPage() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
           <div className="space-y-2">
             <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Nom complet</span>
-            <p className="text-sm font-semibold text-slate-800">{applicant.name}</p>
+            <p className="text-sm font-semibold text-slate-800">{applicant.name || "-"}</p>
           </div>
           <div className="space-y-2">
             <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Téléphone</span>
-            <p className="text-sm font-semibold text-slate-800">{applicant.phone}</p>
+            <p className="text-sm font-semibold text-slate-800">{applicant.phone || "-"}</p>
           </div>
           <div className="space-y-2">
             <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Email</span>
-            <p className="text-sm font-semibold text-slate-800">{applicant.email}</p>
+            <p className="text-sm font-semibold text-slate-800">{applicant.email || "-"}</p>
           </div>
           <div className="space-y-2">
             <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Date de candidature</span>
             <p className="text-sm font-semibold text-slate-800">
-              {new Date(applicant.appliedDate).toLocaleDateString("fr-FR", {
-                day: "numeric",
-                month: "long",
-                year: "numeric",
-              })}
+              {applicant.appliedDate ? (
+                isNaN(new Date(applicant.appliedDate).getTime())
+                  ? applicant.appliedDate
+                  : new Date(applicant.appliedDate).toLocaleDateString("fr-FR", {
+                      day: "numeric",
+                      month: "long",
+                      year: "numeric",
+                    })
+              ) : (
+                "-"
+              )}
             </p>
           </div>
         </div>
@@ -151,6 +199,9 @@ export default function ApplicantDetailPage() {
                 Voir le CV
               </a>
             )}
+            {!applicant.github && !applicant.linkedin && !applicant.portfolio && !applicant.cv && (
+              <span className="text-slate-400 text-xs font-normal">Aucun lien disponible</span>
+            )}
           </div>
         </div>
       </div>
@@ -165,13 +216,13 @@ export default function ApplicantDetailPage() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
           <div className="space-y-2">
             <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Expérience</span>
-            <p className="text-sm font-semibold text-slate-800">{applicant.experience}</p>
+            <p className="text-sm font-semibold text-slate-800">{applicant.experience || "-"}</p>
           </div>
           <div className="space-y-2">
             <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Note de matching</span>
             <div className="flex items-center gap-1.5">
               <Icon icon="solar:star-bold" className="w-4 h-4 text-amber-400" />
-              <span className="text-sm font-bold text-slate-800">{applicant.rating}</span>
+              <span className="text-sm font-bold text-slate-800">{applicant.rating || 0}</span>
               <span className="text-xs text-slate-400">/ 5</span>
             </div>
           </div>
@@ -180,20 +231,31 @@ export default function ApplicantDetailPage() {
         <div className="space-y-2">
           <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Compétences</span>
           <div className="flex flex-wrap gap-1.5">
-            {applicant.skills.map((skill: string) => (
-              <span
-                key={skill}
-                className="bg-blue-50 text-blue-700 text-[10px] font-semibold px-2.5 py-1 rounded-md border border-blue-100/80"
-              >
-                {skill}
-              </span>
-            ))}
+            {applicant.skills && applicant.skills.length > 0 ? (
+              applicant.skills.map((skill: string) => (
+                <span
+                  key={skill}
+                  className="bg-blue-50 text-blue-700 text-[10px] font-semibold px-2.5 py-1 rounded-md border border-blue-100/80"
+                >
+                  {skill}
+                </span>
+              ))
+            ) : (
+              <span className="text-slate-400 text-xs font-normal">Aucune compétence renseignée</span>
+            )}
           </div>
         </div>
       </div>
 
       {/* Actions */}
-      <div className="flex items-center justify-end gap-3">
+      <div className="flex items-center justify-between gap-3">
+        <Link
+          href={`/recruiter/messages?candidateId=${applicant.id || applicant.candidateId}&candidateName=${encodeURIComponent(applicant.name || "")}`}
+          className="inline-flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs py-3 px-5 rounded-xl shadow-sm transition-all"
+        >
+          <Icon icon="solar:chat-round-dots-bold" className="w-4 h-4" />
+          Contacter le candidat
+        </Link>
         <Link
           href={`/recruiter/jobs/${jobId}/applicants`}
           className="inline-flex items-center gap-2 bg-white border border-slate-200/80 hover:bg-slate-50 text-slate-700 font-semibold text-xs py-3 px-5 rounded-xl transition-all select-none"
