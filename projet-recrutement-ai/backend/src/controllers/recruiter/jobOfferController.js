@@ -130,3 +130,112 @@ export const toggleStatus = async (req, res) => {
         res.status(500).json({ success: false, error: "Internal server error" });
     }
 };
+
+export const updateDescriptionFromWebhook = async (req, res) => {
+    try {
+        console.log("📥 Received webhook callback from n8n:", JSON.stringify(req.body, null, 2));
+
+        const { id, description, quiz, questions, quizzes } = req.body;
+        if (!id) {
+            return res.status(400).json({
+                success: false,
+                error: "id is required in request body",
+            });
+        }
+
+        // Verify webhook secret
+        const clientSecret = req.headers["x-webhook-secret"] || req.query.secret;
+        const serverSecret = process.env.WEBHOOK_SECRET;
+        if (serverSecret && clientSecret !== serverSecret) {
+            console.warn("⚠️ Webhook secret mismatch or missing.");
+            return res.status(401).json({ success: false, error: "Unauthorized: Webhook secret mismatch" });
+        }
+
+        // Normalize Quiz and Questions
+        let quizTitle = "Technical Quiz";
+        let skillTarget = "General";
+        let finalQuestions = [];
+
+        const incomingQuiz = quiz || quizzes;
+        const incomingQuestions = questions;
+
+        if (incomingQuestions && Array.isArray(incomingQuestions)) {
+            finalQuestions = incomingQuestions;
+        } else if (incomingQuiz) {
+            if (Array.isArray(incomingQuiz)) {
+                finalQuestions = incomingQuiz;
+            } else if (typeof incomingQuiz === "object") {
+                quizTitle = incomingQuiz.title || quizTitle;
+                skillTarget = incomingQuiz.skillTarget || skillTarget;
+                if (Array.isArray(incomingQuiz.questions)) {
+                    finalQuestions = incomingQuiz.questions;
+                } else if (Array.isArray(incomingQuiz.quizzes)) {
+                    finalQuestions = incomingQuiz.quizzes;
+                }
+            }
+        }
+
+        let normalizedQuiz = null;
+        if (finalQuestions.length > 0) {
+            const mappedQuestions = finalQuestions.map((q) => {
+                let correctIdx = 0;
+                if (typeof q.correctAnswer === "number") {
+                    correctIdx = q.correctAnswer;
+                } else if (typeof q.correctAnswer === "string") {
+                    const parsed = parseInt(q.correctAnswer, 10);
+                    if (!isNaN(parsed)) {
+                        correctIdx = parsed;
+                    } else if (Array.isArray(q.options)) {
+                        // Find match index case-insensitively
+                        const idx = q.options.findIndex(
+                            (opt) => opt.toString().trim().toLowerCase() === q.correctAnswer.toString().trim().toLowerCase()
+                        );
+                        if (idx !== -1) correctIdx = idx;
+                    }
+                }
+
+                return {
+                    text: q.text || q.question || "",
+                    options: Array.isArray(q.options) ? q.options : [],
+                    correctAnswer: correctIdx,
+                };
+            }).filter((q) => q.text !== "");
+
+            if (mappedQuestions.length > 0) {
+                normalizedQuiz = {
+                    title: quizTitle,
+                    skillTarget: skillTarget,
+                    questions: mappedQuestions,
+                };
+            }
+        }
+
+        // Pass triggerWebhook = false via calling custom service method
+        const updated = await jobOfferService.updateJobOfferDescriptionAndQuiz(id, description, normalizedQuiz);
+        if (!updated) {
+            return res.status(404).json({ success: false, error: "Job offer not found" });
+        }
+
+        res.status(200).json({ success: true, data: updated });
+    } catch (error) {
+        console.error("Error updating job description and quiz from webhook:", error);
+        res.status(500).json({ success: false, error: "Internal server error" });
+    }
+};
+
+export const regenerateJobOfferDescription = async (req, res) => {
+    try {
+        const offer = await jobOfferService.getJobOfferById(req.params.id);
+        if (!offer) {
+            return res.status(404).json({ success: false, error: "Job offer not found" });
+        }
+
+        // Trigger the webhook again
+        await jobOfferService.triggerN8NWebhook(offer);
+
+        res.status(200).json({ success: true, message: "Regeneration triggered successfully" });
+    } catch (error) {
+        console.error("Error regenerating job offer description:", error);
+        res.status(500).json({ success: false, error: "Internal server error" });
+    }
+};

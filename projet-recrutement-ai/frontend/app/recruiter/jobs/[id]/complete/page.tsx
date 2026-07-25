@@ -4,6 +4,8 @@ import React from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { Icon } from "@iconify/react";
+import { api } from "@/lib/api";
+import type { ApiJobOffer } from "@/lib/api";
 
 interface CompleteOffer {
   id: string;
@@ -18,40 +20,146 @@ interface CompleteOffer {
   date: string;
 }
 
-const OFFERS_DB: Record<string, CompleteOffer> = {
-  "1": {
-    id: "1",
-    title: "Développeur Fullstack Node/Next.js",
-    contractType: "CDI (Contrat à Durée Indéterminée)",
-    location: "Casablanca, Maroc (Sur site)",
-    salary: "18 000 - 25 000 DH/mois",
-    experience: "+3 à 5 ans d'expérience",
-    description:
-      "Nous recherchons un développeur Fullstack talentueux pour rejoindre notre équipe technique. Vous serez responsable de la conception, du développement et de la maintenance d'applications web modernes en utilisant Node.js et Next.js. Vous travaillerez en étroite collaboration avec l'équipe produit pour livrer des fonctionnalités de haute qualité.",
-    skills: ["Node.js", "Next.js", "React", "TypeScript", "PostgreSQL", "Docker"],
-    status: "Publiée",
-    date: "28 Juin 2026",
-  },
-  "2": {
-    id: "2",
-    title: "UI/UX Designer Senior",
-    contractType: "CDI (Contrat à Durée Indéterminée)",
-    location: "Rabat, Maroc (Hybride)",
-    salary: "15 000 - 20 000 DH/mois",
-    experience: "+5 ans d'expérience (Senior)",
-    description:
-      "Nous cherchons un UI/UX Designer Senior pour concevoir des expériences utilisateur exceptionnelles. Vous serez en charge de la recherche utilisateur, de la création de wireframes, de prototypes interactifs et de la conception d'interfaces intuitives.",
-    skills: ["Figma", "Design System", "Prototyping", "User Research", "Design Thinking", "Adobe XD"],
-    status: "Brouillon",
-    date: "24 Juin 2026",
-  },
-};
+const OFFERS_DB: Record<string, CompleteOffer> = {};
+
+function parseBoldText(text: string) {
+  const parts = text.split(/(\*\*.*?\*\*)/g);
+  return parts.map((part, i) => {
+    if (part.startsWith("**") && part.endsWith("**")) {
+      return <strong key={i} className="font-bold text-slate-800">{part.slice(2, -2)}</strong>;
+    }
+    return part;
+  });
+}
+
+function formatDescription(text: string) {
+  if (!text) return null;
+  const blocks = text.split(/\n\n+/);
+  return blocks.map((block, idx) => {
+    const trimmed = block.trim();
+    if (!trimmed) return null;
+
+    if (trimmed.startsWith("###")) {
+      return (
+        <h4 key={idx} className="text-sm font-bold text-slate-800 mt-4 mb-2">
+          {trimmed.replace(/^###\s*/, "")}
+        </h4>
+      );
+    }
+    if (trimmed.startsWith("##")) {
+      return (
+        <h3 key={idx} className="text-base font-bold text-slate-900 mt-5 mb-2 border-b border-slate-100 pb-1">
+          {trimmed.replace(/^##\s*/, "")}
+        </h3>
+      );
+    }
+    if (trimmed.startsWith("#")) {
+      return (
+        <h2 key={idx} className="text-lg font-bold text-slate-900 mt-6 mb-3">
+          {trimmed.replace(/^#\s*/, "")}
+        </h2>
+      );
+    }
+
+    if (trimmed.includes("\n-") || trimmed.includes("\n*") || trimmed.startsWith("- ") || trimmed.startsWith("* ")) {
+      const items = trimmed
+        .split(/\n[-*]\s*/)
+        .map(item => item.trim())
+        .filter(Boolean);
+
+      let introText = "";
+      let listItems = items;
+      if (!trimmed.startsWith("- ") && !trimmed.startsWith("* ")) {
+        introText = items[0];
+        listItems = items.slice(1);
+      }
+
+      return (
+        <div key={idx} className="space-y-1.5 my-3">
+          {introText && <p className="text-sm text-slate-600">{parseBoldText(introText)}</p>}
+          <ul className="list-disc pl-5 space-y-1">
+            {listItems.map((item, itemIdx) => (
+              <li key={itemIdx} className="text-sm text-slate-600 leading-relaxed">
+                {parseBoldText(item)}
+              </li>
+            ))}
+          </ul>
+        </div>
+      );
+    }
+
+    return (
+      <p key={idx} className="text-sm text-slate-600 leading-relaxed whitespace-pre-wrap">
+        {parseBoldText(trimmed)}
+      </p>
+    );
+  });
+}
+
 
 export default function OfferCompletePage() {
   const params = useParams();
   const router = useRouter();
   const jobId = params.id as string;
-  const offer = OFFERS_DB[jobId];
+  
+  const [offer, setOffer] = React.useState<CompleteOffer | null>(null);
+  const [loading, setLoading] = React.useState(true);
+  const [regenerating, setRegenerating] = React.useState(false);
+
+  const handleRegenerate = async () => {
+    setRegenerating(true);
+    try {
+      await api.post(`/api/job-offers/${jobId}/regenerate`, {});
+      alert("La demande de régénération a été envoyée avec succès à n8n ! Elle s'actualisera sous peu.");
+    } catch (error) {
+      console.error("Error regenerating offer:", error);
+      alert("Erreur lors du lancement de la régénération.");
+    } finally {
+      setRegenerating(false);
+    }
+  };
+
+  React.useEffect(() => {
+    const fetchOffer = async () => {
+      try {
+        const res = await api.get<{ data: ApiJobOffer }>(`/api/job-offers/${jobId}`);
+        if (res?.data) {
+          const o = res.data;
+          setOffer({
+            id: o.id,
+            title: o.title,
+            contractType: o.contractType,
+            location: o.location || "Non spécifiée",
+            salary: o.salary || "Non spécifié",
+            experience: `${o.experienceYears} ${o.experienceYears > 1 ? "ans" : "an"} d'expérience`,
+            description: o.description,
+            skills: o.skills ? o.skills.map((s) => s.name) : [],
+            status: o.status === "OPEN" ? "Publiée" : "Archivée",
+            date: new Date(o.createdAt).toLocaleDateString("fr-FR", {
+              day: "numeric",
+              month: "long",
+              year: "numeric",
+            }),
+          });
+        }
+      } catch (error) {
+        console.error("Error fetching job offer:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    if (jobId) {
+      fetchOffer();
+    }
+  }, [jobId]);
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-20">
+        <div className="w-8 h-8 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
 
   if (!offer) {
     return (
@@ -116,10 +224,23 @@ export default function OfferCompletePage() {
 
       {/* Offer Details */}
       <div className="bg-white rounded-2xl border border-slate-200/70 shadow-sm p-6 sm:p-8 space-y-6">
-        <h3 className="text-sm font-bold text-slate-800 border-b border-slate-100 pb-2 flex items-center gap-2">
-          <Icon icon="solar:document-text-linear" className="w-4 h-4 text-blue-500" />
-          Détails de l&apos;offre
-        </h3>
+        <div className="flex items-center justify-between border-b border-slate-100 pb-2">
+          <h3 className="text-sm font-bold text-slate-800 flex items-center gap-2">
+            <Icon icon="solar:document-text-linear" className="w-4 h-4 text-blue-500" />
+            Détails de l&apos;offre
+          </h3>
+          <button
+            onClick={handleRegenerate}
+            disabled={regenerating}
+            className="inline-flex items-center gap-1.5 text-xs font-semibold text-purple-600 hover:text-purple-700 bg-purple-50 hover:bg-purple-100 border border-purple-100 px-3 py-1.5 rounded-lg transition-all disabled:opacity-50"
+          >
+            <Icon
+              icon="solar:magic-stick-3-linear"
+              className={`w-3.5 h-3.5 ${regenerating ? "animate-spin" : ""}`}
+            />
+            {regenerating ? "Génération..." : "Régénérer par l'IA"}
+          </button>
+        </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
           <div className="space-y-2">
@@ -140,9 +261,11 @@ export default function OfferCompletePage() {
           </div>
         </div>
 
-        <div className="space-y-2">
-          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Description</span>
-          <p className="text-sm text-slate-600 leading-relaxed">{offer.description}</p>
+        <div className="space-y-3">
+          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Description de l&apos;offre</span>
+          <div className="space-y-4 bg-slate-50/50 rounded-2xl border border-slate-200/50 p-5 sm:p-6 text-slate-700">
+            {formatDescription(offer.description)}
+          </div>
         </div>
 
         <div className="space-y-2">
