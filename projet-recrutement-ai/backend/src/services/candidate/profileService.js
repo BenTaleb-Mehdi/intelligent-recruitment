@@ -78,3 +78,18 @@ export const updateCandidateProfile = async (userId, data) => {
         },
     });
 };
+
+/**
+ * Update candidate CV file path in database
+ */
+export const updateCandidateCv = async (userId, cvPath) => {
+    return prisma.candidate.update({
+        where: { userId },
+        data: { cvPath },
+        include: {
+            user: { select: { id: true, name: true, email: true, image: true } },
+            skills: { select: { id: true, name: true } },
+        },
+    });
+};
+

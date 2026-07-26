@@ -20,7 +20,8 @@ const getInitials = (name: string) => {
 };
 
 export default function CandidateProfile() {
-  const [fileName, setFileName] = useState("Mehdi_Ben_Taleb_CV.pdf");
+  const [fileName, setFileName] = useState("");
+
   const [isGitHubConnected, setIsGitHubConnected] = useState(true);
   const [isPortfolioConnected, setIsPortfolioConnected] = useState(false);
   const [autoSync, setAutoSync] = useState(true);

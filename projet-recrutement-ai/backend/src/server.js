@@ -14,6 +14,7 @@ import jobOfferRouter from './routes/recruiter/jobOfferRoutes.js';
 import dropdownListRouter from './routes/recruiter/dropdownListRoutes.js';
 import candidateRouter from './routes/candidate/candidateRoutes.js';
 import messageRouter from './routes/messageRoutes.js';
+import cvRoutes from './routes/cvRoutes.js';
 
 const app = express();
 const server = http.createServer(app);
@@ -44,7 +45,9 @@ app.use(recruiterRouter);
 app.use(jobOfferRouter);
 app.use(dropdownListRouter);
 app.use(candidateRouter);
+app.use(cvRoutes);
 app.use("/api", messageRouter);
+
 
 // Socket.IO real-time message handling
 io.on("connection", (socket) => {

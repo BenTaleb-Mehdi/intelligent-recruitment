@@ -5,6 +5,8 @@ import { Icon } from "@iconify/react";
 import { Card } from "./Card";
 import { Button } from "./Button";
 import { Indicator } from "./Indicator";
+import { Alert } from "./Alert";
+import { api } from "@/lib/api";
 
 interface CvUploaderProps {
   fileName: string;
@@ -13,6 +15,58 @@ interface CvUploaderProps {
 
 export default function CvUploader({ fileName, onChange }: CvUploaderProps) {
   const [dragOver, setDragOver] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
+  const [alertInfo, setAlertInfo] = useState<{
+    status: "success" | "danger" | "warning" | "default";
+    title: string;
+    description: string;
+  } | null>(null);
+
+  const handleFileUpload = async (file: File) => {
+    setAlertInfo(null);
+
+    if (!file.name.toLowerCase().endsWith(".pdf")) {
+      setAlertInfo({
+        status: "danger",
+        title: "Invalid File Format",
+        description: "Only PDF (.pdf) files are allowed for CV upload.",
+      });
+      return;
+    }
+
+    setIsUploading(true);
+
+    try {
+      const formData = new FormData();
+      formData.append("cv", file);
+
+      const response: any = await api.upload("/api/cvs/upload", formData);
+
+      if (response.success && (response.data?.cvPath || response.data?.viewUrl)) {
+        onChange(response.data.cvPath || response.data.viewUrl);
+        setAlertInfo({
+          status: "success",
+          title: "CV Uploaded Successfully",
+          description: "Your PDF resume has been stored directly inside MongoDB GridFS.",
+        });
+      } else {
+        setAlertInfo({
+          status: "danger",
+          title: "Upload Failed",
+          description: "Failed to upload CV file to MongoDB GridFS.",
+        });
+      }
+    } catch (err: any) {
+      console.error("Upload error:", err);
+      setAlertInfo({
+        status: "danger",
+        title: "Upload Error",
+        description: err.message || "Failed to upload CV file. Please try again.",
+      });
+    } finally {
+      setIsUploading(false);
+    }
+  };
 
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
@@ -27,8 +81,20 @@ export default function CvUploader({ fileName, onChange }: CvUploaderProps) {
     e.preventDefault();
     setDragOver(false);
     if (e.dataTransfer.files && e.dataTransfer.files[0]) {
-      onChange(e.dataTransfer.files[0].name);
+      handleFileUpload(e.dataTransfer.files[0]);
     }
+  };
+
+  const getDisplayName = (path: string) => {
+    if (!path) return "";
+    const parts = path.split("/");
+    return parts[parts.length - 1];
+  };
+
+  const getFileUrl = (path: string) => {
+    if (!path) return "#";
+    if (path.startsWith("http")) return path;
+    return `http://localhost:5000${path.startsWith("/") ? "" : "/"}${path}`;
   };
 
   return (
@@ -36,11 +102,20 @@ export default function CvUploader({ fileName, onChange }: CvUploaderProps) {
       <Card.Header>
         <div>
           <Card.Title>Curriculum Vitae (CV)</Card.Title>
-          <Card.Description>Primary resume parsed by AI for skill matching</Card.Description>
+          <Card.Description>Upload your resume (PDF format only)</Card.Description>
         </div>
         <Icon icon="solar:document-text-bold-duotone" className="text-xl text-accent" />
       </Card.Header>
       <Card.Content className="space-y-6">
+        {alertInfo && (
+          <Alert
+            status={alertInfo.status}
+            title={alertInfo.title}
+            description={alertInfo.description}
+          />
+        )}
+
+
         <div
           onDragOver={handleDragOver}
           onDragLeave={handleDragLeave}
@@ -52,31 +127,43 @@ export default function CvUploader({ fileName, onChange }: CvUploaderProps) {
               : "border-slate-200 dark:border-slate-750 bg-white dark:bg-slate-800/10 hover:border-accent/40 dark:hover:border-slate-700",
           ].join(" ")}
         >
-          <div className="p-3 bg-accent/15 text-accent rounded-full mb-3 shadow-sm">
-            <Icon icon="solar:cloud-upload-bold" className="text-2xl" />
-          </div>
-          <h4 className="text-sm font-bold text-default-800 dark:text-default-250">
-            {dragOver ? "Drop file to upload!" : "Drag & drop your CV file here"}
-          </h4>
-          <p className="text-xs text-default-450 mt-1">Supports PDF, DOCX or TXT up to 10MB</p>
-          <input 
-            type="file" 
-            id="cv-file" 
-            className="hidden" 
-            onChange={(e) => {
-              if (e.target.files && e.target.files[0]) {
-                onChange(e.target.files[0].name);
-              }
-            }} 
-          />
-          <Button 
-            size="sm" 
-            variant="outline" 
-            className="mt-4" 
-            onClick={() => document.getElementById("cv-file")?.click()}
-          >
-            Browse Files
-          </Button>
+          {isUploading ? (
+            <div className="flex flex-col items-center gap-3">
+              <div className="w-8 h-8 border-3 border-accent border-t-transparent rounded-full animate-spin" />
+              <p className="text-xs font-semibold text-default-600">Uploading your PDF to MongoDB GridFS...</p>
+            </div>
+          ) : (
+            <>
+              <div className="p-3 bg-accent/15 text-accent rounded-full mb-3 shadow-sm">
+                <Icon icon="solar:cloud-upload-bold" className="text-2xl" />
+              </div>
+              <h4 className="text-sm font-bold text-default-800 dark:text-default-250">
+                {dragOver ? "Drop PDF to upload!" : "Drag & drop your PDF CV here"}
+              </h4>
+              <p className="text-xs text-default-450 mt-1">Supports PDF format only (up to 20MB)</p>
+
+              <input 
+                type="file" 
+                id="cv-file" 
+                className="hidden" 
+                accept=".pdf,application/pdf"
+                onChange={(e) => {
+                  if (e.target.files && e.target.files[0]) {
+                    handleFileUpload(e.target.files[0]);
+                  }
+                }} 
+              />
+
+              <Button 
+                size="sm" 
+                variant="outline" 
+                className="mt-4" 
+                onClick={() => document.getElementById("cv-file")?.click()}
+              >
+                Browse Files
+              </Button>
+            </>
+          )}
         </div>
 
         {/* Uploaded File status */}
@@ -87,12 +174,22 @@ export default function CvUploader({ fileName, onChange }: CvUploaderProps) {
                 <Icon icon="solar:document-bold" className="text-lg" />
               </div>
               <div className="min-w-0">
-                <p className="text-sm font-semibold text-default-800 dark:text-default-200 truncate">{fileName}</p>
-                <p className="text-[10px] text-default-400 font-semibold uppercase">Parsed by AI Matcher • 2 mins ago</p>
+                <p className="text-sm font-semibold text-default-800 dark:text-default-200 truncate">
+                  {getDisplayName(fileName)}
+                </p>
+                <a
+                  href={getFileUrl(fileName)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-[11px] text-blue-600 dark:text-blue-400 font-semibold hover:underline inline-flex items-center gap-1 mt-0.5"
+                >
+                  <Icon icon="solar:download-minimalistic-bold" className="text-xs" />
+                  View / Download Saved CV
+                </a>
               </div>
             </div>
             <div className="flex items-center gap-2">
-              <Indicator status="success" label="Active" />
+              <Indicator status="success" label="Saved on DB" />
               <button
                 onClick={() => onChange("")}
                 className="p-1.5 text-default-400 hover:text-danger rounded-lg transition-colors"

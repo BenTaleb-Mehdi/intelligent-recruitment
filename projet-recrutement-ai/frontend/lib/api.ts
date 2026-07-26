@@ -21,12 +21,29 @@ export const api = {
     get: <T>(url: string) => request<T>(url),
     post: <T>(url: string, body: unknown) =>
         request<T>(url, { method: "POST", body: JSON.stringify(body) }),
+    upload: async <T>(url: string, formData: FormData): Promise<T> => {
+        const res = await fetch(`${API_BASE}${url}`, {
+            method: "POST",
+            body: formData,
+            credentials: "include",
+        });
+        const text = await res.text();
+        let json: any;
+        try {
+            json = JSON.parse(text);
+        } catch {
+            throw new Error(`Upload failed (${res.status}): ${text.slice(0, 200)}`);
+        }
+        if (!res.ok) throw new Error(json.error || json.message || "Upload failed");
+        return json;
+    },
     put: <T>(url: string, body: unknown) =>
         request<T>(url, { method: "PUT", body: JSON.stringify(body) }),
     patch: <T>(url: string, body?: unknown) =>
         request<T>(url, { method: "PATCH", body: body ? JSON.stringify(body) : undefined }),
     delete: <T>(url: string) => request<T>(url, { method: "DELETE" }),
 };
+
 
 export interface ApiRecruiter {
     id: string;

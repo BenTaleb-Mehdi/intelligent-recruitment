@@ -190,7 +190,7 @@ export default function ApplicantDetailPage() {
             )}
             {applicant.cv && (
               <a
-                href={applicant.cv}
+                href={applicant.cv.startsWith("http") ? applicant.cv : `http://localhost:5000${applicant.cv.startsWith("/") ? "" : "/"}${applicant.cv}`}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="inline-flex items-center gap-1.5 px-3 py-1.5 text-[10px] font-semibold text-emerald-700 bg-emerald-50 border border-emerald-100/80 rounded-lg hover:bg-emerald-100 transition-all"
