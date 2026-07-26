@@ -14,6 +14,16 @@ const statusStyles: Record<string, string> = {
   Refusé: "bg-rose-50 text-rose-700 border-rose-100/80",
 };
 
+const getInitials = (name: string) => {
+  if (!name) return "C";
+  return name
+    .split(" ")
+    .map((n) => n[0] || "")
+    .join("")
+    .toUpperCase()
+    .slice(0, 2);
+};
+
 export default function ApplicantDetailPage() {
   const params = useParams();
   const jobId = params.id as string;
@@ -84,15 +94,28 @@ export default function ApplicantDetailPage() {
   return (
     <div className="max-w-3xl mx-auto space-y-6 font-sans">
       {/* Header */}
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-4">
         <Link
           href={`/recruiter/jobs/${jobId}/applicants`}
-          className="p-2 text-slate-400 hover:text-slate-800 hover:bg-slate-100 rounded-lg transition-colors"
+          className="p-2 text-slate-400 hover:text-slate-800 hover:bg-slate-100 rounded-lg transition-colors shrink-0"
         >
           <Icon icon="solar:alt-arrow-left-linear" className="w-5 h-5" />
         </Link>
-        <div className="flex-1">
-          <div className="flex items-center gap-3">
+
+        {applicant.image ? (
+          <img
+            src={applicant.image}
+            alt={applicant.name || "Candidat"}
+            className="w-16 h-16 rounded-2xl object-cover border-2 border-white shadow-md shrink-0"
+          />
+        ) : (
+          <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-indigo-500 to-blue-600 text-white font-bold text-lg flex items-center justify-center shadow-md shrink-0">
+            {getInitials(applicant.name)}
+          </div>
+        )}
+
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-3 flex-wrap">
             <h2 className="text-2xl font-bold text-slate-900 tracking-tight">
               {applicant.name}
             </h2>
@@ -111,6 +134,23 @@ export default function ApplicantDetailPage() {
             Candidat pour l&apos;offre #{jobId}
           </p>
         </div>
+      </div>
+
+      {/* Bio & Presentation Section */}
+      <div className="bg-white rounded-2xl border border-slate-200/70 shadow-sm p-6 sm:p-8 space-y-3">
+        <h3 className="text-sm font-bold text-slate-800 border-b border-slate-100 pb-2 flex items-center gap-2">
+          <Icon icon="solar:notes-linear" className="w-4 h-4 text-blue-500" />
+          Biographie &amp; Présentation
+        </h3>
+        {applicant.bio ? (
+          <p className="text-sm text-slate-600 leading-relaxed bg-slate-50/70 p-4 rounded-xl border border-slate-100 italic">
+            &ldquo;{applicant.bio}&rdquo;
+          </p>
+        ) : (
+          <p className="text-xs text-slate-400 italic">
+            Aucune biographie renseignée par ce candidat.
+          </p>
+        )}
       </div>
 
       {/* Contact Info */}

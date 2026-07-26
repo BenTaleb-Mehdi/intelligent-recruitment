@@ -15,12 +15,24 @@ export interface Applicant {
   skills: string[];
   experience: string;
   rating: number;
+  bio?: string;
+  image?: string;
 }
 
 export interface ApplicantsTableProps {
   applicants: Applicant[];
   jobId: string;
 }
+
+const getInitials = (name: string) => {
+  if (!name) return "C";
+  return name
+    .split(" ")
+    .map((n) => n[0] || "")
+    .join("")
+    .toUpperCase()
+    .slice(0, 2);
+};
 
 const statusStyles: Record<Applicant["status"], string> = {
   Nouveau: "bg-blue-50 text-blue-700 border-blue-100/80 dark:bg-blue-950/20 dark:text-blue-400 dark:border-blue-900/50",
@@ -71,9 +83,29 @@ export default function ApplicantsTable({ applicants, jobId }: ApplicantsTablePr
                   className="border-b border-slate-100 hover:bg-slate-50/50 transition-colors"
                 >
                   <td className="py-3.5 px-4">
-                    <span className="font-semibold text-slate-800 dark:text-slate-200">
-                      {applicant.name || "Candidat"}
-                    </span>
+                    <div className="flex items-center gap-3">
+                      {applicant.image ? (
+                        <img
+                          src={applicant.image}
+                          alt={applicant.name || "Candidat"}
+                          className="w-9 h-9 rounded-full object-cover border border-slate-200 shadow-sm shrink-0"
+                        />
+                      ) : (
+                        <div className="w-9 h-9 rounded-full bg-gradient-to-br from-indigo-500 to-blue-600 text-white font-bold text-xs flex items-center justify-center shadow-sm shrink-0">
+                          {getInitials(applicant.name)}
+                        </div>
+                      )}
+                      <div className="flex flex-col min-w-0">
+                        <span className="font-semibold text-slate-800 dark:text-slate-200 truncate">
+                          {applicant.name || "Candidat"}
+                        </span>
+                        {applicant.bio ? (
+                          <span className="text-[11px] text-slate-400 line-clamp-1 max-w-[220px]" title={applicant.bio}>
+                            {applicant.bio}
+                          </span>
+                        ) : null}
+                      </div>
+                    </div>
                   </td>
                   <td className="py-3.5 px-4">
                     <div className="flex flex-col gap-0.5">
@@ -175,18 +207,38 @@ export default function ApplicantsTable({ applicants, jobId }: ApplicantsTablePr
         {applicants.length > 0 ? (
           applicants.map((applicant) => (
             <div key={applicant.id} className="p-4 space-y-3">
-              <div className="flex items-start justify-between gap-3">
-                <div>
-                  <span className="font-semibold text-sm text-slate-800">
-                    {applicant.name || "Candidat"}
-                  </span>
-                  <div className="text-xs text-slate-400 mt-0.5">{applicant.email || "-"}</div>
+              <div className="flex items-start gap-3">
+                {applicant.image ? (
+                  <img
+                    src={applicant.image}
+                    alt={applicant.name || "Candidat"}
+                    className="w-10 h-10 rounded-full object-cover border border-slate-200 shadow-sm shrink-0"
+                  />
+                ) : (
+                  <div className="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-500 to-blue-600 text-white font-bold text-xs flex items-center justify-center shadow-sm shrink-0">
+                    {getInitials(applicant.name)}
+                  </div>
+                )}
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-start justify-between gap-2">
+                    <div>
+                      <span className="font-semibold text-sm text-slate-800">
+                        {applicant.name || "Candidat"}
+                      </span>
+                      <div className="text-xs text-slate-400 mt-0.5">{applicant.email || "-"}</div>
+                    </div>
+                    <span
+                      className={`shrink-0 inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold border leading-none select-none ${statusStyles[applicant.status] || statusStyles["Nouveau"]}`}
+                    >
+                      {applicant.status || "Nouveau"}
+                    </span>
+                  </div>
+                  {applicant.bio && (
+                    <p className="text-xs text-slate-500 mt-1.5 italic line-clamp-2 bg-slate-50 p-2 rounded-lg border border-slate-100">
+                      &ldquo;{applicant.bio}&rdquo;
+                    </p>
+                  )}
                 </div>
-                <span
-                  className={`shrink-0 inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold border leading-none select-none ${statusStyles[applicant.status] || statusStyles["Nouveau"]}`}
-                >
-                  {applicant.status || "Nouveau"}
-                </span>
               </div>
 
               <div className="grid grid-cols-2 gap-2 text-xs">

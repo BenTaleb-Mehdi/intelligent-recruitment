@@ -145,6 +145,46 @@ export const toggleJobOfferStatus = async (id) => {
     return updatedOffer;
 };
 
+export const formatCorrectAnswer = (ans, options = []) => {
+    let ansList = [];
+    if (Array.isArray(ans)) {
+        ansList = ans;
+    } else if (ans !== undefined && ans !== null) {
+        ansList = [ans];
+    }
+
+    if (ansList.length === 0) return 1;
+
+    let bitmask = 0;
+    ansList.forEach((item) => {
+        let idx = -1;
+
+        if (typeof item === "number" && !isNaN(item)) {
+            idx = item;
+        } else if (typeof item === "string" && !isNaN(parseInt(item, 10)) && String(parseInt(item, 10)) === item.trim()) {
+            idx = parseInt(item, 10);
+        } else if (typeof item === "string" && Array.isArray(options) && options.length > 0) {
+            const cleanItem = item.trim().toLowerCase();
+            let foundIdx = options.findIndex((opt) => String(opt).trim().toLowerCase() === cleanItem);
+            if (foundIdx === -1) {
+                foundIdx = options.findIndex((opt) => {
+                    const cleanOpt = String(opt).trim().toLowerCase();
+                    return cleanOpt.length > 3 && (cleanOpt.includes(cleanItem) || cleanItem.includes(cleanOpt));
+                });
+            }
+            if (foundIdx !== -1) {
+                idx = foundIdx;
+            }
+        }
+
+        if (idx >= 0 && idx < 8) {
+            bitmask |= (1 << idx);
+        }
+    });
+
+    return bitmask > 0 ? bitmask : 1;
+};
+
 export const updateJobOfferDescriptionAndQuiz = async (id, description, quizData) => {
     // Fetch the job offer to verify it exists and get its title
     const jobOffer = await prisma.jobOffer.findUnique({
@@ -171,9 +211,9 @@ export const updateJobOfferDescriptionAndQuiz = async (id, description, quizData
                     status: "VALIDATED",
                     questions: {
                         create: quizData.questions.map((q) => ({
-                            text: q.text,
-                            options: q.options,
-                            correctAnswer: q.correctAnswer,
+                            text: q.text || q.question || "",
+                            options: Array.isArray(q.options) ? q.options : [],
+                            correctAnswer: formatCorrectAnswer(q.correctAnswers || q.correctAnswer, q.options),
                         })),
                     },
                 },
@@ -184,9 +224,9 @@ export const updateJobOfferDescriptionAndQuiz = async (id, description, quizData
                     questions: {
                         deleteMany: {}, // Delete old questions
                         create: quizData.questions.map((q) => ({
-                            text: q.text,
-                            options: q.options,
-                            correctAnswer: q.correctAnswer,
+                            text: q.text || q.question || "",
+                            options: Array.isArray(q.options) ? q.options : [],
+                            correctAnswer: formatCorrectAnswer(q.correctAnswers || q.correctAnswer, q.options),
                         })),
                     },
                 },
@@ -224,7 +264,7 @@ export const updateJobOfferQuiz = async (jobOfferId, quizData) => {
         ? quizData.questions.map((q) => ({
               text: q.text || q.question || "",
               options: Array.isArray(q.options) ? q.options : [],
-              correctAnswer: typeof q.correctAnswer === "number" ? q.correctAnswer : parseInt(q.correctAnswer, 10) || 0,
+              correctAnswer: formatCorrectAnswer(q.correctAnswers || q.correctAnswer, q.options),
           }))
         : undefined;
 

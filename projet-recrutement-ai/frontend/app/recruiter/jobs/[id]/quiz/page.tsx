@@ -20,6 +20,23 @@ interface QuizData {
 
 const QUIZZES_DB: Record<string, QuizData> = {};
 
+const decodeCorrectAnswers = (val: any): number | number[] => {
+  if (Array.isArray(val)) {
+    return val.map((x) => Number(x));
+  }
+  const num = typeof val === "number" ? val : parseInt(val, 10);
+  if (isNaN(num)) return 0;
+
+  const indices: number[] = [];
+  for (let i = 0; i < 8; i++) {
+    if ((num & (1 << i)) !== 0) {
+      indices.push(i);
+    }
+  }
+  if (indices.length === 0) return 0;
+  return indices.length === 1 ? indices[0] : indices;
+};
+
 export default function JobQuizPage() {
   const params = useParams();
   const router = useRouter();
@@ -55,7 +72,7 @@ export default function JobQuizPage() {
                 : typeof q.options === "string"
                 ? JSON.parse(q.options)
                 : [],
-              correctAnswer: q.correctAnswer,
+              correctAnswer: decodeCorrectAnswers(q.correctAnswer),
             }))
           );
           setValidated(offer.quiz.status === "VALIDATED");
@@ -103,7 +120,24 @@ export default function JobQuizPage() {
 
   const handleCorrectChange = (qId: string, optIndex: number) => {
     setQuestions((prev) =>
-      prev.map((q) => (q.id === qId ? { ...q, correctAnswer: optIndex } : q))
+      prev.map((q) => {
+        if (q.id !== qId) return q;
+        const currentArr = Array.isArray(q.correctAnswer)
+          ? q.correctAnswer
+          : typeof q.correctAnswer === "number"
+          ? [q.correctAnswer]
+          : [];
+
+        const exists = currentArr.includes(optIndex);
+        const updated = exists
+          ? currentArr.filter((i) => i !== optIndex)
+          : [...currentArr, optIndex];
+
+        return {
+          ...q,
+          correctAnswer: updated.length === 1 ? updated[0] : updated,
+        };
+      })
     );
     setValidated(false);
   };

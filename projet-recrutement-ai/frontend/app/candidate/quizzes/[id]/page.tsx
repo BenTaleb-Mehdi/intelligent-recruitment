@@ -16,7 +16,7 @@ export default function CandidateQuizRoom() {
   const [quiz, setQuiz] = useState<any>(null);
   const [questions, setQuestions] = useState<any[]>([]);
   const [currentQuestion, setCurrentQuestion] = useState(0);
-  const [selectedAnswers, setSelectedAnswers] = useState<Record<number, number>>({});
+  const [selectedAnswers, setSelectedAnswers] = useState<Record<number, number[]>>({});
   const [timeLeft, setTimeLeft] = useState(600); // 10 minutes in seconds
   const [finished, setFinished] = useState(false);
   const [score, setScore] = useState(0);
@@ -63,12 +63,48 @@ export default function CandidateQuizRoom() {
     return `${minutes.toString().padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`;
   }, [timeLeft]);
 
+  const currentQ = questions[currentQuestion];
+  const correctArr = useMemo(() => {
+    if (!currentQ) return [];
+    if (Array.isArray(currentQ.correctAnswers)) return currentQ.correctAnswers.map((x: any) => Number(x));
+    if (Array.isArray(currentQ.correctAnswer)) return currentQ.correctAnswer.map((x: any) => Number(x));
+
+    const val = currentQ.correctAnswer !== undefined ? currentQ.correctAnswer : currentQ.correctAnswers;
+    const num = typeof val === "number" ? val : parseInt(val, 10);
+    if (isNaN(num)) return [];
+
+    const indices: number[] = [];
+    for (let i = 0; i < 8; i++) {
+      if ((num & (1 << i)) !== 0) {
+        indices.push(i);
+      }
+    }
+    return indices.length > 0 ? indices : [num >= 0 ? num : 0];
+  }, [currentQ]);
+
+  const isMultipleChoice = correctArr.length > 1;
+
   const handleSelectOption = (optIdx: number) => {
     if (finished) return;
-    setSelectedAnswers({
-      ...selectedAnswers,
-      [currentQuestion]: optIdx,
-    });
+    const currentSelected = selectedAnswers[currentQuestion] || [];
+
+    if (isMultipleChoice) {
+      // Checkbox mode (multiple choice)
+      const exists = currentSelected.includes(optIdx);
+      const updated = exists
+        ? currentSelected.filter((i) => i !== optIdx)
+        : [...currentSelected, optIdx];
+      setSelectedAnswers({
+        ...selectedAnswers,
+        [currentQuestion]: updated,
+      });
+    } else {
+      // Radio mode (single choice)
+      setSelectedAnswers({
+        ...selectedAnswers,
+        [currentQuestion]: [optIdx],
+      });
+    }
   };
 
   const handleNext = () => {
@@ -87,10 +123,27 @@ export default function CandidateQuizRoom() {
     if (questions.length === 0) return;
     let correctCount = 0;
     questions.forEach((q, idx) => {
-      if (selectedAnswers[idx] === q.correctAnswer) {
+      const selected = selectedAnswers[idx] || [];
+      let correctArr: number[] = [];
+      if (Array.isArray(q.correctAnswers)) {
+        correctArr = q.correctAnswers;
+      } else if (Array.isArray(q.correctAnswer)) {
+        correctArr = q.correctAnswer;
+      } else if (typeof q.correctAnswer === "number") {
+        correctArr = [q.correctAnswer];
+      }
+
+      const sSorted = [...selected].sort();
+      const cSorted = [...correctArr].sort();
+      const isExactMatch =
+        sSorted.length === cSorted.length &&
+        sSorted.every((val, index) => val === cSorted[index]);
+
+      if (isExactMatch || (correctArr.length > 0 && selected.some((s) => correctArr.includes(s)))) {
         correctCount++;
       }
     });
+
     const finalScore = Math.round((correctCount / questions.length) * 100);
     setScore(finalScore);
 
@@ -194,7 +247,9 @@ export default function CandidateQuizRoom() {
             <Card.Content className="p-6 space-y-6">
               <div className="flex justify-between items-center text-xs font-semibold text-default-450 border-b border-default-100 dark:border-default-50/10 pb-4">
                 <span>Evaluation Question {currentQuestion + 1} of {questions.length}</span>
-                <Chip variant="soft">Single Choice QCM</Chip>
+                <Chip variant="soft">
+                  {isMultipleChoice ? "Choix Multiple (Checkboxes)" : "Choix Unique (Radio)"}
+                </Chip>
               </div>
 
               {/* Question Text */}
@@ -206,25 +261,44 @@ export default function CandidateQuizRoom() {
               <div className="space-y-3 pt-2">
                 {Array.isArray(questions[currentQuestion]?.options) && 
                   questions[currentQuestion].options.map((opt: string, optIdx: number) => {
-                    const isSelected = selectedAnswers[currentQuestion] === optIdx;
+                    const currentSelected = selectedAnswers[currentQuestion] || [];
+                    const isSelected = currentSelected.includes(optIdx);
                     return (
                       <button
                         key={optIdx}
                         onClick={() => handleSelectOption(optIdx)}
                         className={[
-                          "w-full text-left p-4 rounded-xl border text-sm transition-all duration-150 flex items-center justify-between",
+                          "w-full text-left p-4 rounded-xl border text-sm transition-all duration-150 flex items-center justify-between cursor-pointer",
                           isSelected
                             ? "border-accent bg-accent/5 text-accent font-semibold shadow-sm shadow-accent/5"
                             : "border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-800/10 hover:border-accent/40 dark:hover:border-slate-700 hover:bg-blue-50/20 dark:hover:bg-slate-800/20",
                         ].join(" ")}
                       >
                         <span>{opt}</span>
-                        <div className={[
-                          "w-4 h-4 rounded-full border flex items-center justify-center shrink-0 ml-3",
-                          isSelected ? "border-accent bg-accent" : "border-slate-300 dark:border-slate-700",
-                        ].join(" ")}>
-                          {isSelected && <div className="w-1.5 h-1.5 rounded-full bg-white" />}
-                        </div>
+
+                        {isMultipleChoice ? (
+                          /* Square Checkbox for Multiple Answers */
+                          <div className={[
+                            "w-5 h-5 rounded-md border-2 flex items-center justify-center shrink-0 ml-3 transition-all",
+                            isSelected ? "border-accent bg-accent text-white shadow-sm" : "border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900",
+                          ].join(" ")}>
+                            {isSelected && (
+                              <svg className="w-3.5 h-3.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3.5">
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                              </svg>
+                            )}
+                          </div>
+                        ) : (
+                          /* Round Radio Button for Single Answer */
+                          <div className={[
+                            "w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 ml-3 transition-all",
+                            isSelected ? "border-accent bg-accent text-white shadow-sm" : "border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900",
+                          ].join(" ")}>
+                            {isSelected && (
+                              <div className="w-2 h-2 rounded-full bg-white" />
+                            )}
+                          </div>
+                        )}
                       </button>
                     );
                   })
@@ -247,7 +321,7 @@ export default function CandidateQuizRoom() {
                   startIcon="solar:verified-check-bold"
                   variant="primary"
                   onClick={handleSubmit}
-                  isDisabled={selectedAnswers[currentQuestion] === undefined}
+                  isDisabled={!selectedAnswers[currentQuestion] || selectedAnswers[currentQuestion].length === 0}
                 >
                   Finish & Submit
                 </Button>
@@ -256,7 +330,7 @@ export default function CandidateQuizRoom() {
                   endIcon="solar:alt-arrow-right-bold"
                   variant="primary"
                   onClick={handleNext}
-                  isDisabled={selectedAnswers[currentQuestion] === undefined}
+                  isDisabled={!selectedAnswers[currentQuestion] || selectedAnswers[currentQuestion].length === 0}
                 >
                   Next Question
                 </Button>

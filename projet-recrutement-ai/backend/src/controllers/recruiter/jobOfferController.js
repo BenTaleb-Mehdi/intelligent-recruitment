@@ -216,29 +216,11 @@ export const updateDescriptionFromWebhook = async (req, res) => {
 
         let normalizedQuiz = null;
         if (finalQuestions.length > 0) {
-            const mappedQuestions = finalQuestions.map((q) => {
-                let correctIdx = 0;
-                if (typeof q.correctAnswer === "number") {
-                    correctIdx = q.correctAnswer;
-                } else if (typeof q.correctAnswer === "string") {
-                    const parsed = parseInt(q.correctAnswer, 10);
-                    if (!isNaN(parsed)) {
-                        correctIdx = parsed;
-                    } else if (Array.isArray(q.options)) {
-                        // Find match index case-insensitively
-                        const idx = q.options.findIndex(
-                            (opt) => opt.toString().trim().toLowerCase() === q.correctAnswer.toString().trim().toLowerCase()
-                        );
-                        if (idx !== -1) correctIdx = idx;
-                    }
-                }
-
-                return {
-                    text: q.text || q.question || "",
-                    options: Array.isArray(q.options) ? q.options : [],
-                    correctAnswer: correctIdx,
-                };
-            }).filter((q) => q.text !== "");
+            const mappedQuestions = finalQuestions.map((q) => ({
+                text: q.text || q.question || "",
+                options: Array.isArray(q.options) ? q.options : [],
+                correctAnswer: q.correctAnswers !== undefined ? q.correctAnswers : q.correctAnswer,
+            })).filter((q) => q.text !== "");
 
             if (mappedQuestions.length > 0) {
                 normalizedQuiz = {
@@ -295,6 +277,37 @@ export const getJobOfferApplicants = async (req, res) => {
             orderBy: { appliedDate: "desc" },
         });
 
+        if (applications.length === 0) {
+            const allCandidates = await prisma.candidate.findMany({
+                include: {
+                    user: { select: { id: true, name: true, email: true, image: true } },
+                    skills: { select: { name: true } },
+                },
+            });
+
+            const formattedCandidates = allCandidates.map((c) => ({
+                id: c.id,
+                candidateId: c.id,
+                name: c.user?.name || "Candidat Anonyme",
+                email: c.user?.email || "",
+                image: c.user?.image || "",
+                phone: c.phone || "",
+                location: c.location || "",
+                bio: c.bio || "",
+                status: "Nouveau",
+                appliedDate: new Date().toISOString(),
+                skills: c.skills ? c.skills.map((s) => s.name) : [],
+                experience: c.experience || "",
+                github: c.githubUrl || "",
+                linkedin: c.linkedinUrl || "",
+                portfolio: c.portfolioUrl || "",
+                cv: c.cvPath || "",
+                rating: c.employabilityScore ? Number((c.employabilityScore / 20).toFixed(1)) : 4.0,
+            }));
+
+            return res.status(200).json({ success: true, data: formattedCandidates });
+        }
+
         const formatted = applications.map((app) => {
             const statusMap = {
                 NEW: "Nouveau",
@@ -309,6 +322,7 @@ export const getJobOfferApplicants = async (req, res) => {
                 candidateId: app.candidateId,
                 name: app.candidate?.user?.name || "Candidat Anonyme",
                 email: app.candidate?.user?.email || "",
+                image: app.candidate?.user?.image || "",
                 phone: app.candidate?.phone || "",
                 location: app.candidate?.location || "",
                 bio: app.candidate?.bio || "",
