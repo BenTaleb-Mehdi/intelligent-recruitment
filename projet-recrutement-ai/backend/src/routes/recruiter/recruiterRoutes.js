@@ -1,7 +1,7 @@
 import { Router } from "express";
-import * as recruiterController from "../controllers/recruiterController.js";
-import { getRecruiterStats, getRecentApplications } from "../services/statsService.js";
-import { protectDashboard } from "../middleware/authMiddleware.js";
+import * as recruiterController from "../../controllers/recruiter/recruiterController.js";
+import { getRecruiterStats, getRecentApplications } from "../../services/statsService.js";
+import { protectDashboard } from "../../middleware/authMiddleware.js";
 
 const router = Router();
 

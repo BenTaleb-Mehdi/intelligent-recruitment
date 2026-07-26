@@ -35,11 +35,24 @@ export default function SettingsPage() {
   const [showToast, setShowToast] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // Security tab states
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [email, setEmail] = useState("");
+  const [originalEmail, setOriginalEmail] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [isUpdatingSecurity, setIsUpdatingSecurity] = useState(false);
+  const [securitySuccess, setSecuritySuccess] = useState(false);
+  const [securityError, setSecurityError] = useState<string | null>(null);
+
   useEffect(() => {
     const fetchRecruiter = async () => {
       try {
         const { data: session } = await authClient.getSession();
         if (!session?.user?.id) return;
+
+        setEmail(session.user.email || "");
+        setOriginalEmail(session.user.email || "");
 
         const { data: recruiters } = await api.get<{ data: ApiRecruiter[] }>("/api/recruiters");
         const recruiter = recruiters?.find((r) => r.userId === session.user.id);
@@ -76,6 +89,7 @@ export default function SettingsPage() {
         description,
         logo,
       });
+      window.dispatchEvent(new Event("recruiter-updated"));
       setShowToast(true);
       setTimeout(() => setShowToast(false), 3000);
     } catch (error) {
@@ -83,6 +97,71 @@ export default function SettingsPage() {
       alert("Erreur lors de la sauvegarde.");
     } finally {
       setIsSaving(false);
+    }
+  };
+
+  const handleSecurityUpdate = async () => {
+    setSecurityError(null);
+    setSecuritySuccess(false);
+
+    const isEmailChanged = email !== originalEmail;
+    const isPasswordChanging = newPassword.length > 0;
+
+    if (!isEmailChanged && !isPasswordChanging) {
+      setSecurityError("Aucune modification détectée.");
+      return;
+    }
+
+    if (!currentPassword) {
+      setSecurityError("Le mot de passe actuel est requis pour modifier vos informations de sécurité.");
+      return;
+    }
+
+    if (isPasswordChanging) {
+      if (newPassword.length < 8) {
+        setSecurityError("Le nouveau mot de passe doit contenir au moins 8 caractères.");
+        return;
+      }
+      if (newPassword !== confirmPassword) {
+        setSecurityError("Les nouveaux mots de passe ne correspondent pas.");
+        return;
+      }
+    }
+
+    setIsUpdatingSecurity(true);
+    try {
+      // 1. If email is changing
+      if (isEmailChanged) {
+        const { error } = await authClient.changeEmail({
+          newEmail: email,
+        });
+        if (error) {
+          throw new Error(error.message || "Erreur lors de la modification de l'email.");
+        }
+        setOriginalEmail(email);
+      }
+
+      // 2. If password is changing
+      if (isPasswordChanging) {
+        const { error } = await authClient.changePassword({
+          currentPassword,
+          newPassword,
+        });
+        if (error) {
+          throw new Error(error.message || "Erreur lors de la modification du mot de passe. Veuillez vérifier votre mot de passe actuel.");
+        }
+        setNewPassword("");
+        setConfirmPassword("");
+      }
+
+      setSecuritySuccess(true);
+      setCurrentPassword("");
+      setTimeout(() => setSecuritySuccess(false), 5000);
+    } catch (err: any) {
+      console.error("Security update error:", err);
+      setSecurityError(err.message || "Une erreur est survenue lors de la mise à jour.");
+    } finally {
+      setIsUpdatingSecurity(false);
     }
   };
 
@@ -379,31 +458,85 @@ export default function SettingsPage() {
             Sécurité du compte
           </h3>
 
-          <div className="space-y-4">
-            <div className="space-y-1.5">
-              <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Email actuel</label>
-              <input
-                type="email"
-                defaultValue="contact@smartrecruit.ma"
-                className="w-full bg-slate-50 border border-slate-200/80 rounded-xl px-4 py-2.5 text-xs text-slate-800 focus:outline-none focus:bg-white focus:ring-1 focus:ring-blue-600 transition-all font-medium"
-              />
+          {securityError && (
+            <div className="bg-rose-50 border border-rose-250/60 text-rose-700 text-xs px-4 py-3.5 rounded-xl flex items-center gap-2.5 select-none">
+              <Icon icon="solar:danger-triangle-bold" className="w-5 h-5 flex-shrink-0 text-rose-600" />
+              <span className="font-medium">{securityError}</span>
             </div>
+          )}
+
+          {securitySuccess && (
+            <div className="bg-emerald-50 border border-emerald-250/60 text-emerald-700 text-xs px-4 py-3.5 rounded-xl flex items-center gap-2.5 select-none">
+              <Icon icon="solar:check-circle-bold" className="w-5 h-5 flex-shrink-0 text-emerald-600" />
+              <span className="font-medium">Vos informations de sécurité ont été mises à jour avec succès.</span>
+            </div>
+          )}
+
+          <div className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
               <div className="space-y-1.5">
-                <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Nouveau mot de passe</label>
-                <input type="password" placeholder="••••••••" className="w-full bg-slate-50 border border-slate-200/80 rounded-xl px-4 py-2.5 text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:bg-white focus:ring-1 focus:ring-blue-600 transition-all font-medium" />
+                <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Adresse email</label>
+                <input
+                  type="email"
+                  placeholder="contact@smartrecruit.ma"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="w-full bg-slate-50 border border-slate-200/80 rounded-xl px-4 py-2.5 text-xs text-slate-800 focus:outline-none focus:bg-white focus:ring-1 focus:ring-blue-600 transition-all font-medium"
+                />
               </div>
               <div className="space-y-1.5">
-                <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Confirmer le mot de passe</label>
-                <input type="password" placeholder="••••••••" className="w-full bg-slate-50 border border-slate-200/80 rounded-xl px-4 py-2.5 text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:bg-white focus:ring-1 focus:ring-blue-600 transition-all font-medium" />
+                <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Mot de passe actuel *</label>
+                <input
+                  type="password"
+                  placeholder="Requis pour toute modification"
+                  value={currentPassword}
+                  onChange={(e) => setCurrentPassword(e.target.value)}
+                  className="w-full bg-slate-50 border border-slate-200/80 rounded-xl px-4 py-2.5 text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:bg-white focus:ring-1 focus:ring-blue-600 transition-all font-medium"
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-5 border-t border-slate-100 pt-4">
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Nouveau mot de passe</label>
+                <input
+                  type="password"
+                  placeholder="Au moins 8 caractères"
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  className="w-full bg-slate-50 border border-slate-200/80 rounded-xl px-4 py-2.5 text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:bg-white focus:ring-1 focus:ring-blue-600 transition-all font-medium"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Confirmer le nouveau mot de passe</label>
+                <input
+                  type="password"
+                  placeholder="Confirmez le nouveau mot de passe"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  className="w-full bg-slate-50 border border-slate-200/80 rounded-xl px-4 py-2.5 text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:bg-white focus:ring-1 focus:ring-blue-600 transition-all font-medium"
+                />
               </div>
             </div>
           </div>
 
           <div className="flex justify-end pt-4 border-t border-slate-100">
-            <button className="inline-flex items-center gap-2 bg-rose-600 hover:bg-rose-700 text-white font-semibold text-xs py-3 px-6 rounded-xl shadow-sm transition-all active:scale-[0.98] select-none">
-              <Icon icon="solar:diskette-linear" className="w-4 h-4" />
-              Mettre à jour
+            <button
+              onClick={handleSecurityUpdate}
+              disabled={isUpdatingSecurity}
+              className="inline-flex items-center gap-2 bg-rose-600 hover:bg-rose-700 text-white font-semibold text-xs py-3 px-6 rounded-xl shadow-sm transition-all active:scale-[0.98] select-none disabled:opacity-75 disabled:cursor-not-allowed min-w-[120px]"
+            >
+              {isUpdatingSecurity ? (
+                <>
+                  <Icon icon="solar:restart-bold" className="w-4 h-4 animate-spin" />
+                  Mise à jour...
+                </>
+              ) : (
+                <>
+                  <Icon icon="solar:shield-check-linear" className="w-4 h-4" />
+                  Mettre à jour
+                </>
+              )}
             </button>
           </div>
         </div>

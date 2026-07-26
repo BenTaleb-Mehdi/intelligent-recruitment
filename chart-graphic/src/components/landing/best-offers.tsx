@@ -3,97 +3,140 @@
 import React from "react";
 import Link from "next/link";
 import { Icon } from "@iconify/react";
+import { motion } from "framer-motion";
 import jobsData from "@/data/landing-jobs.json";
+import { Button } from "@/components/charts/atoms/Button";
 
 const techColors: Record<string, string> = {
-  "Next.js": "bg-blue-50 text-blue-700",
-  "Node.js": "bg-emerald-50 text-emerald-700",
-  "PostgreSQL": "bg-sky-50 text-sky-700",
-  "AWS": "bg-amber-50 text-amber-700",
-  "Docker": "bg-blue-50 text-blue-700",
-  "Terraform": "bg-indigo-50 text-indigo-700",
-  "Python": "bg-indigo-50 text-indigo-700",
-  "Spark": "bg-orange-50 text-orange-700",
-  "dbt": "bg-rose-50 text-rose-700",
+  "Next.js": "bg-blue-50 text-blue-700 border-blue-100/50",
+  "Node.js": "bg-emerald-50 text-emerald-700 border-emerald-100/50",
+  "PostgreSQL": "bg-sky-50 text-sky-700 border-sky-100/50",
+  "AWS": "bg-amber-50 text-amber-700 border-amber-100/50",
+  "Docker": "bg-blue-50 text-blue-700 border-blue-100/50",
+  "Terraform": "bg-indigo-50 text-indigo-700 border-indigo-100/50",
+  "Python": "bg-indigo-50 text-indigo-700 border-indigo-100/50",
+  "Spark": "bg-orange-50 text-orange-700 border-orange-100/50",
+  "dbt": "bg-rose-50 text-rose-700 border-rose-100/50",
 };
 
 export default function BestOffers() {
+  const containerVariants = {
+    hidden: {},
+    visible: {
+      transition: {
+        staggerChildren: 0.1,
+      },
+    },
+  } as const;
+
+  const itemVariants = {
+    hidden: { opacity: 0, y: 30 },
+    visible: {
+      opacity: 1,
+      y: 0,
+      transition: {
+        type: "spring" as const,
+        stiffness: 80,
+        damping: 15,
+      },
+    },
+  };
+
   return (
-    <section id="offres" className="py-24 bg-slate-50/50">
-      <div className="max-w-5xl mx-auto px-6 space-y-12">
+    <section id="offres" className="py-28 bg-[#f8fafc]/60 relative overflow-hidden border-y border-slate-100">
+      <div className="absolute inset-0 pointer-events-none">
+        <div className="absolute top-0 right-1/4 w-96 h-96 rounded-full bg-blue-50/40 blur-3xl" />
+        <div className="absolute bottom-0 left-1/4 w-96 h-96 rounded-full bg-indigo-50/40 blur-3xl" />
+      </div>
+
+      <div className="relative z-10 max-w-5xl mx-auto px-6 space-y-16">
+        {/* Section Header */}
         <div className="text-center space-y-3">
-          <span className="inline-block bg-blue-50 border border-blue-100 text-blue-600 text-xs font-bold px-4 py-1.5 rounded-full uppercase tracking-wider select-none">
+          <span className="inline-block bg-blue-50 border border-blue-100 text-blue-600 text-xs font-bold px-4 py-1.5 rounded-full uppercase tracking-wider select-none shadow-sm">
             Offres tendance · Maroc IT
           </span>
           <h2 className="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight">
             Les meilleures offres du moment
           </h2>
-          <p className="text-slate-500 text-base max-w-xl mx-auto font-medium">
+          <p className="text-slate-500 text-sm sm:text-base max-w-xl mx-auto font-medium">
             Sélectionnées par notre IA parmi +180 offres actives, selon les stacks
             les plus demandées au Maroc.
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+        {/* Jobs Grid */}
+        <motion.div
+          variants={containerVariants}
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true, margin: "-80px" }}
+          className="grid grid-cols-1 md:grid-cols-3 gap-6"
+        >
           {jobsData.jobs.map((job, i) => (
-            <div
-              key={i}
-              className="group bg-white rounded-2xl border border-slate-200/80 shadow-sm hover:shadow-lg hover:border-blue-200 transition-all duration-300 p-6 flex flex-col gap-5 relative overflow-hidden cursor-pointer"
-            >
-              <span className="absolute top-4 right-4 inline-flex items-center gap-1 bg-blue-600 text-white text-[10px] font-bold px-2.5 py-1 rounded-full shadow-sm select-none">
-                <Icon icon="solar:stars-linear" className="w-3 h-3" />
-                {job.match} match IA
-              </span>
+            <Link href="/offres" key={i} className="block">
+              <motion.div
+                variants={itemVariants}
+                whileHover={{ y: -6, scale: 1.01 }}
+                transition={{ type: "spring", stiffness: 350, damping: 22 }}
+                className="group bg-white rounded-2xl border border-slate-200/70 shadow-sm hover:shadow-xl hover:border-blue-200/80 transition-all duration-300 p-6 flex flex-col gap-5 relative overflow-hidden cursor-pointer h-full"
+              >
+                {/* Company Logo Char */}
+                <div className="w-12 h-12 rounded-2xl bg-slate-50 border border-slate-100 flex items-center justify-center text-blue-600 font-black text-lg select-none shadow-sm group-hover:bg-blue-50/50 group-hover:border-blue-100 transition-colors duration-300">
+                  {job.company.charAt(0)}
+                </div>
 
-              <div className="w-11 h-11 rounded-xl bg-blue-50 flex items-center justify-center text-blue-700 font-extrabold text-base select-none border border-blue-100">
-                {job.company.charAt(0)}
-              </div>
+                {/* Title & Company info */}
+                <div className="space-y-1 flex-1">
+                  <h3 className="text-base font-bold text-slate-800 leading-snug group-hover:text-blue-600 transition-colors duration-200">
+                    {job.title}
+                  </h3>
+                  <p className="text-xs font-semibold text-slate-400">{job.company}</p>
 
-              <div className="space-y-1.5 flex-1">
-                <h3 className="text-sm font-bold text-slate-900 leading-snug group-hover:text-blue-700 transition-colors">
-                  {job.title}
-                </h3>
-                <p className="text-xs font-semibold text-slate-500">{job.company}</p>
+                  <div className="flex flex-wrap items-center gap-3 pt-2 text-[11px] text-slate-400 font-semibold">
+                    <span className="flex items-center gap-1">
+                      <Icon icon="solar:map-point-linear" className="w-3.5 h-3.5 text-slate-400" />
+                      {job.loc}
+                    </span>
+                  </div>
+                </div>
 
-                <div className="flex flex-wrap items-center gap-2 pt-1 text-[11px] text-slate-400 font-medium">
-                  <span className="flex items-center gap-1">
-                    <Icon icon="solar:map-point-linear" className="w-3 h-3" />
-                    {job.loc}
+                {/* Tech Tags */}
+                <div className="flex flex-wrap gap-1.5">
+                  {job.tech.map((t) => (
+                    <span
+                      key={t}
+                      className={`text-[10px] font-bold px-2.5 py-0.5 rounded-lg border ${
+                        techColors[t] ?? "bg-slate-55 text-slate-600 border-slate-200/50"
+                      }`}
+                    >
+                      {t}
+                    </span>
+                  ))}
+                </div>
+
+                {/* Footer pricing & link */}
+                <div className="flex items-center justify-between pt-4 border-t border-slate-100 mt-2">
+                  <span className="text-sm font-extrabold text-slate-800">{job.salary}</span>
+                  <span className="text-xs font-bold text-blue-600 hover:text-blue-700 inline-flex items-center gap-1 group/btn transition-colors duration-200">
+                    Postuler
+                    <span className="transform group-hover/btn:translate-x-0.5 transition-transform duration-200">→</span>
                   </span>
                 </div>
-              </div>
-
-              <div className="flex flex-wrap gap-1.5">
-                {job.tech.map((t) => (
-                  <span
-                    key={t}
-                    className={`text-[10px] font-bold px-2 py-0.5 rounded-md ${techColors[t] ?? "bg-slate-100 text-slate-600"}`}
-                  >
-                    {t}
-                  </span>
-                ))}
-              </div>
-
-              <div className="flex items-center justify-between pt-1 border-t border-slate-100">
-                <span className="text-sm font-extrabold text-slate-800">{job.salary}</span>
-                <Link
-            href="/offres"
-                  className="text-[11px] font-bold text-blue-600 hover:text-blue-700 hover:underline transition-colors"
-                >
-                  Postuler →
-                </Link>
-              </div>
-            </div>
+              </motion.div>
+            </Link>
           ))}
-        </div>
+        </motion.div>
 
-        <div className="text-center">
-          <Link
-            href="/recruiter/jobs"
-            className="inline-flex items-center gap-2 bg-white border border-slate-200 text-slate-700 text-sm font-bold px-6 py-3 rounded-xl hover:border-blue-300 hover:text-blue-700 hover:shadow-sm transition-all"
-          >
-            <Icon icon="solar:case-linear" className="w-4 h-4" />
-            Voir toutes les offres
+        {/* View all button */}
+        <div className="text-center pt-4">
+          <Link href="/recruiter/jobs">
+            <Button
+              variant="outline"
+              className="border-slate-200 text-slate-700 font-bold text-sm h-12 px-6 hover:bg-slate-50 hover:border-slate-300 rounded-xl shadow-sm transition-all inline-flex items-center gap-2"
+              startIcon="solar:case-linear"
+            >
+              Voir toutes les offres
+            </Button>
           </Link>
         </div>
       </div>

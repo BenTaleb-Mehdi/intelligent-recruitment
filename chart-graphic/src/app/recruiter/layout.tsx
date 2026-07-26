@@ -40,7 +40,7 @@ export default function RecruiterLayout({
       <SidebarRecruiter isOpen={isSidebarOpen} onClose={closeSidebar} />
       
       {/* Main Content Area */}
-      <div className="flex flex-1 flex-col">
+      <div className="flex flex-1 flex-col overflow-hidden">
         {/* Navbar Layout component — fixed at top */}
         <NavbarRecruiter onToggleSidebar={toggleSidebar} />
         

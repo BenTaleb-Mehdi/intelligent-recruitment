@@ -73,10 +73,10 @@ export default function NavbarRecruiter({ onToggleSidebar }: NavbarRecruiterProp
         </button>
 
         {/* Separator Line */}
-        <div className="w-[1px] h-4 bg-slate-200"></div>
+        <div className="hidden sm:block w-[1px] h-4 bg-slate-200"></div>
 
         {/* Breadcrumbs */}
-        <div className="flex items-center gap-2 text-slate-400 select-none">
+        <div className="hidden sm:flex items-center gap-2 text-slate-400 select-none">
           <Icon icon="solar:home-smile-linear" className="w-4 h-4 text-slate-400" />
           <span className="text-slate-300 font-light text-xs">/</span>
           <span className="text-slate-800 text-xs font-semibold tracking-wide">

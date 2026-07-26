@@ -5,16 +5,20 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { Icon } from "@iconify/react";
 import { authClient } from "@/lib/auth-client";
+import { useUnreadMessages } from "@/hooks/useUnreadMessages";
 
 interface SidebarRecruiterProps {
   isOpen: boolean;
   onClose: () => void;
+  logo?: string | null;
+  companyName?: string;
 }
 
-export default function SidebarRecruiter({ isOpen, onClose }: SidebarRecruiterProps) {
+export default function SidebarRecruiter({ isOpen, onClose, logo, companyName }: SidebarRecruiterProps) {
   const router = useRouter();
   const pathname = usePathname() || "";
   const [isJobsOpen, setIsJobsOpen] = useState(true);
+  const { unreadCount } = useUnreadMessages("RECRUITER");
 
   const handleLogout = async () => {
     await authClient.signOut();
@@ -37,13 +41,21 @@ export default function SidebarRecruiter({ isOpen, onClose }: SidebarRecruiterPr
       <div className={`h-16 flex items-center border-b border-slate-200/50 bg-white px-4 ${
         isOpen ? "justify-between" : "justify-center"
       }`}>
-        <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center text-white font-extrabold text-sm shadow-sm select-none">
-            SR
-          </div>
+        <div className="flex items-center gap-2.5 min-w-0">
+          {logo ? (
+            <img 
+              src={logo} 
+              alt="Logo" 
+              className="w-8 h-8 rounded-lg object-cover shadow-sm select-none flex-shrink-0" 
+            />
+          ) : (
+            <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center text-white font-extrabold text-sm shadow-sm select-none flex-shrink-0">
+              {companyName ? companyName.substring(0, 2).toUpperCase() : "SR"}
+            </div>
+          )}
           {isOpen && (
-            <span className="font-semibold text-slate-900 text-sm tracking-tight">
-              SmartRecruit IA
+            <span className="font-semibold text-slate-900 text-sm tracking-tight truncate max-w-[140px]" title={companyName || "SmartRecruit IA"}>
+              {companyName || "SmartRecruit IA"}
             </span>
           )}
         </div>
@@ -192,8 +204,8 @@ export default function SidebarRecruiter({ isOpen, onClose }: SidebarRecruiterPr
           }}
           className={`flex items-center transition-all duration-200 ${
             isOpen 
-              ? "px-3 py-2 text-xs font-semibold rounded-lg gap-3" 
-              : "w-10 h-10 justify-center mx-auto rounded-xl"
+              ? "px-3 py-2 text-xs font-semibold rounded-lg gap-3 justify-between" 
+              : "w-10 h-10 justify-center mx-auto rounded-xl relative"
           } ${
             isActive("/recruiter/messages")
               ? "bg-slate-100 text-slate-900 shadow-sm"
@@ -201,11 +213,22 @@ export default function SidebarRecruiter({ isOpen, onClose }: SidebarRecruiterPr
           }`}
           title={!isOpen ? "Messages" : undefined}
         >
-          <Icon 
-            icon="solar:chat-round-dots-linear" 
-            className="w-5 h-5 flex-shrink-0" 
-          />
-          {isOpen && <span className="truncate">Messages</span>}
+          <div className="flex items-center gap-3">
+            <Icon 
+              icon="solar:chat-round-dots-linear" 
+              className="w-5 h-5 flex-shrink-0" 
+            />
+            {isOpen && <span className="truncate">Messages</span>}
+          </div>
+          {unreadCount > 0 && (
+            <span className={`bg-blue-600 text-white font-bold rounded-full flex items-center justify-center ${
+              isOpen
+                ? "text-[10px] px-1.5 py-0.5 min-w-[18px]"
+                : "absolute -top-1 -right-1 w-4 h-4 text-[9px] border-2 border-white"
+            }`}>
+              {unreadCount > 99 ? "99+" : unreadCount}
+            </span>
+          )}
         </Link>
 
         {/* Candidates Matching (with "New" badge when open) */}

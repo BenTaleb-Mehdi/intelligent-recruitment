@@ -1,3 +1,5 @@
+"use client";
+
 import React from "react";
 import Link from "next/link";
 import { Icon } from "@iconify/react";
@@ -10,21 +12,23 @@ const links = {
 
 export default function Footer() {
   return (
-    <footer className="bg-slate-900 text-slate-400 font-sans">
-      <div className="max-w-5xl mx-auto px-6 py-16 grid grid-cols-1 md:grid-cols-4 gap-10">
-        <div className="space-y-4 md:col-span-1">
-          <div className="flex items-center gap-2.5 select-none">
-            <div className="w-7 h-7 rounded-lg bg-blue-600 flex items-center justify-center">
-              <Icon icon="solar:stars-linear" className="w-3.5 h-3.5 text-white" />
+    <footer className="bg-slate-950 text-slate-400 font-sans border-t border-slate-900">
+      <div className="max-w-5xl mx-auto px-6 py-20 grid grid-cols-1 md:grid-cols-4 gap-12">
+        
+        {/* Brand Column */}
+        <div className="space-y-5 md:col-span-1">
+          <Link href="/" className="flex items-center gap-2.5 select-none group">
+            <div className="w-8.5 h-8.5 rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-600 flex items-center justify-center shadow-md shadow-blue-500/10">
+              <Icon icon="solar:stars-linear" className="w-4.5 h-4.5 text-white" />
             </div>
-            <span className="text-white font-bold text-base">
-              Iksa<span className="text-blue-400">tech</span>
+            <span className="text-white font-extrabold text-lg tracking-tight">
+              Iksa<span className="text-blue-500">tech</span>
             </span>
-          </div>
-          <p className="text-xs leading-relaxed text-slate-500">
+          </Link>
+          <p className="text-xs leading-relaxed text-slate-500 font-semibold">
             La plateforme de recrutement tech alimentée par l'IA pour le marché marocain.
           </p>
-          <div className="flex items-center gap-3 pt-1">
+          <div className="flex items-center gap-3 pt-2">
             {[
               { icon: "mdi:linkedin", label: "LinkedIn" },
               { icon: "mdi:twitter", label: "Twitter" },
@@ -34,25 +38,26 @@ export default function Footer() {
                 key={s.label}
                 href="#"
                 aria-label={s.label}
-                className="w-8 h-8 rounded-lg bg-slate-800 border border-slate-700 flex items-center justify-center text-slate-400 hover:text-white hover:border-blue-400 transition-colors"
+                className="w-9 h-9 rounded-xl bg-slate-900 border border-slate-800/80 flex items-center justify-center text-slate-400 hover:text-white hover:border-blue-500 hover:bg-slate-950 transition-all duration-300 shadow-sm"
               >
-                <Icon icon={s.icon} className="w-4 h-4" />
+                <Icon icon={s.icon} className="w-4.5 h-4.5" />
               </a>
             ))}
           </div>
         </div>
 
+        {/* Links Columns */}
         {Object.entries(links).map(([section, items]) => (
-          <div key={section} className="space-y-3">
-            <h4 className="text-xs font-bold uppercase tracking-widest text-slate-300">
+          <div key={section} className="space-y-4">
+            <h4 className="text-xs font-bold uppercase tracking-widest text-slate-200">
               {section}
             </h4>
-            <ul className="space-y-2">
+            <ul className="space-y-2.5">
               {items.map((item) => (
                 <li key={item}>
                   <Link
                     href="/recruiter/jobs"
-                    className="text-xs text-slate-500 hover:text-blue-400 transition-colors"
+                    className="text-xs text-slate-500 hover:text-blue-400 transition-colors duration-200 font-semibold"
                   >
                     {item}
                   </Link>
@@ -63,14 +68,15 @@ export default function Footer() {
         ))}
       </div>
 
-      <div className="border-t border-slate-800">
-        <div className="max-w-5xl mx-auto px-6 py-4 flex flex-col sm:flex-row items-center justify-between gap-2 text-[11px] text-slate-600">
+      {/* Under footer credits */}
+      <div className="border-t border-slate-900/60 bg-slate-950/80">
+        <div className="max-w-5xl mx-auto px-6 py-6 flex flex-col sm:flex-row items-center justify-between gap-4 text-[11px] text-slate-600 font-semibold">
           <span>© 2026 Iksatech. Tous droits réservés.</span>
-          <div className="flex items-center gap-4">
-            <a href="#" className="hover:text-slate-400 transition-colors">Politique de confidentialité</a>
-            <a href="#" className="hover:text-slate-400 transition-colors">CGU</a>
-            <span className="flex items-center gap-1">
-              Fait avec <Icon icon="solar:heart-linear" className="w-3 h-3 text-rose-400" /> au Maroc
+          <div className="flex items-center gap-5 flex-wrap justify-center">
+            <a href="#" className="hover:text-slate-400 transition-colors duration-200">Politique de confidentialité</a>
+            <a href="#" className="hover:text-slate-400 transition-colors duration-200">CGU</a>
+            <span className="flex items-center gap-1 select-none">
+              Fait avec <Icon icon="solar:heart-linear" className="w-3.5 h-3.5 text-rose-500 animate-pulse" /> au Maroc
             </span>
           </div>
         </div>

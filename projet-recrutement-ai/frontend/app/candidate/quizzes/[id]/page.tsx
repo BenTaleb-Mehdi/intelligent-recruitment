@@ -31,6 +31,9 @@ export default function CandidateQuizRoom() {
         if (found) {
           setQuiz(found);
           setQuestions(found.questions || []);
+          if (found.duration) {
+            setTimeLeft(found.duration * 60);
+          }
         }
       }
     } catch (e) {

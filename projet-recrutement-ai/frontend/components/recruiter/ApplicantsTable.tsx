@@ -3,6 +3,7 @@
 import React from "react";
 import Link from "next/link";
 import { Icon } from "@iconify/react";
+import { saveRecruiterConversation } from "@/lib/recruiterChat";
 
 export interface Applicant {
   id: string;
@@ -71,66 +72,87 @@ export default function ApplicantsTable({ applicants, jobId }: ApplicantsTablePr
                 >
                   <td className="py-3.5 px-4">
                     <span className="font-semibold text-slate-800 dark:text-slate-200">
-                      {applicant.name}
+                      {applicant.name || "Candidat"}
                     </span>
                   </td>
                   <td className="py-3.5 px-4">
                     <div className="flex flex-col gap-0.5">
-                      <span className="text-slate-600 dark:text-slate-400">{applicant.email}</span>
-                      <span className="text-slate-400">{applicant.phone}</span>
+                      <span className="text-slate-600 dark:text-slate-400">{applicant.email || "-"}</span>
+                      {applicant.phone ? <span className="text-slate-400">{applicant.phone}</span> : null}
                     </div>
                   </td>
                   <td className="py-3.5 px-4">
                     <span
-                      className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold border leading-none select-none ${statusStyles[applicant.status]}`}
+                      className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold border leading-none select-none ${statusStyles[applicant.status] || statusStyles["Nouveau"]}`}
                     >
-                      {applicant.status}
+                      {applicant.status || "Nouveau"}
                     </span>
                   </td>
                   <td className="py-3.5 px-4">
                     <div className="flex flex-wrap gap-1">
-                      {applicant.skills.map((skill) => (
-                        <span
-                          key={skill}
-                          className="bg-slate-100 text-slate-600 dark:bg-zinc-800 dark:text-zinc-400 text-[10px] font-semibold px-2 py-0.5 rounded-md"
-                        >
-                          {skill}
-                        </span>
-                      ))}
+                      {applicant.skills && applicant.skills.length > 0 ? (
+                        applicant.skills.map((skill) => (
+                          <span
+                            key={skill}
+                            className="bg-slate-100 text-slate-600 dark:bg-zinc-800 dark:text-zinc-400 text-[10px] font-semibold px-2 py-0.5 rounded-md"
+                          >
+                            {skill}
+                          </span>
+                        ))
+                      ) : (
+                        <span className="text-slate-400 text-[11px]">-</span>
+                      )}
                     </div>
                   </td>
                   <td className="py-3.5 px-4 text-slate-600 dark:text-slate-400">
-                    {applicant.experience}
+                    {applicant.experience || "-"}
                   </td>
                   <td className="py-3.5 px-4">
-                    <div className="flex items-center gap-1">
-                      <Icon
-                        icon="solar:star-bold"
-                        className="w-3.5 h-3.5 text-amber-400"
-                      />
-                      <span className="font-semibold text-slate-700 dark:text-slate-300">
-                        {applicant.rating}
-                      </span>
-                    </div>
+                    {applicant.rating && applicant.rating > 0 ? (
+                      <div className="flex items-center gap-1">
+                        <Icon
+                          icon="solar:star-bold"
+                          className="w-3.5 h-3.5 text-amber-400"
+                        />
+                        <span className="font-semibold text-slate-700 dark:text-slate-300">
+                          {applicant.rating}
+                        </span>
+                      </div>
+                    ) : (
+                      <span className="text-slate-400 text-[11px]">-</span>
+                    )}
                   </td>
                   <td className="py-3.5 px-4 text-slate-400">
-                    {new Date(applicant.appliedDate).toLocaleDateString(
-                      "fr-FR",
-                      {
-                        day: "numeric",
-                        month: "short",
-                        year: "numeric",
-                      }
+                    {applicant.appliedDate ? (
+                      new Date(applicant.appliedDate).toLocaleDateString(
+                        "fr-FR",
+                        {
+                          day: "numeric",
+                          month: "short",
+                          year: "numeric",
+                        }
+                      )
+                    ) : (
+                      "-"
                     )}
                   </td>
                   <td className="py-3.5 px-4 text-center">
-                    <Link
-                      href={`/recruiter/jobs/${jobId}/applicants/${applicant.id}`}
-                      className="inline-flex items-center gap-1.5 px-3 py-1.5 text-[10px] font-bold text-blue-600 bg-blue-50 hover:bg-blue-100 dark:text-blue-400 dark:bg-blue-950/20 dark:hover:bg-blue-950/40 border border-blue-100/80 dark:border-blue-900/50 rounded-lg transition-all"
-                    >
-                      <Icon icon="solar:eye-linear" className="w-3.5 h-3.5" />
-                      Détails
-                    </Link>
+                    <div className="flex items-center justify-center gap-1.5">
+                      <Link
+                        href={`/recruiter/messages?candidateId=${applicant.id}&candidateName=${encodeURIComponent(applicant.name || "")}`}
+                        className="inline-flex items-center gap-1 px-2.5 py-1.5 text-[10px] font-bold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200/80 rounded-lg transition-all"
+                      >
+                        <Icon icon="solar:chat-round-dots-bold" className="w-3.5 h-3.5 text-emerald-600" />
+                        Contacter
+                      </Link>
+                      <Link
+                        href={`/recruiter/jobs/${jobId}/applicants/${applicant.id}`}
+                        className="inline-flex items-center gap-1 px-2.5 py-1.5 text-[10px] font-bold text-blue-600 bg-blue-50 hover:bg-blue-100 dark:text-blue-400 dark:bg-blue-950/20 dark:hover:bg-blue-950/40 border border-blue-100/80 dark:border-blue-900/50 rounded-lg transition-all"
+                      >
+                        <Icon icon="solar:eye-linear" className="w-3.5 h-3.5" />
+                        Détails
+                      </Link>
+                    </div>
                   </td>
                 </tr>
               ))
@@ -140,7 +162,7 @@ export default function ApplicantsTable({ applicants, jobId }: ApplicantsTablePr
                   colSpan={8}
                   className="py-12 px-4 text-center text-slate-400 select-none"
                 >
-                  Aucun candidat trouvé pour cette recherche.
+                  Aucun candidat disponible pour cette offre.
                 </td>
               </tr>
             )}
@@ -156,57 +178,76 @@ export default function ApplicantsTable({ applicants, jobId }: ApplicantsTablePr
               <div className="flex items-start justify-between gap-3">
                 <div>
                   <span className="font-semibold text-sm text-slate-800">
-                    {applicant.name}
+                    {applicant.name || "Candidat"}
                   </span>
-                  <div className="text-xs text-slate-400 mt-0.5">{applicant.email}</div>
+                  <div className="text-xs text-slate-400 mt-0.5">{applicant.email || "-"}</div>
                 </div>
                 <span
-                  className={`shrink-0 inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold border leading-none select-none ${statusStyles[applicant.status]}`}
+                  className={`shrink-0 inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold border leading-none select-none ${statusStyles[applicant.status] || statusStyles["Nouveau"]}`}
                 >
-                  {applicant.status}
+                  {applicant.status || "Nouveau"}
                 </span>
               </div>
 
               <div className="grid grid-cols-2 gap-2 text-xs">
                 <div>
                   <span className="text-slate-400">Téléphone</span>
-                  <p className="text-slate-600 font-medium">{applicant.phone}</p>
+                  <p className="text-slate-600 font-medium">{applicant.phone || "-"}</p>
                 </div>
                 <div>
                   <span className="text-slate-400">Expérience</span>
-                  <p className="text-slate-600 font-medium">{applicant.experience}</p>
+                  <p className="text-slate-600 font-medium">{applicant.experience || "-"}</p>
                 </div>
                 <div>
                   <span className="text-slate-400">Note</span>
                   <p className="text-slate-600 font-medium inline-flex items-center gap-1">
-                    <Icon icon="solar:star-bold" className="w-3 h-3 text-amber-400" />
-                    {applicant.rating}
+                    {applicant.rating && applicant.rating > 0 ? (
+                      <>
+                        <Icon icon="solar:star-bold" className="w-3 h-3 text-amber-400" />
+                        {applicant.rating}
+                      </>
+                    ) : (
+                      "-"
+                    )}
                   </p>
                 </div>
                 <div>
                   <span className="text-slate-400">Date</span>
                   <p className="text-slate-600 font-medium">
-                    {new Date(applicant.appliedDate).toLocaleDateString("fr-FR", {
-                      day: "numeric",
-                      month: "short",
-                      year: "numeric",
-                    })}
+                    {applicant.appliedDate ? (
+                      new Date(applicant.appliedDate).toLocaleDateString("fr-FR", {
+                        day: "numeric",
+                        month: "short",
+                        year: "numeric",
+                      })
+                    ) : (
+                      "-"
+                    )}
                   </p>
                 </div>
               </div>
 
               <div className="flex flex-wrap gap-1">
-                {applicant.skills.map((skill) => (
-                  <span
-                    key={skill}
-                    className="bg-slate-100 text-slate-600 text-[10px] font-semibold px-2 py-0.5 rounded-md"
-                  >
-                    {skill}
-                  </span>
-                ))}
+                {applicant.skills && applicant.skills.length > 0 ? (
+                  applicant.skills.map((skill) => (
+                    <span
+                      key={skill}
+                      className="bg-slate-100 text-slate-600 text-[10px] font-semibold px-2 py-0.5 rounded-md"
+                    >
+                      {skill}
+                    </span>
+                  ))
+                ) : null}
               </div>
 
-              <div className="pt-1 border-t border-slate-50">
+              <div className="pt-2 border-t border-slate-100 flex items-center gap-2">
+                <Link
+                  href={`/recruiter/messages?candidateId=${applicant.id}&candidateName=${encodeURIComponent(applicant.name || "")}`}
+                  className="inline-flex items-center gap-1 px-3 py-1.5 text-[10px] font-bold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200/80 rounded-lg transition-all"
+                >
+                  <Icon icon="solar:chat-round-dots-bold" className="w-3.5 h-3.5 text-emerald-600" />
+                  Contacter
+                </Link>
                 <Link
                   href={`/recruiter/jobs/${jobId}/applicants/${applicant.id}`}
                   className="inline-flex items-center gap-1.5 px-3 py-1.5 text-[10px] font-bold text-blue-600 bg-blue-50 hover:bg-blue-100 border border-blue-100/80 rounded-lg transition-all"
@@ -219,7 +260,7 @@ export default function ApplicantsTable({ applicants, jobId }: ApplicantsTablePr
           ))
         ) : (
           <div className="py-12 px-4 text-center text-slate-400 select-none">
-            Aucun candidat trouvé pour cette recherche.
+            Aucun candidat disponible pour cette offre.
           </div>
         )}
       </div>
