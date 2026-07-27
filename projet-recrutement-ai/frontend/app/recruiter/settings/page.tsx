@@ -7,6 +7,7 @@ import { Icon } from "@iconify/react";
 import { api, ApiRecruiter } from "@/lib/api";
 import { authClient } from "@/lib/auth-client";
 import CustomSelect from "@/components/recruiter/custom-select";
+import { useAlert } from "@/contexts/AlertContext";
 
 type Tab = "profile" | "ai" | "security";
 
@@ -29,11 +30,18 @@ export default function SettingsPage() {
   const [headquarters, setHeadquarters] = useState("");
   const [description, setDescription] = useState("");
   const [logo, setLogo] = useState<string | null>(null);
+  const [iceNumber, setIceNumber] = useState("");
+  const [rcNumber, setRcNumber] = useState("");
+  const [originalIceNumber, setOriginalIceNumber] = useState("");
+  const [originalRcNumber, setOriginalRcNumber] = useState("");
+  const [verificationStatus, setVerificationStatus] = useState<"UNVERIFIED" | "PENDING_VERIFICATION" | "VERIFIED" | "REJECTED">("UNVERIFIED");
+  const [isVerifying, setIsVerifying] = useState(false);
   const [recruiterId, setRecruiterId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
-  const [showToast, setShowToast] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const { showAlert } = useAlert();
 
   // Security tab states
   const [currentPassword, setCurrentPassword] = useState("");
@@ -55,17 +63,26 @@ export default function SettingsPage() {
         setOriginalEmail(session.user.email || "");
 
         const { data: recruiters } = await api.get<{ data: ApiRecruiter[] }>("/api/recruiters");
-        const recruiter = recruiters?.find((r) => r.userId === session.user.id);
-        if (!recruiter) return;
+        let recruiter = recruiters?.find((r) => r.userId === session.user.id);
+        if (!recruiter && recruiters && recruiters.length > 0) {
+          recruiter = recruiters[0];
+        }
 
-        setRecruiterId(recruiter.id);
-        setCompanyName(recruiter.companyName || "");
-        setWebsite(recruiter.website || "");
-        setIndustry(recruiter.industry || "");
-        setTeamSize(recruiter.teamSize || "");
-        setHeadquarters(recruiter.headquarters || "");
-        setDescription(recruiter.description || "");
-        setLogo(recruiter.logo || null);
+        if (recruiter) {
+          setRecruiterId(recruiter.id);
+          setCompanyName(recruiter.companyName || "");
+          setWebsite(recruiter.website || "");
+          setIndustry(recruiter.industry || "");
+          setTeamSize(recruiter.teamSize || "");
+          setHeadquarters(recruiter.headquarters || "");
+          setDescription(recruiter.description || "");
+          setLogo(recruiter.logo || null);
+          setIceNumber(recruiter.iceNumber || "");
+          setRcNumber(recruiter.rcNumber || "");
+          setOriginalIceNumber(recruiter.iceNumber || "");
+          setOriginalRcNumber(recruiter.rcNumber || "");
+          setVerificationStatus(recruiter.verificationStatus || "UNVERIFIED");
+        }
       } catch (error) {
         console.error("Error fetching recruiter:", error);
       } finally {
@@ -76,25 +93,124 @@ export default function SettingsPage() {
     fetchRecruiter();
   }, []);
 
+  const handleVerifyCompany = async () => {
+    if (!companyName || (!iceNumber && !rcNumber)) {
+      showAlert("warning", "Veuillez indiquer le nom de l'entreprise et au moins un identifiant (ICE ou RC).");
+      return;
+    }
+
+    setIsVerifying(true);
+    try {
+      const res = await api.post<{
+        success: boolean;
+        isVerified: boolean;
+        canCreateOffer: boolean;
+        status: string;
+        message: string;
+        recruiter?: ApiRecruiter;
+      }>("/api/recruiters/verify-company", {
+        companyName,
+        iceNumber,
+        rcNumber,
+      });
+
+      if (res.isVerified) {
+        setVerificationStatus("VERIFIED");
+        showAlert("success", res.message || "Entreprise vérifiée avec succès sur Charika.ma ! Vous pouvez maintenant publier des offres d'emploi.");
+      } else {
+        setVerificationStatus("REJECTED");
+        showAlert("danger", res.message || "Échec de la vérification : Numéro ICE ou RC introuvable sur Charika.ma.");
+      }
+    } catch (err: any) {
+      setVerificationStatus("REJECTED");
+      showAlert("danger", err?.message || "Échec de la vérification. Numéro ICE ou RC non valide sur Charika.ma.");
+    } finally {
+      setIsVerifying(false);
+    }
+  };
+
   const handleSave = async () => {
-    if (!recruiterId) return;
     setIsSaving(true);
     try {
-      await api.put(`/api/recruiters/${recruiterId}`, {
-        companyName,
-        website,
-        industry,
-        teamSize,
-        headquarters,
-        description,
-        logo,
-      });
+      const { data: session } = await authClient.getSession();
+      const userId = session?.user?.id;
+
+      if (recruiterId) {
+        const iceOrRcChanged = iceNumber !== originalIceNumber || rcNumber !== originalRcNumber;
+
+        const res = await api.put<{ 
+          success: boolean; 
+          data: ApiRecruiter; 
+          verificationStatus?: "UNVERIFIED" | "PENDING_VERIFICATION" | "VERIFIED" | "REJECTED"; 
+          isVerified?: boolean; 
+          message?: string 
+        }>(`/api/recruiters/${recruiterId}`, {
+          companyName,
+          website,
+          industry,
+          teamSize,
+          headquarters,
+          description,
+          logo,
+          iceNumber,
+          rcNumber,
+        });
+
+        const newStatus = res?.data?.verificationStatus || res?.verificationStatus;
+        if (newStatus) {
+          setVerificationStatus(newStatus);
+        }
+
+        // Update original ICE/RC after a successful save
+        setOriginalIceNumber(iceNumber);
+        setOriginalRcNumber(rcNumber);
+
+        // Show verification feedback when ICE/RC changed or whenever backend ran verification
+        let verificationAlertShown = false;
+        if (iceOrRcChanged || newStatus === "VERIFIED" || newStatus === "REJECTED") {
+          if (res?.isVerified || newStatus === "VERIFIED") {
+            showAlert("success", res?.message || "Profil enregistré et entreprise vérifiée avec succès sur Charika.ma ! Vous pouvez publier des offres.");
+            verificationAlertShown = true;
+          } else if (newStatus === "REJECTED") {
+            showAlert("danger", res?.message || "Profil enregistré, mais la vérification ICE / RC a échoué sur Charika.ma.");
+            verificationAlertShown = true;
+          }
+        }
+
+        if (!verificationAlertShown) {
+          window.dispatchEvent(new Event("recruiter-updated"));
+          showAlert("success", "Profil mis à jour avec succès !");
+          return;
+        }
+      } else if (userId) {
+        const res = await api.post<{ success: boolean; data: ApiRecruiter }>("/api/recruiters", {
+          userId,
+          companyName: companyName || "Mon Entreprise",
+          website,
+          industry,
+          teamSize,
+          headquarters,
+          description,
+          logo,
+          iceNumber,
+          rcNumber,
+        });
+        if (res?.data?.id) {
+          setRecruiterId(res.data.id);
+          if (res.data.verificationStatus) {
+            setVerificationStatus(res.data.verificationStatus);
+          }
+        }
+      } else {
+        showAlert("warning", "Veuillez vous connecter pour enregistrer votre profil.");
+        return;
+      }
+
       window.dispatchEvent(new Event("recruiter-updated"));
-      setShowToast(true);
-      setTimeout(() => setShowToast(false), 3000);
+      showAlert("success", "Profil mis à jour avec succès !");
     } catch (error) {
       console.error("Error updating recruiter:", error);
-      alert("Erreur lors de la sauvegarde.");
+      showAlert("danger", "Erreur lors de la sauvegarde.");
     } finally {
       setIsSaving(false);
     }
@@ -170,7 +286,7 @@ export default function SettingsPage() {
     if (!file) return;
 
     if (file.size > 2 * 1024 * 1024) {
-      alert("Le fichier ne doit pas dépasser 2 Mo.");
+      showAlert("warning", "Le fichier ne doit pas dépasser 2 Mo.");
       return;
     }
 
@@ -208,12 +324,6 @@ export default function SettingsPage() {
 
   return (
     <div className="max-w-4xl mx-auto space-y-6 font-sans relative">
-      {showToast && (
-        <div className="fixed bottom-5 right-5 z-50 bg-emerald-600 text-white px-5 py-3.5 rounded-xl shadow-lg flex items-center gap-3 animate-slide-in select-none">
-          <Icon icon="solar:check-circle-bold" className="w-5 h-5 flex-shrink-0" />
-          <div className="text-xs font-semibold">Profil mis à jour avec succès !</div>
-        </div>
-      )}
 
       <div>
         <h2 className="text-2xl font-bold text-slate-900 tracking-tight">Paramètres</h2>
@@ -325,6 +435,95 @@ export default function SettingsPage() {
                 onChange={(e) => setHeadquarters(e.target.value)}
                 className="w-full bg-slate-50 border border-slate-200/80 rounded-xl px-4 py-2.5 text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:bg-white focus:ring-1 focus:ring-blue-600 transition-all font-medium"
               />
+            </div>
+
+            <div className="space-y-1.5">
+              <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">
+                N° ICE (Identifiant Commun de l&apos;Entreprise)
+              </label>
+              <input
+                type="text"
+                maxLength={15}
+                placeholder="002847593000012"
+                value={iceNumber}
+                onChange={(e) => setIceNumber(e.target.value)}
+                className="w-full bg-slate-50 border border-slate-200/80 rounded-xl px-4 py-2.5 text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:bg-white focus:ring-1 focus:ring-blue-600 transition-all font-medium"
+              />
+              <p className="text-[10px] text-slate-400">15 chiffres (Identifiant juridique légal)</p>
+            </div>
+
+            <div className="space-y-1.5">
+              <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">
+                N° RC (Registre du Commerce)
+              </label>
+              <input
+                type="text"
+                placeholder="123456"
+                value={rcNumber}
+                onChange={(e) => setRcNumber(e.target.value)}
+                className="w-full bg-slate-50 border border-slate-200/80 rounded-xl px-4 py-2.5 text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:bg-white focus:ring-1 focus:ring-blue-600 transition-all font-medium"
+              />
+              <p className="text-[10px] text-slate-400">Numéro d&apos;immatriculation au Registre du Commerce</p>
+            </div>
+          </div>
+
+          {/* Verification Status Card */}
+          <div className="bg-slate-50 border border-slate-200/80 rounded-2xl p-5 space-y-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div className="flex items-center gap-2.5">
+                <div className="p-2 bg-blue-100/70 rounded-xl text-blue-700">
+                  <Icon icon="solar:shield-check-bold" className="w-5 h-5" />
+                </div>
+                <div>
+                  <h4 className="text-xs font-bold text-slate-800">Vérification de l&apos;Entreprise (Charika.ma)</h4>
+                  <p className="text-[11px] text-slate-500 mt-0.5">Vérification officielle auprès du registre du commerce marocain.</p>
+                </div>
+              </div>
+              <div>
+                {verificationStatus === "VERIFIED" ? (
+                  <span className="inline-flex items-center gap-1.5 bg-emerald-100 text-emerald-800 text-[11px] font-bold px-3.5 py-1.5 rounded-full">
+                    <Icon icon="solar:check-circle-bold" className="w-4 h-4 text-emerald-600" />
+                    Vérifiée (Publication autorisée)
+                  </span>
+                ) : verificationStatus === "REJECTED" ? (
+                  <span className="inline-flex items-center gap-1.5 bg-rose-100 text-rose-800 text-[11px] font-bold px-3.5 py-1.5 rounded-full">
+                    <Icon icon="solar:close-circle-bold" className="w-4 h-4 text-rose-600" />
+                    Vérification Rejetée
+                  </span>
+                ) : (
+                  <span className="inline-flex items-center gap-1.5 bg-amber-100 text-amber-800 text-[11px] font-bold px-3.5 py-1.5 rounded-full">
+                    <Icon icon="solar:info-circle-bold" className="w-4 h-4 text-amber-600" />
+                    Non Vérifiée (Publication bloquée)
+                  </span>
+                )}
+              </div>
+            </div>
+
+
+            <div className="flex justify-between items-center pt-2 border-t border-slate-200/60">
+              <p className="text-[11px] text-slate-500">
+                {verificationStatus === "VERIFIED"
+                  ? "Votre entreprise est certifiée. Vous pouvez créer des offres d'emploi sans restriction."
+                  : "Vous ne pouvez pas créer d'offre d'emploi avant d'avoir vérifié votre entreprise."}
+              </p>
+              <button
+                type="button"
+                onClick={handleVerifyCompany}
+                disabled={isVerifying}
+                className="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs py-2.5 px-4 rounded-xl shadow-sm transition-all active:scale-[0.98] disabled:opacity-75"
+              >
+                {isVerifying ? (
+                  <>
+                    <Icon icon="solar:restart-bold" className="w-4 h-4 animate-spin" />
+                    Vérification Charika.ma...
+                  </>
+                ) : (
+                  <>
+                    <Icon icon="solar:shield-check-linear" className="w-4 h-4" />
+                    {verificationStatus === "VERIFIED" ? "Re-vérifier l'ICE / RC" : "Vérifier l'entreprise (Charika.ma)"}
+                  </>
+                )}
+              </button>
             </div>
           </div>
 

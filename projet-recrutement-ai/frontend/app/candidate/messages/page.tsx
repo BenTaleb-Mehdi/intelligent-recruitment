@@ -199,9 +199,17 @@ function CandidateMessagesContent() {
                       }`}
                     >
                       <div className="relative flex-shrink-0">
-                        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-600 to-indigo-600 text-white font-bold text-xs flex items-center justify-center shadow-xs">
-                          {conv.avatar}
-                        </div>
+                        {conv.logo || conv.recruiterImage || conv.image ? (
+                          <img
+                            src={conv.logo || conv.recruiterImage || conv.image}
+                            alt={conv.recruiterName || conv.companyName}
+                            className="w-10 h-10 rounded-xl object-cover shadow-xs border border-slate-200"
+                          />
+                        ) : (
+                          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-600 to-indigo-600 text-white font-bold text-xs flex items-center justify-center shadow-xs">
+                            {conv.avatar}
+                          </div>
+                        )}
                         {conv.online && (
                           <span className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-emerald-500 border-2 border-white rounded-full" />
                         )}
@@ -268,6 +276,7 @@ function CandidateMessagesContent() {
               currentUserRole="CANDIDATE"
               currentUserName="Mehdi Ben Taleb"
               otherUserName={formatDisplayName(activeConv.recruiterName, activeConv.companyName)}
+              otherUserLogo={activeConv.logo || activeConv.recruiterImage || activeConv.image}
               onMessageSent={() => {
                 loadConversationsFromMongo();
               }}

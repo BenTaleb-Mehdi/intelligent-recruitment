@@ -5,6 +5,9 @@ export interface RecruiterConversation {
   candidateName: string;
   candidateAvatar: string;
   candidateTitle: string;
+  candidateImage?: string;
+  logo?: string;
+  image?: string;
   lastMessage?: string;
   lastTime?: string;
   unread?: number;
@@ -18,6 +21,9 @@ export interface SaveRecruiterConversationParams {
   candidateName: string;
   candidateAvatar?: string;
   candidateTitle?: string;
+  candidateImage?: string;
+  logo?: string;
+  image?: string;
   lastMessage?: string;
   lastTime?: string;
   unread?: number;

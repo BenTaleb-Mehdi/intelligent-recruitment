@@ -11,7 +11,7 @@ export const getAllJobOffers = async (filters = {}) => {
     return prisma.jobOffer.findMany({
         where,
         include: {
-            recruiter: { select: { id: true, companyName: true } },
+            recruiter: { select: { id: true, companyName: true, logo: true, headquarters: true, iceNumber: true, rcNumber: true } },
             skills: { select: { id: true, name: true } },
             _count: { select: { applications: true } },
         },
@@ -23,7 +23,7 @@ export const getJobOfferById = async (id) => {
     return prisma.jobOffer.findUnique({
         where: { id },
         include: {
-            recruiter: { select: { id: true, companyName: true } },
+            recruiter: { select: { id: true, companyName: true, logo: true, headquarters: true, iceNumber: true, rcNumber: true } },
             skills: { select: { id: true, name: true } },
             applications: true,
             quiz: {
@@ -96,7 +96,7 @@ export const createJobOffer = async (data) => {
     const offer = await prisma.jobOffer.create({
         data,
         include: {
-            recruiter: { select: { id: true, companyName: true } },
+            recruiter: { select: { id: true, companyName: true, logo: true, headquarters: true, iceNumber: true, rcNumber: true } },
             skills: { select: { id: true, name: true } },
         },
     });
@@ -111,7 +111,7 @@ export const updateJobOffer = async (id, data, triggerWebhook = true) => {
         where: { id },
         data,
         include: {
-            recruiter: { select: { id: true, companyName: true } },
+            recruiter: { select: { id: true, companyName: true, logo: true, headquarters: true, iceNumber: true, rcNumber: true } },
             skills: { select: { id: true, name: true } },
         },
     });
@@ -135,7 +135,7 @@ export const toggleJobOfferStatus = async (id) => {
         where: { id },
         data: { status: offer.status === "OPEN" ? "CLOSED" : "OPEN" },
         include: {
-            recruiter: { select: { id: true, companyName: true } },
+            recruiter: { select: { id: true, companyName: true, logo: true, headquarters: true, iceNumber: true, rcNumber: true } },
             skills: { select: { id: true, name: true } },
         },
     });
@@ -239,7 +239,7 @@ export const updateJobOfferDescriptionAndQuiz = async (id, description, quizData
         where: { id },
         data: updateData,
         include: {
-            recruiter: { select: { id: true, companyName: true } },
+            recruiter: { select: { id: true, companyName: true, logo: true, headquarters: true, iceNumber: true, rcNumber: true } },
             skills: { select: { id: true, name: true } },
             quiz: { include: { questions: true } },
         },
@@ -299,5 +299,79 @@ export const updateJobOfferQuiz = async (jobOfferId, quizData) => {
             questions: true,
         },
     });
+};
+
+export const getJobOfferApplicants = async (jobOfferId) => {
+    const applications = await prisma.application.findMany({
+        where: { jobOfferId },
+        include: {
+            candidate: {
+                include: {
+                    user: { select: { id: true, name: true, email: true, image: true } },
+                    skills: { select: { name: true } },
+                },
+            },
+        },
+        orderBy: { appliedDate: "desc" },
+    });
+
+    if (applications.length === 0) {
+        const allCandidates = await prisma.candidate.findMany({
+            include: {
+                user: { select: { id: true, name: true, email: true, image: true } },
+                skills: { select: { name: true } },
+            },
+        });
+
+        return allCandidates.map((c) => ({
+            id: c.id,
+            candidateId: c.id,
+            name: c.user?.name || "Candidat Anonyme",
+            email: c.user?.email || "",
+            image: c.user?.image || "",
+            phone: c.phone || "",
+            location: c.location || "",
+            bio: c.bio || "",
+            status: "Nouveau",
+            appliedDate: new Date().toISOString(),
+            skills: c.skills ? c.skills.map((s) => s.name) : [],
+            experience: c.experience || "",
+            github: c.githubUrl || "",
+            linkedin: c.linkedinUrl || "",
+            portfolio: c.portfolioUrl || "",
+            cv: c.cvPath || "",
+            rating: c.employabilityScore ? Number((c.employabilityScore / 20).toFixed(1)) : 4.0,
+        }));
+    }
+
+    const statusMap = {
+        NEW: "Nouveau",
+        INTERVIEW: "Entretien",
+        IN_PROGRESS: "En cours",
+        REJECTED: "Refusé",
+    };
+
+    return applications.map((app) => ({
+        id: app.id,
+        applicationId: app.id,
+        candidateId: app.candidateId,
+        name: app.candidate?.user?.name || "Candidat Anonyme",
+        email: app.candidate?.user?.email || "",
+        image: app.candidate?.user?.image || "",
+        phone: app.candidate?.phone || "",
+        location: app.candidate?.location || "",
+        bio: app.candidate?.bio || "",
+        status: statusMap[app.status] || "Nouveau",
+        appliedDate: app.appliedDate ? new Date(app.appliedDate).toISOString() : "",
+        skills: app.candidate?.skills ? app.candidate.skills.map((s) => s.name) : [],
+        experience: app.candidate?.experience || "",
+        github: app.candidate?.githubUrl || "",
+        linkedin: app.candidate?.linkedinUrl || "",
+        portfolio: app.candidate?.portfolioUrl || "",
+        cv: app.candidate?.cvPath || "",
+        rating: app.matchScore ? Number((app.matchScore / 20).toFixed(1)) : 0,
+        matchScore: app.matchScore || 0,
+        matchExplanation: app.matchExplanation || "",
+    }));
 };
 

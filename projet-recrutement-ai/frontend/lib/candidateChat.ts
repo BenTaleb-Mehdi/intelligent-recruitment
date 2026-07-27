@@ -5,6 +5,9 @@ export interface CandidateConversation {
   companyName: string;
   role: string;
   avatar: string;
+  recruiterImage?: string;
+  logo?: string;
+  image?: string;
   lastMessage?: string;
   lastTime?: string;
   unread?: number;

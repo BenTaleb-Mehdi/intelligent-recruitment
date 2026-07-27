@@ -25,6 +25,7 @@ interface ChatBoxProps {
   currentUserRole: "CANDIDATE" | "RECRUITER";
   currentUserName: string;
   otherUserName?: string;
+  otherUserLogo?: string;
   onMessageSent?: (content: string) => void;
 }
 
@@ -34,6 +35,7 @@ export default function ChatBox({
   currentUserRole,
   currentUserName,
   otherUserName = "Correspondant",
+  otherUserLogo,
   onMessageSent,
 }: ChatBoxProps) {
   const [messages, setMessages] = useState<Message[]>([]);
@@ -262,9 +264,17 @@ export default function ChatBox({
       <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-slate-50/50">
         <div className="flex items-center gap-3">
           <div className="relative">
-            <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-blue-600 to-indigo-600 text-white font-bold flex items-center justify-center text-sm shadow">
-              {getInitials(otherUserName)}
-            </div>
+            {otherUserLogo ? (
+              <img
+                src={otherUserLogo}
+                alt={otherUserName}
+                className="w-10 h-10 rounded-full object-cover shadow border border-slate-200"
+              />
+            ) : (
+              <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-blue-600 to-indigo-600 text-white font-bold flex items-center justify-center text-sm shadow">
+                {getInitials(otherUserName)}
+              </div>
+            )}
             <span
               className={`absolute bottom-0 right-0 w-3 h-3 rounded-full border-2 border-white ${
                 connected ? "bg-emerald-500" : "bg-slate-300"

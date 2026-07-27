@@ -38,6 +38,13 @@ enum CandidateStatus {
   EMPLOYED
 }
 
+enum VerificationStatus {
+  UNVERIFIED
+  PENDING_VERIFICATION
+  VERIFIED
+  REJECTED
+}
+
 // ==========================================================
 // 🟦 MYSQL DATABASE (RELATIONAL CORE)
 // ==========================================================
@@ -142,6 +149,10 @@ model Recruiter {
   headquarters     String?
   description      String?    @db.Text
   logo             String?    @db.LongText
+  iceNumber        String?
+  rcNumber         String?
+  verificationStatus VerificationStatus @default(UNVERIFIED) @map("verification_status")
+  isProfileComplete  Boolean            @default(false) @map("is_profile_complete")
   contractTypes    String?    @db.LongText
   locations        String?    @db.LongText
   experienceLevels String?    @db.LongText

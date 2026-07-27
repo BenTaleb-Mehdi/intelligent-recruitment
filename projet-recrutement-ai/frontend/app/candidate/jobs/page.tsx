@@ -240,6 +240,7 @@ export default function CandidateJobsFeed() {
               currentUserRole="CANDIDATE"
               currentUserName="Mehdi Ben Taleb"
               otherUserName={`${activeChatJob.company} (Recruteur)`}
+              otherUserLogo={activeChatJob.logo}
             />
           </div>
         </div>

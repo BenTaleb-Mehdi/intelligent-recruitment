@@ -112,6 +112,9 @@ function RecruiterMessagesContent() {
     candidateName: c.candidateName,
     candidateAvatar: c.candidateAvatar,
     candidateTitle: c.candidateTitle,
+    candidateImage: c.candidateImage,
+    logo: c.logo,
+    image: c.image,
     lastMessage: c.lastMessage || "Échange démarré",
     lastTime: c.lastTime || "Aujourd'hui",
     unread: c.unread || 0,
@@ -199,6 +202,7 @@ function RecruiterMessagesContent() {
               currentUserRole="RECRUITER"
               currentUserName="Recruteur"
               otherUserName={activeConv.candidateName}
+              otherUserLogo={activeConv.candidateImage || activeConv.logo || activeConv.image}
               onMessageSent={() => {
                 loadConversationsFromMongo();
               }}

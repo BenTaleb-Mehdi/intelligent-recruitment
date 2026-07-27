@@ -10,6 +10,7 @@ import { api } from "@/lib/api";
 import type { ApiJobOffer } from "@/lib/api";
 
 import QuizQuestionCard, { QuizQuestion } from "@/components/recruiter/QuizQuestionCard";
+import { useAlert } from "@/contexts/AlertContext";
 
 interface QuizData {
   jobTitle: string;
@@ -53,6 +54,8 @@ export default function JobQuizPage() {
   const [endDate, setEndDate] = useState<CalendarDate>(parseDate("2026-07-14"));
   const [endTime, setEndTime] = useState("23:59");
   const [duration, setDuration] = useState("30");
+
+  const { showAlert } = useAlert();
 
   const fetchQuiz = async (showMainSpinner = false) => {
     try {
@@ -191,7 +194,7 @@ export default function JobQuizPage() {
       setRejected(false);
     } catch (err: any) {
       console.error("Error validating quiz:", err);
-      alert(err.message || "Erreur lors de la validation du quiz.");
+      showAlert("danger", err.message || "Erreur lors de la validation du quiz.");
     } finally {
       setValidating(false);
     }
@@ -207,7 +210,7 @@ export default function JobQuizPage() {
       setValidated(false);
     } catch (err: any) {
       console.error("Error rejecting quiz:", err);
-      alert(err.message || "Erreur lors du rejet du quiz.");
+      showAlert("danger", err.message || "Erreur lors du rejet du quiz.");
     } finally {
       setValidating(false);
     }
@@ -238,7 +241,7 @@ export default function JobQuizPage() {
             } else if (attempts >= maxAttempts) {
               clearInterval(pollInterval);
               setValidating(false);
-              alert("La régénération prend plus de temps que prévu. Elle sera actualisée plus tard.");
+              showAlert("warning", "La régénération prend plus de temps que prévu. Elle sera actualisée plus tard.");
             }
           } else if (attempts >= maxAttempts) {
              clearInterval(pollInterval);
@@ -253,7 +256,7 @@ export default function JobQuizPage() {
       
     } catch (err: any) {
       console.error("Error triggering regeneration:", err);
-      alert(err.message || "Erreur lors du déclenchement de la régénération.");
+      showAlert("danger", err.message || "Erreur lors du déclenchement de la régénération.");
       setValidating(false);
     }
   };
@@ -284,6 +287,7 @@ export default function JobQuizPage() {
 
   return (
     <div className="max-w-4xl mx-auto space-y-6 font-sans">
+
       {/* Header */}
       <div className="flex items-center gap-3">
         <Link

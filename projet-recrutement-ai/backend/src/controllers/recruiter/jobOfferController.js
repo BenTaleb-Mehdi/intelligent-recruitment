@@ -1,5 +1,4 @@
 import * as jobOfferService from "../../services/jobOfferService.js";
-import prisma from "../../config/db.js";
 
 export const getAllJobOffers = async (req, res) => {
     try {
@@ -60,27 +59,6 @@ export const createJobOffer = async (req, res) => {
         }
 
         const offer = await jobOfferService.createJobOffer(data);
-
-        if (process.env.N8N_WEBHOOK_URL) {
-            fetch(process.env.N8N_WEBHOOK_URL, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    id: offer.id,
-                    title: offer.title,
-                    skills: skills || [],
-                    contractType: offer.contractType,
-                    locationType: offer.locationType,
-                    experienceYears: offer.experienceYears,
-                    location: offer.location,
-                    salary: offer.salary,
-                    description: offer.description,
-                }),
-            }).catch((err) => {
-                console.error("Error calling n8n webhook:", err);
-            });
-        }
-
         res.status(201).json({ success: true, data: offer });
     } catch (error) {
         console.error("Error creating job offer:", error);
@@ -118,23 +96,6 @@ export const updateJobOffer = async (req, res) => {
         }
 
         const updated = await jobOfferService.updateJobOffer(req.params.id, data);
-        if (process.env.N8N_WEBHOOK_URL && (title || contractType || location || experienceYears || skills)) {
-            fetch(process.env.N8N_WEBHOOK_URL, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    id: updated.id,
-                    title: updated.title,
-                    contractType: updated.contractType,
-                    location: updated.location, 
-                    experienceYears: updated.experienceYears,
-                    skills: updated.skills ? updated.skills.map(s => s.name).join(', ') : "",
-                    salary: updated.salary
-                }),
-            }).catch((err) => {
-                console.error("Error calling n8n webhook on update:", err);
-            });
-        }
         res.status(200).json({ success: true, data: updated });
     } catch (error) {
         console.error("Error updating job offer:", error);
@@ -231,7 +192,6 @@ export const updateDescriptionFromWebhook = async (req, res) => {
             }
         }
 
-        // Pass triggerWebhook = false via calling custom service method
         const updated = await jobOfferService.updateJobOfferDescriptionAndQuiz(id, description, normalizedQuiz);
         if (!updated) {
             return res.status(404).json({ success: false, error: "Job offer not found" });
@@ -251,9 +211,7 @@ export const regenerateJobOfferDescription = async (req, res) => {
             return res.status(404).json({ success: false, error: "Job offer not found" });
         }
 
-        // Trigger the webhook again
         await jobOfferService.triggerN8NWebhook(offer);
-
         res.status(200).json({ success: true, message: "Regeneration triggered successfully" });
     } catch (error) {
         console.error("Error regenerating job offer description:", error);
@@ -264,83 +222,8 @@ export const regenerateJobOfferDescription = async (req, res) => {
 export const getJobOfferApplicants = async (req, res) => {
     try {
         const { id } = req.params;
-        const applications = await prisma.application.findMany({
-            where: { jobOfferId: id },
-            include: {
-                candidate: {
-                    include: {
-                        user: { select: { id: true, name: true, email: true, image: true } },
-                        skills: { select: { name: true } },
-                    },
-                },
-            },
-            orderBy: { appliedDate: "desc" },
-        });
-
-        if (applications.length === 0) {
-            const allCandidates = await prisma.candidate.findMany({
-                include: {
-                    user: { select: { id: true, name: true, email: true, image: true } },
-                    skills: { select: { name: true } },
-                },
-            });
-
-            const formattedCandidates = allCandidates.map((c) => ({
-                id: c.id,
-                candidateId: c.id,
-                name: c.user?.name || "Candidat Anonyme",
-                email: c.user?.email || "",
-                image: c.user?.image || "",
-                phone: c.phone || "",
-                location: c.location || "",
-                bio: c.bio || "",
-                status: "Nouveau",
-                appliedDate: new Date().toISOString(),
-                skills: c.skills ? c.skills.map((s) => s.name) : [],
-                experience: c.experience || "",
-                github: c.githubUrl || "",
-                linkedin: c.linkedinUrl || "",
-                portfolio: c.portfolioUrl || "",
-                cv: c.cvPath || "",
-                rating: c.employabilityScore ? Number((c.employabilityScore / 20).toFixed(1)) : 4.0,
-            }));
-
-            return res.status(200).json({ success: true, data: formattedCandidates });
-        }
-
-        const formatted = applications.map((app) => {
-            const statusMap = {
-                NEW: "Nouveau",
-                INTERVIEW: "Entretien",
-                IN_PROGRESS: "En cours",
-                REJECTED: "Refusé",
-            };
-
-            return {
-                id: app.id,
-                applicationId: app.id,
-                candidateId: app.candidateId,
-                name: app.candidate?.user?.name || "Candidat Anonyme",
-                email: app.candidate?.user?.email || "",
-                image: app.candidate?.user?.image || "",
-                phone: app.candidate?.phone || "",
-                location: app.candidate?.location || "",
-                bio: app.candidate?.bio || "",
-                status: statusMap[app.status] || "Nouveau",
-                appliedDate: app.appliedDate ? new Date(app.appliedDate).toISOString() : "",
-                skills: app.candidate?.skills ? app.candidate.skills.map((s) => s.name) : [],
-                experience: app.candidate?.experience || "",
-                github: app.candidate?.githubUrl || "",
-                linkedin: app.candidate?.linkedinUrl || "",
-                portfolio: app.candidate?.portfolioUrl || "",
-                cv: app.candidate?.cvPath || "",
-                rating: app.matchScore ? Number((app.matchScore / 20).toFixed(1)) : 0,
-                matchScore: app.matchScore || 0,
-                matchExplanation: app.matchExplanation || "",
-            };
-        });
-
-        return res.status(200).json({ success: true, data: formatted });
+        const formattedApplicants = await jobOfferService.getJobOfferApplicants(id);
+        return res.status(200).json({ success: true, data: formattedApplicants });
     } catch (error) {
         console.error("Error fetching job offer applicants:", error);
         return res.status(500).json({ success: false, error: "Internal server error" });
@@ -360,4 +243,3 @@ export const updateJobOfferQuiz = async (req, res) => {
         res.status(500).json({ success: false, error: "Internal server error" });
     }
 };
-

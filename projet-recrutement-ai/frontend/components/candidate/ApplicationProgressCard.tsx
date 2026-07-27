@@ -19,6 +19,7 @@ export interface Application {
   candidateId?: string;
   candidateName?: string;
   company: string;
+  logo?: string;
   role: string;
   appliedDate: string;
   status: string; // "quiz-pending" | "interviewing" | "rejected" | other statuses
@@ -151,6 +152,7 @@ export default function ApplicationProgressCard({ application }: ApplicationProg
               currentUserRole="CANDIDATE"
               currentUserName={application.candidateName || "Candidat"}
               otherUserName={application.company}
+              otherUserLogo={application.logo}
             />
           </div>
         </div>

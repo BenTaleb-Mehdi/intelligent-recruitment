@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Icon } from "@iconify/react";
 import { authClient } from "@/lib/auth-client";
 import { api, ApiRecruiter, ApiDropdownItem, DropdownType } from "@/lib/api";
+import { useAlert } from "@/contexts/AlertContext";
 
 const TYPE_LABELS: Record<DropdownType, string> = {
   CONTRACT_TYPE: "Types de contrat",
@@ -29,6 +30,8 @@ export default function DropdownsPage() {
   const [items, setItems] = useState<ApiDropdownItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState<string | null>(null);
+
+  const { showAlert } = useAlert();
 
   const [activeType, setActiveType] = useState<DropdownType>("CONTRACT_TYPE");
 
@@ -81,7 +84,7 @@ export default function DropdownsPage() {
       setItems((prev) => [...prev, data]);
       setNewValues((prev) => ({ ...prev, [type]: "" }));
     } catch (error: any) {
-      alert(error.message || "Erreur lors de l'ajout");
+      showAlert("danger", error.message || "Erreur lors de l'ajout");
     } finally {
       setSaving(null);
     }
@@ -100,7 +103,7 @@ export default function DropdownsPage() {
       setEditingId(null);
       setEditValue("");
     } catch (error: any) {
-      alert(error.message || "Erreur lors de la modification");
+      showAlert("danger", error.message || "Erreur lors de la modification");
     } finally {
       setSaving(null);
     }
@@ -114,7 +117,7 @@ export default function DropdownsPage() {
       await api.delete(`/api/dropdown-lists/${id}`);
       setItems((prev) => prev.filter((item) => item.id !== id));
     } catch (error: any) {
-      alert(error.message || "Erreur lors de la suppression");
+      showAlert("danger", error.message || "Erreur lors de la suppression");
     } finally {
       setSaving(null);
     }
