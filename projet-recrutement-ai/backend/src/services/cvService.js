@@ -16,12 +16,16 @@ export const triggerN8nCvWebhookAsync = (cvDoc, eventType = "CV_UPLOADED") => {
         return;
     }
 
+    const publicBaseUrl = process.env.BACKEND_PUBLIC_URL || "https://dripping-hangup-detonator.ngrok-free.dev";
+
     const payload = {
         cvId: cvDoc._id ? cvDoc._id.toString() : cvDoc.id,
         event: eventType, // 'CV_UPLOADED' | 'CV_EDITED'
         userId: cvDoc.userId,
         fileId: cvDoc.fileId ? cvDoc.fileId.toString() : undefined,
         originalName: cvDoc.originalName,
+        fileUrl: `${publicBaseUrl}/api/cvs/${cvDoc._id}/file`,
+        downloadUrl: `${publicBaseUrl}/api/cvs/${cvDoc.userId}/download`,
         status: cvDoc.status || "PROCESSING",
         timestamp: new Date().toISOString(),
     };
