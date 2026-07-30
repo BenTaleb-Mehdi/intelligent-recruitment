@@ -10,6 +10,14 @@ import CvUploader from "@/components/candidate/CvUploader";
 import DeveloperConnections from "@/components/candidate/DeveloperConnections";
 import { api } from "@/lib/api";
 
+export interface WorkExperienceItem {
+  id: string;
+  company: string;
+  role: string;
+  period: string;
+  description: string;
+}
+
 const getInitials = (name: string) => {
   return name
     .split(" ")
@@ -31,10 +39,30 @@ export default function CandidateProfile() {
     name: "Mehdi Ben Taleb",
     email: "m.bentaleb@example.com",
     headline: "Full-Stack Developer",
+    bio: "Passionate full-stack developer specializing in modern web applications, cloud architecture, and AI-driven solutions.",
+    location: "Casablanca, Morocco",
     phone: "+212 600-000000",
     portfolio: "https://bentaleb.dev",
     avatarUrl: "/avatar-mehdi.png"
   });
+
+  // Work Experience list state
+  const [experiences, setExperiences] = useState<WorkExperienceItem[]>([
+    {
+      id: "1",
+      company: "Tech Solutions Inc.",
+      role: "Senior Full-Stack Developer",
+      period: "2023 - Present",
+      description: "Led development of scalable web applications using Next.js, Node.js, and TypeScript. Managed REST/GraphQL API services, automated deployments, and optimized database queries."
+    },
+    {
+      id: "2",
+      company: "Innovate Digital Agency",
+      role: "Frontend Engineer",
+      period: "2021 - 2023",
+      description: "Designed responsive interactive user interfaces with React and Tailwind CSS. Built reusable design system components and improved core web vitals speed score by 40%."
+    }
+  ]);
 
   // Skills lists state
   const [skills, setSkills] = useState({
@@ -45,6 +73,7 @@ export default function CandidateProfile() {
 
   // UI edit toggle states
   const [isEditingProfile, setIsEditingProfile] = useState(false);
+  const [isEditingExperience, setIsEditingExperience] = useState(false);
   const [isEditingSkills, setIsEditingSkills] = useState(false);
 
   // New skill inputs
@@ -60,16 +89,44 @@ export default function CandidateProfile() {
       if (response.success && response.data) {
         const profile = response.data;
         setPersonalInfo({
-          name: profile.user.name,
-          email: profile.user.email,
+          name: profile.user?.name || "Candidate Name",
+          email: profile.user?.email || "",
           headline: profile.title || "Full-Stack Developer",
+          bio: profile.bio || "",
+          location: profile.location || "",
           phone: profile.phone || "",
           portfolio: profile.portfolioUrl || "",
-          avatarUrl: profile.user.image || ""
+          avatarUrl: profile.user?.image || ""
         });
         setFileName(profile.cvPath || "");
-        
-        const skillNames = profile.skills.map((s: any) => s.name);
+
+        // Parse experience string or JSON
+        if (profile.experience) {
+          try {
+            const parsed = JSON.parse(profile.experience);
+            if (Array.isArray(parsed) && parsed.length > 0) {
+              setExperiences(parsed);
+            } else if (typeof profile.experience === "string" && profile.experience.trim()) {
+              setExperiences([{
+                id: "1",
+                company: "Previous Experience",
+                role: profile.title || "Developer",
+                period: "",
+                description: profile.experience
+              }]);
+            }
+          } catch {
+            setExperiences([{
+              id: "1",
+              company: "Previous Experience",
+              role: profile.title || "Developer",
+              period: "",
+              description: String(profile.experience)
+            }]);
+          }
+        }
+
+        const skillNames = profile.skills ? profile.skills.map((s: any) => s.name) : [];
         setSkills({
           core: skillNames,
           database: [],
@@ -86,10 +143,11 @@ export default function CandidateProfile() {
     fetchProfile();
   }, []);
 
-  // Save changes
+  // Save changes to backend
   const saveProfile = async (
-    updatedPersonalInfo: typeof personalInfo,
-    updatedSkills: typeof skills,
+    updatedPersonalInfo: typeof personalInfo = personalInfo,
+    updatedSkills: typeof skills = skills,
+    updatedExperiences: WorkExperienceItem[] = experiences,
     updatedFileName = fileName
   ) => {
     try {
@@ -99,10 +157,15 @@ export default function CandidateProfile() {
         ...updatedSkills.ai
       ];
 
+      const serializedExp = JSON.stringify(updatedExperiences);
+
       const response: any = await api.put("/api/candidates/profile", {
         name: updatedPersonalInfo.name,
         image: updatedPersonalInfo.avatarUrl || undefined,
         title: updatedPersonalInfo.headline,
+        bio: updatedPersonalInfo.bio,
+        location: updatedPersonalInfo.location,
+        experience: serializedExp,
         phone: updatedPersonalInfo.phone,
         portfolioUrl: updatedPersonalInfo.portfolio,
         skills: flatSkills,
@@ -110,11 +173,14 @@ export default function CandidateProfile() {
       });
 
       if (response.success) {
-        // Fallback sync payload for localStorage listeners
         const payload = {
           name: updatedPersonalInfo.name,
           email: updatedPersonalInfo.email,
           headline: updatedPersonalInfo.headline,
+          bio: updatedPersonalInfo.bio,
+          location: updatedPersonalInfo.location,
+          experiences: updatedExperiences,
+          experience: serializedExp,
           phone: updatedPersonalInfo.phone,
           portfolio: updatedPersonalInfo.portfolio,
           avatarUrl: updatedPersonalInfo.avatarUrl,
@@ -137,7 +203,7 @@ export default function CandidateProfile() {
         const dataUrl = reader.result as string;
         const updated = { ...personalInfo, avatarUrl: dataUrl };
         setPersonalInfo(updated);
-        saveProfile(updated, skills);
+        saveProfile(updated, skills, experiences);
       };
       reader.readAsDataURL(file);
     }
@@ -148,12 +214,14 @@ export default function CandidateProfile() {
       {/* Title */}
       <div>
         <h1 className="text-2xl font-bold tracking-tight">My Profile & CV</h1>
-        <p className="text-sm text-default-550">Manage your CV upload documents, connect external developer portfolios, and review extracted AI skillsets.</p>
+        <p className="text-sm text-default-550">Manage your CV upload documents, work experiences, and developer portfolio.</p>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
-        {/* Left 2 Cols: CV Upload, Personal Info and Developer Sync */}
+        {/* Left 2 Cols: Personal Info, Work Experience & CV Upload */}
         <div className="lg:col-span-2 space-y-8">
+          
+          {/* Card 1: Personal Details */}
           <Card className="relative">
             {!isEditingProfile ? (
               <button 
@@ -166,7 +234,7 @@ export default function CandidateProfile() {
             ) : (
               <button 
                 onClick={() => {
-                  saveProfile(personalInfo, skills);
+                  saveProfile(personalInfo, skills, experiences);
                   setIsEditingProfile(false);
                 }}
                 className="absolute top-4 right-4 w-8 h-8 rounded-full flex items-center justify-center bg-emerald-50 hover:bg-emerald-100 text-emerald-700 dark:bg-emerald-950/20 dark:hover:bg-emerald-900/30 dark:text-emerald-450 transition-all duration-200 border border-emerald-100 dark:border-emerald-900/35 hover:scale-105 active:scale-95 shadow-sm z-10"
@@ -182,7 +250,7 @@ export default function CandidateProfile() {
               </div>
             </Card.Header>
             <Card.Content className="space-y-4">
-              {/* Avatar row with click-to-upload */}
+              {/* Avatar row */}
               <div className="flex items-center gap-4 border-b border-default-100 dark:border-default-50/10 pb-4">
                 <input 
                   type="file" 
@@ -214,13 +282,16 @@ export default function CandidateProfile() {
                 <div>
                   <h4 className="text-base font-bold text-default-900 dark:text-default-50">{personalInfo.name}</h4>
                   <p className="text-xs text-default-450 mt-0.5">{personalInfo.headline}</p>
+                  {personalInfo.location && (
+                    <p className="text-xs text-default-500 mt-1 font-medium">{personalInfo.location}</p>
+                  )}
                 </div>
               </div>
 
               {isEditingProfile && (
                 <div className="flex items-center gap-2.5 p-3 bg-blue-50/60 dark:bg-blue-950/10 border border-blue-100/50 dark:border-blue-900/50 rounded-xl text-xs text-blue-700 dark:text-blue-400 font-medium select-none mb-4 animate-pulse">
                   <Icon icon="solar:user-bold-duotone" className="w-5 h-5 text-blue-500 shrink-0" />
-                  <span>You are editing parsed resume data. Updates will synchronize automatically.</span>
+                  <span>You are editing personal details. Updates will synchronize automatically.</span>
                 </div>
               )}
 
@@ -264,6 +335,16 @@ export default function CandidateProfile() {
                       />
                     </div>
                     <div className="md:col-span-2">
+                      <label className="block text-xs font-bold text-default-450 uppercase mb-1.5">Location</label>
+                      <input
+                        type="text"
+                        value={personalInfo.location || ""}
+                        onChange={(e) => setPersonalInfo({ ...personalInfo, location: e.target.value })}
+                        className="w-full px-3 py-2 text-sm border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 transition-all font-medium text-slate-800 dark:text-slate-200"
+                        placeholder="e.g. Casablanca, Morocco"
+                      />
+                    </div>
+                    <div className="md:col-span-2">
                       <label className="block text-xs font-bold text-default-450 uppercase mb-1.5">Portfolio Link</label>
                       <input
                         type="url"
@@ -271,6 +352,16 @@ export default function CandidateProfile() {
                         onChange={(e) => setPersonalInfo({ ...personalInfo, portfolio: e.target.value })}
                         className="w-full px-3 py-2 text-sm border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 transition-all font-medium text-slate-800 dark:text-slate-200"
                         placeholder="https://yourportfolio.com"
+                      />
+                    </div>
+                    <div className="md:col-span-2">
+                      <label className="block text-xs font-bold text-default-450 uppercase mb-1.5">Bio / About Me</label>
+                      <textarea
+                        rows={3}
+                        value={personalInfo.bio || ""}
+                        onChange={(e) => setPersonalInfo({ ...personalInfo, bio: e.target.value })}
+                        className="w-full px-3 py-2 text-sm border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 transition-all font-medium text-slate-800 dark:text-slate-200 resize-none"
+                        placeholder="Tell recruiters about yourself, your background, and your key strengths..."
                       />
                     </div>
                   </div>
@@ -287,56 +378,225 @@ export default function CandidateProfile() {
                   </div>
                 </div>
               ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <h5 className="text-[10px] font-bold text-default-400 uppercase tracking-wider mb-1">Full Name</h5>
-                    <p className="text-sm font-semibold text-default-800 dark:text-default-200">{personalInfo.name}</p>
+                <div className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <h5 className="text-[10px] font-bold text-default-400 uppercase tracking-wider mb-1">Full Name</h5>
+                      <p className="text-sm font-semibold text-default-800 dark:text-default-200">{personalInfo.name}</p>
+                    </div>
+                    <div>
+                      <h5 className="text-[10px] font-bold text-default-400 uppercase tracking-wider mb-1">Email Address</h5>
+                      <p className="text-sm font-semibold text-default-800 dark:text-default-200">{personalInfo.email}</p>
+                    </div>
+                    <div>
+                      <h5 className="text-[10px] font-bold text-default-400 uppercase tracking-wider mb-1">Professional Headline</h5>
+                      <p className="text-sm font-semibold text-default-800 dark:text-default-200">{personalInfo.headline}</p>
+                    </div>
+                    <div>
+                      <h5 className="text-[10px] font-bold text-default-400 uppercase tracking-wider mb-1">Phone Number</h5>
+                      <p className="text-sm font-semibold text-default-800 dark:text-default-200">{personalInfo.phone || "-"}</p>
+                    </div>
+                    <div>
+                      <h5 className="text-[10px] font-bold text-default-400 uppercase tracking-wider mb-1">Location</h5>
+                      <p className="text-sm font-semibold text-default-800 dark:text-default-200">
+                        {personalInfo.location || <span className="text-default-450 italic font-normal">Not specified</span>}
+                      </p>
+                    </div>
+                    <div>
+                      <h5 className="text-[10px] font-bold text-default-400 uppercase tracking-wider mb-1">Portfolio Link</h5>
+                      <p className="text-sm font-semibold text-default-800 dark:text-default-200">
+                        {personalInfo.portfolio ? (
+                          <a 
+                            href={personalInfo.portfolio} 
+                            target="_blank" 
+                            rel="noopener noreferrer" 
+                            className="text-blue-600 dark:text-blue-400 hover:underline"
+                          >
+                            {personalInfo.portfolio.replace("https://", "").replace("http://", "")}
+                          </a>
+                        ) : (
+                          <span className="text-default-450 italic font-normal">No link connected</span>
+                        )}
+                      </p>
+                    </div>
                   </div>
-                  <div>
-                    <h5 className="text-[10px] font-bold text-default-400 uppercase tracking-wider mb-1">Email Address</h5>
-                    <p className="text-sm font-semibold text-default-800 dark:text-default-200">{personalInfo.email}</p>
-                  </div>
-                  <div>
-                    <h5 className="text-[10px] font-bold text-default-400 uppercase tracking-wider mb-1">Professional Headline</h5>
-                    <p className="text-sm font-semibold text-default-800 dark:text-default-200">{personalInfo.headline}</p>
-                  </div>
-                  <div>
-                    <h5 className="text-[10px] font-bold text-default-400 uppercase tracking-wider mb-1">Phone Number</h5>
-                    <p className="text-sm font-semibold text-default-800 dark:text-default-200">{personalInfo.phone}</p>
-                  </div>
-                  <div className="md:col-span-2">
-                    <h5 className="text-[10px] font-bold text-default-400 uppercase tracking-wider mb-1">Portfolio Link</h5>
-                    <p className="text-sm font-semibold text-default-800 dark:text-default-200">
-                      {personalInfo.portfolio ? (
-                        <a 
-                          href={personalInfo.portfolio} 
-                          target="_blank" 
-                          rel="noopener noreferrer" 
-                          className="text-blue-600 dark:text-blue-400 hover:underline inline-flex items-center gap-1.5"
-                        >
-                          {personalInfo.portfolio.replace("https://", "").replace("http://", "")}
-                          <Icon icon="solar:arrow-right-up-linear" className="w-3.5 h-3.5 text-blue-500 shrink-0" />
-                        </a>
-                      ) : (
-                        <span className="text-default-450 italic">No link connected</span>
-                      )}
-                    </p>
+
+                  {/* Bio Section */}
+                  <div className="pt-2 border-t border-default-100 dark:border-default-50/10">
+                    <h5 className="text-[10px] font-bold text-default-400 uppercase tracking-wider mb-1">Bio / About Me</h5>
+                    {personalInfo.bio ? (
+                      <p className="text-sm text-default-700 dark:text-default-300 leading-relaxed font-normal bg-slate-50/70 dark:bg-slate-900/50 p-3.5 rounded-xl border border-slate-200/50 dark:border-slate-800">
+                        {personalInfo.bio}
+                      </p>
+                    ) : (
+                      <p className="text-xs text-default-450 italic font-normal">No biography provided yet. Click edit to add your bio.</p>
+                    )}
                   </div>
                 </div>
               )}
             </Card.Content>
           </Card>
 
-          {/* CV Drag & Drop Card */}
+          {/* Card 2: Independent Work Experience Section */}
+          <Card className="relative">
+            {!isEditingExperience ? (
+              <button 
+                onClick={() => setIsEditingExperience(true)}
+                className="absolute top-4 right-4 w-8 h-8 rounded-full flex items-center justify-center bg-blue-50 hover:bg-blue-100 text-blue-600 dark:bg-blue-950/20 dark:hover:bg-blue-900/30 dark:text-blue-400 transition-all duration-200 border border-blue-100 dark:border-blue-900/35 hover:scale-105 active:scale-95 shadow-sm z-10"
+                title="Edit Work Experience"
+              >
+                <Icon icon="solar:pen-linear" className="w-4 h-4" />
+              </button>
+            ) : (
+              <button 
+                onClick={() => {
+                  saveProfile(personalInfo, skills, experiences);
+                  setIsEditingExperience(false);
+                }}
+                className="absolute top-4 right-4 w-8 h-8 rounded-full flex items-center justify-center bg-emerald-50 hover:bg-emerald-100 text-emerald-700 dark:bg-emerald-950/20 dark:hover:bg-emerald-900/30 dark:text-emerald-450 transition-all duration-200 border border-emerald-100 dark:border-emerald-900/35 hover:scale-105 active:scale-95 shadow-sm z-10"
+                title="Save Work Experience"
+              >
+                <Icon icon="solar:check-read-bold" className="w-4 h-4" />
+              </button>
+            )}
+            <Card.Header className="flex justify-between items-center pb-2 pr-14">
+              <div>
+                <Card.Title>Work Experience</Card.Title>
+                <Card.Description>Companies, roles, and career responsibilities</Card.Description>
+              </div>
+            </Card.Header>
+            <Card.Content className="space-y-6">
+              {isEditingExperience ? (
+                <div className="space-y-6">
+                  {experiences.map((exp, index) => (
+                    <div key={exp.id || index} className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50 space-y-3 relative group">
+                      <button
+                        onClick={() => {
+                          const updated = experiences.filter((_, i) => i !== index);
+                          setExperiences(updated);
+                        }}
+                        className="absolute top-3 right-3 text-slate-400 hover:text-rose-600 transition-colors p-1"
+                        title="Remove experience"
+                      >
+                        <Icon icon="solar:trash-bin-trash-linear" className="w-4 h-4" />
+                      </button>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pr-8">
+                        <div>
+                          <label className="block text-xs font-bold text-default-450 uppercase mb-1">Company Name</label>
+                          <input
+                            type="text"
+                            value={exp.company}
+                            onChange={(e) => {
+                              const updated = [...experiences];
+                              updated[index].company = e.target.value;
+                              setExperiences(updated);
+                            }}
+                            placeholder="e.g. Acme Corp"
+                            className="w-full px-3 py-1.5 text-xs border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 font-medium text-slate-800 dark:text-slate-200"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-xs font-bold text-default-450 uppercase mb-1">Role / Position</label>
+                          <input
+                            type="text"
+                            value={exp.role}
+                            onChange={(e) => {
+                              const updated = [...experiences];
+                              updated[index].role = e.target.value;
+                              setExperiences(updated);
+                            }}
+                            placeholder="e.g. Senior Software Engineer"
+                            className="w-full px-3 py-1.5 text-xs border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 font-medium text-slate-800 dark:text-slate-200"
+                          />
+                        </div>
+                        <div className="md:col-span-2">
+                          <label className="block text-xs font-bold text-default-450 uppercase mb-1">Period / Dates</label>
+                          <input
+                            type="text"
+                            value={exp.period}
+                            onChange={(e) => {
+                              const updated = [...experiences];
+                              updated[index].period = e.target.value;
+                              setExperiences(updated);
+                            }}
+                            placeholder="e.g. 2022 - Present"
+                            className="w-full px-3 py-1.5 text-xs border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 font-medium text-slate-800 dark:text-slate-200"
+                          />
+                        </div>
+                        <div className="md:col-span-2">
+                          <label className="block text-xs font-bold text-default-450 uppercase mb-1">What did you do / Responsibilities</label>
+                          <textarea
+                            rows={3}
+                            value={exp.description}
+                            onChange={(e) => {
+                              const updated = [...experiences];
+                              updated[index].description = e.target.value;
+                              setExperiences(updated);
+                            }}
+                            placeholder="Describe your achievements, responsibilities, projects, and tech stack used..."
+                            className="w-full px-3 py-1.5 text-xs border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 font-medium text-slate-800 dark:text-slate-200 resize-none"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+
+                  <button
+                    onClick={() => {
+                      setExperiences([
+                        ...experiences,
+                        { id: Date.now().toString(), company: "", role: "", period: "", description: "" }
+                      ]);
+                    }}
+                    className="w-full py-2.5 px-4 border border-dashed border-blue-300 dark:border-blue-800/60 hover:border-blue-500 bg-blue-50/50 hover:bg-blue-50 dark:bg-blue-950/20 text-blue-600 dark:text-blue-400 rounded-xl text-xs font-semibold flex items-center justify-center gap-2 transition-all"
+                  >
+                    + Add Work Position
+                  </button>
+                </div>
+              ) : (
+                <div className="space-y-6">
+                  {experiences && experiences.length > 0 ? (
+                    experiences.map((exp, index) => (
+                      <div 
+                        key={exp.id || index} 
+                        className={`pb-5 ${index !== experiences.length - 1 ? 'border-b border-default-100 dark:border-default-50/10' : ''}`}
+                      >
+                        <div className="flex flex-wrap items-baseline justify-between gap-2 mb-1">
+                          <div>
+                            <h4 className="text-sm font-bold text-default-900 dark:text-default-50">{exp.role || "Position"}</h4>
+                            <p className="text-xs font-semibold text-blue-600 dark:text-blue-400">{exp.company}</p>
+                          </div>
+                          {exp.period && (
+                            <span className="text-[11px] font-medium text-default-450 bg-slate-100 dark:bg-slate-800/80 px-2.5 py-0.5 rounded-full">
+                              {exp.period}
+                            </span>
+                          )}
+                        </div>
+                        {exp.description && (
+                          <p className="text-xs text-default-600 dark:text-default-400 leading-relaxed mt-2 whitespace-pre-line">
+                            {exp.description}
+                          </p>
+                        )}
+                      </div>
+                    ))
+                  ) : (
+                    <p className="text-xs text-default-450 italic">No work experience added yet. Click edit to add your positions.</p>
+                  )}
+                </div>
+              )}
+            </Card.Content>
+          </Card>
+
+          {/* Card 3: CV Drag & Drop */}
           <CvUploader
             fileName={fileName}
             onChange={(name) => {
               setFileName(name);
-              saveProfile(personalInfo, skills, name);
+              saveProfile(personalInfo, skills, experiences, name);
             }}
           />
 
-          {/* External Integrations */}
+          {/* Card 4: External Integrations */}
           <DeveloperConnections
             isGitHubConnected={isGitHubConnected}
             onGitHubToggle={setIsGitHubConnected}
@@ -359,7 +619,7 @@ export default function CandidateProfile() {
             ) : (
               <button 
                 onClick={() => {
-                  saveProfile(personalInfo, skills);
+                  saveProfile(personalInfo, skills, experiences);
                   setIsEditingSkills(false);
                 }}
                 className="absolute top-4 right-4 w-8 h-8 rounded-full flex items-center justify-center bg-emerald-50 hover:bg-emerald-100 text-emerald-700 dark:bg-emerald-950/20 dark:hover:bg-emerald-900/30 dark:text-emerald-450 transition-all duration-200 border border-emerald-100 dark:border-emerald-900/35 hover:scale-105 active:scale-95 shadow-sm z-10"
@@ -398,7 +658,7 @@ export default function CandidateProfile() {
                             const updated = skills.core.filter(s => s !== skill);
                             const newSkills = { ...skills, core: updated };
                             setSkills(newSkills);
-                            saveProfile(personalInfo, newSkills);
+                            saveProfile(personalInfo, newSkills, experiences);
                           }}
                           className="hover:scale-125 focus:outline-none transition-transform"
                           title={`Remove ${skill}`}
@@ -424,7 +684,7 @@ export default function CandidateProfile() {
                           if (newCoreSkill.trim()) {
                             const newSkills = { ...skills, core: [...skills.core, newCoreSkill.trim()] };
                             setSkills(newSkills);
-                            saveProfile(personalInfo, newSkills);
+                            saveProfile(personalInfo, newSkills, experiences);
                             setNewCoreSkill("");
                           }
                         }
@@ -436,7 +696,7 @@ export default function CandidateProfile() {
                         if (newCoreSkill.trim()) {
                           const newSkills = { ...skills, core: [...skills.core, newCoreSkill.trim()] };
                           setSkills(newSkills);
-                          saveProfile(personalInfo, newSkills);
+                          saveProfile(personalInfo, newSkills, experiences);
                           setNewCoreSkill("");
                         }
                       }}
@@ -464,7 +724,7 @@ export default function CandidateProfile() {
                             const updated = skills.database.filter(s => s !== skill);
                             const newSkills = { ...skills, database: updated };
                             setSkills(newSkills);
-                            saveProfile(personalInfo, newSkills);
+                            saveProfile(personalInfo, newSkills, experiences);
                           }}
                           className="hover:scale-125 focus:outline-none transition-transform"
                           title={`Remove ${skill}`}
@@ -490,7 +750,7 @@ export default function CandidateProfile() {
                           if (newDbSkill.trim()) {
                             const newSkills = { ...skills, database: [...skills.database, newDbSkill.trim()] };
                             setSkills(newSkills);
-                            saveProfile(personalInfo, newSkills);
+                            saveProfile(personalInfo, newSkills, experiences);
                             setNewDbSkill("");
                           }
                         }
@@ -502,7 +762,7 @@ export default function CandidateProfile() {
                         if (newDbSkill.trim()) {
                           const newSkills = { ...skills, database: [...skills.database, newDbSkill.trim()] };
                           setSkills(newSkills);
-                          saveProfile(personalInfo, newSkills);
+                          saveProfile(personalInfo, newSkills, experiences);
                           setNewDbSkill("");
                         }
                       }}
@@ -530,7 +790,7 @@ export default function CandidateProfile() {
                             const updated = skills.ai.filter(s => s !== skill);
                             const newSkills = { ...skills, ai: updated };
                             setSkills(newSkills);
-                            saveProfile(personalInfo, newSkills);
+                            saveProfile(personalInfo, newSkills, experiences);
                           }}
                           className="hover:scale-125 focus:outline-none transition-transform"
                           title={`Remove ${skill}`}
@@ -556,7 +816,7 @@ export default function CandidateProfile() {
                           if (newAiSkill.trim()) {
                             const newSkills = { ...skills, ai: [...skills.ai, newAiSkill.trim()] };
                             setSkills(newSkills);
-                            saveProfile(personalInfo, newSkills);
+                            saveProfile(personalInfo, newSkills, experiences);
                             setNewAiSkill("");
                           }
                         }
@@ -568,7 +828,7 @@ export default function CandidateProfile() {
                         if (newAiSkill.trim()) {
                           const newSkills = { ...skills, ai: [...skills.ai, newAiSkill.trim()] };
                           setSkills(newSkills);
-                          saveProfile(personalInfo, newSkills);
+                          saveProfile(personalInfo, newSkills, experiences);
                           setNewAiSkill("");
                         }
                       }}

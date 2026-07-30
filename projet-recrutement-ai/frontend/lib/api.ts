@@ -88,6 +88,24 @@ export interface RecruiterStats {
     avgMatchScore: number;
 }
 
+export interface ApiCandidate {
+    id: string;
+    userId: string;
+    title: string;
+    bio?: string;
+    phone?: string;
+    location?: string;
+    experience?: string;
+    status?: string;
+    employabilityScore?: number;
+    githubUrl?: string;
+    linkedinUrl?: string;
+    portfolioUrl?: string;
+    cvPath?: string;
+    user: { id: string; name: string; email: string; image?: string };
+    skills: { id: string; name: string }[];
+}
+
 export interface ApiApplication {
     id: string;
     status: string;
@@ -112,3 +130,4 @@ export interface ApiDropdownItem {
     value: string;
     createdAt: string;
 }
+

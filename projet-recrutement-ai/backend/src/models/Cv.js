@@ -28,8 +28,8 @@ const cvSchema = new mongoose.Schema(
     },
     status: {
       type: String,
-      enum: ["uploaded", "parsed", "failed"],
-      default: "uploaded",
+      enum: ["PROCESSING", "uploaded", "parsed", "failed"],
+      default: "PROCESSING",
     },
     parsedData: {
       type: mongoose.Schema.Types.Mixed,

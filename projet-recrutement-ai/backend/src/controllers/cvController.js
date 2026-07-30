@@ -1,24 +1,25 @@
 import * as cvService from "../services/cvService.js";
 
 /**
- * Controller: Upload CV file to MongoDB GridFS
+ * Controller: Upload CV PDF file to MongoDB GridFS and start processing
+ * POST /api/cvs/upload
  */
 export const uploadCv = async (req, res) => {
     try {
         if (!req.file) {
             return res.status(400).json({
                 success: false,
-                message: "Upload failed",
-                error: "No PDF file provided.",
+                message: "Bad Request",
+                error: "No PDF file provided in request. Please attach a file under key 'cv'.",
             });
         }
 
         const userId = req.user.id;
-        const cvDoc = await cvService.uploadCvToGridFS(userId, req.file);
+        const { cvDoc, eventType } = await cvService.uploadOrUpdateCvToGridFS(userId, req.file);
 
         return res.status(200).json({
             success: true,
-            message: "CV uploaded successfully to MongoDB GridFS",
+            message: eventType === "CV_EDITED" ? "CV updated successfully. Processing initiated." : "CV uploaded successfully. Processing initiated.",
             data: {
                 id: cvDoc._id,
                 userId: cvDoc.userId,
@@ -26,7 +27,8 @@ export const uploadCv = async (req, res) => {
                 originalName: cvDoc.originalName,
                 mimeType: cvDoc.mimeType,
                 size: cvDoc.size,
-                status: cvDoc.status,
+                status: cvDoc.status, // "PROCESSING"
+                event: eventType, // 'CV_UPLOADED' | 'CV_EDITED'
                 viewUrl: `/api/cvs/${userId}/view`,
                 downloadUrl: `/api/cvs/${userId}/download`,
                 n8nFileUrl: `/api/cvs/${userId}/file`,
@@ -38,10 +40,18 @@ export const uploadCv = async (req, res) => {
         console.error("Error in uploadCv controller:", error);
         return res.status(500).json({
             success: false,
-            message: "Failed to upload CV to MongoDB GridFS",
-            error: error.message,
+            message: "Internal Server Error",
+            error: error.message || "Failed to process CV upload.",
         });
     }
+};
+
+/**
+ * Controller: Edit / Replace existing CV PDF file in MongoDB GridFS
+ * PUT /api/cvs/edit
+ */
+export const editCv = async (req, res) => {
+    return uploadCv(req, res);
 };
 
 /**
@@ -56,7 +66,7 @@ export const downloadCv = async (req, res) => {
         if (!cvDoc) {
             return res.status(404).json({
                 success: false,
-                message: "CV not found",
+                message: "Not Found",
                 error: "No CV document found for this user.",
             });
         }
@@ -75,8 +85,8 @@ export const downloadCv = async (req, res) => {
             if (!res.headersSent) {
                 res.status(500).json({
                     success: false,
-                    message: "Error streaming file from GridFS",
-                    error: error.message,
+                    message: "Internal Server Error",
+                    error: "Error streaming file from database.",
                 });
             }
         });
@@ -86,7 +96,7 @@ export const downloadCv = async (req, res) => {
         console.error("Error in downloadCv controller:", error);
         return res.status(500).json({
             success: false,
-            message: "Error downloading CV",
+            message: "Internal Server Error",
             error: error.message,
         });
     }
@@ -104,7 +114,7 @@ export const viewCv = async (req, res) => {
         if (!cvDoc) {
             return res.status(404).json({
                 success: false,
-                message: "CV not found",
+                message: "Not Found",
                 error: "No CV document found for this user.",
             });
         }
@@ -123,8 +133,8 @@ export const viewCv = async (req, res) => {
             if (!res.headersSent) {
                 res.status(500).json({
                     success: false,
-                    message: "Error streaming file from GridFS",
-                    error: error.message,
+                    message: "Internal Server Error",
+                    error: "Error streaming file inline from database.",
                 });
             }
         });
@@ -134,7 +144,7 @@ export const viewCv = async (req, res) => {
         console.error("Error in viewCv controller:", error);
         return res.status(500).json({
             success: false,
-            message: "Error viewing CV",
+            message: "Internal Server Error",
             error: error.message,
         });
     }
@@ -152,7 +162,7 @@ export const getCvFileForN8n = async (req, res) => {
         if (!cvDoc) {
             return res.status(404).json({
                 success: false,
-                message: "CV not found for n8n workflow",
+                message: "Not Found",
                 error: "No CV file found for this userId.",
             });
         }
@@ -170,8 +180,8 @@ export const getCvFileForN8n = async (req, res) => {
             if (!res.headersSent) {
                 res.status(500).json({
                     success: false,
-                    message: "Failed to stream PDF for n8n",
-                    error: error.message,
+                    message: "Internal Server Error",
+                    error: "Failed to stream PDF for n8n workflow.",
                 });
             }
         });
@@ -181,7 +191,7 @@ export const getCvFileForN8n = async (req, res) => {
         console.error("Error in getCvFileForN8n controller:", error);
         return res.status(500).json({
             success: false,
-            message: "Error fetching CV file for n8n",
+            message: "Internal Server Error",
             error: error.message,
         });
     }
@@ -199,28 +209,28 @@ export const deleteCv = async (req, res) => {
         if (!deleted) {
             return res.status(404).json({
                 success: false,
-                message: "CV not found",
+                message: "Not Found",
                 error: "No CV document found to delete.",
             });
         }
 
         return res.status(200).json({
             success: true,
-            message: "CV file and metadata deleted successfully from MongoDB GridFS",
+            message: "CV file and metadata deleted successfully.",
             data: { userId },
         });
     } catch (error) {
         console.error("Error in deleteCv controller:", error);
         return res.status(500).json({
             success: false,
-            message: "Error deleting CV",
+            message: "Internal Server Error",
             error: error.message,
         });
     }
 };
 
 /**
- * Controller: Get CV metadata details
+ * Controller: Get CV metadata status
  * GET /api/cvs/:userId
  */
 export const getCvStatus = async (req, res) => {
@@ -231,7 +241,7 @@ export const getCvStatus = async (req, res) => {
         if (!cvDoc) {
             return res.status(404).json({
                 success: false,
-                message: "CV metadata not found",
+                message: "Not Found",
                 error: "No CV record found.",
             });
         }
@@ -243,7 +253,7 @@ export const getCvStatus = async (req, res) => {
     } catch (error) {
         return res.status(500).json({
             success: false,
-            message: "Error fetching CV status",
+            message: "Internal Server Error",
             error: error.message,
         });
     }
