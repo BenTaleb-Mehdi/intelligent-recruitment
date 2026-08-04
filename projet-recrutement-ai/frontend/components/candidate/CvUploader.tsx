@@ -35,6 +35,11 @@ export default function CvUploader({ fileName, onChange }: CvUploaderProps) {
     }
 
     setIsUploading(true);
+    setAlertInfo({
+      status: "warning",
+      title: "Analyzing CV & Parsing Profile Details",
+      description: "Please wait a moment while the AI parses your resume. Your profile details, experiences, education, languages, and projects will update automatically.",
+    });
 
     try {
       const formData = new FormData();
@@ -47,7 +52,7 @@ export default function CvUploader({ fileName, onChange }: CvUploaderProps) {
         setAlertInfo({
           status: "success",
           title: "CV Uploaded Successfully",
-          description: "Your PDF resume has been stored directly inside MongoDB GridFS.",
+          description: "Your resume has been uploaded. AI extraction is now running to populate your profile details, education, languages, projects, and experiences automatically.",
         });
       } else {
         setAlertInfo({
@@ -104,7 +109,6 @@ export default function CvUploader({ fileName, onChange }: CvUploaderProps) {
           <Card.Title>Curriculum Vitae (CV)</Card.Title>
           <Card.Description>Upload your resume (PDF format only)</Card.Description>
         </div>
-        <Icon icon="solar:document-text-bold-duotone" className="text-xl text-accent" />
       </Card.Header>
       <Card.Content className="space-y-6">
         {alertInfo && (

@@ -26,7 +26,6 @@ export default function DeveloperConnections({
           <Card.Title>Developer Connections</Card.Title>
           <Card.Description>Sync project metrics for verification (Proof-based hiring)</Card.Description>
         </div>
-        <Icon icon="solar:link-bold-duotone" className="text-xl text-accent" />
       </Card.Header>
       <Card.Content className="space-y-6">
         {/* GitHub connection */}

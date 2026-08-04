@@ -45,4 +45,14 @@ export const uploadCv = async (req, res) => {
     }
 };
 
+export const getDataAI = async (req, res) => {
+    try {
+        const dataAI = await profileService.getDataAIByUserId(req.user.id);
+        res.status(200).json({ success: true, data: dataAI });
+    } catch (error) {
+        console.error("Error in getDataAI controller:", error);
+        res.status(500).json({ success: false, error: error.message || "Internal server error" });
+    }
+};
+
 

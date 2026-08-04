@@ -11,6 +11,7 @@ const router = Router();
 router.get("/api/candidates/profile", protectDashboard, profileController.getCandidateProfile);
 router.put("/api/candidates/profile", protectDashboard, profileController.updateCandidateProfile);
 router.post("/api/candidates/upload-cv", protectDashboard, handleCvUploadMiddleware, profileController.uploadCv);
+router.get("/api/candidates/data-ai", protectDashboard, profileController.getDataAI);
 
 
 

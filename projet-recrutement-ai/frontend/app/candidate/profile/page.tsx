@@ -18,6 +18,19 @@ export interface WorkExperienceItem {
   description: string;
 }
 
+export interface EducationItem {
+  degree: string;
+  institution: string;
+  year: string;
+}
+
+export interface ProjectItem {
+  name: string;
+  description: string;
+  technologies: string[];
+  link: string | null;
+}
+
 const getInitials = (name: string) => {
   return name
     .split(" ")
@@ -36,102 +49,324 @@ export default function CandidateProfile() {
 
   // Profile details state
   const [personalInfo, setPersonalInfo] = useState({
-    name: "Mehdi Ben Taleb",
-    email: "m.bentaleb@example.com",
-    headline: "Full-Stack Developer",
-    bio: "Passionate full-stack developer specializing in modern web applications, cloud architecture, and AI-driven solutions.",
-    location: "Casablanca, Morocco",
-    phone: "+212 600-000000",
-    portfolio: "https://bentaleb.dev",
-    avatarUrl: "/avatar-mehdi.png"
+    name: "",
+    email: "",
+    headline: "",
+    bio: "",
+    location: "",
+    phone: "",
+    portfolio: "",
+    linkedin: "",
+    github: "",
+    avatarUrl: ""
   });
 
   // Work Experience list state
-  const [experiences, setExperiences] = useState<WorkExperienceItem[]>([
-    {
-      id: "1",
-      company: "Tech Solutions Inc.",
-      role: "Senior Full-Stack Developer",
-      period: "2023 - Present",
-      description: "Led development of scalable web applications using Next.js, Node.js, and TypeScript. Managed REST/GraphQL API services, automated deployments, and optimized database queries."
-    },
-    {
-      id: "2",
-      company: "Innovate Digital Agency",
-      role: "Frontend Engineer",
-      period: "2021 - 2023",
-      description: "Designed responsive interactive user interfaces with React and Tailwind CSS. Built reusable design system components and improved core web vitals speed score by 40%."
-    }
-  ]);
+  const [experiences, setExperiences] = useState<WorkExperienceItem[]>([]);
+
+  // Education list state
+  const [educationList, setEducationList] = useState<EducationItem[]>([]);
+
+  // Communication languages state
+  const [languages, setLanguages] = useState<string[]>([]);
+
+  // Projects list state
+  const [projectsList, setProjectsList] = useState<ProjectItem[]>([]);
 
   // Skills lists state
   const [skills, setSkills] = useState({
-    core: ["React 19", "Next.js", "TypeScript", "Node.js", "Tailwind CSS"],
-    database: ["Prisma", "MySQL", "MongoDB", "Git", "Docker"],
-    ai: ["Python", "FastAPI", "TensorFlow"]
+    core: [] as string[],
+    database: [] as string[],
+    ai: [] as string[]
   });
 
   // UI edit toggle states
   const [isEditingProfile, setIsEditingProfile] = useState(false);
   const [isEditingExperience, setIsEditingExperience] = useState(false);
   const [isEditingSkills, setIsEditingSkills] = useState(false);
+  const [isEditingEducation, setIsEditingEducation] = useState(false);
+  const [isEditingProjects, setIsEditingProjects] = useState(false);
+  const [isEditingLanguages, setIsEditingLanguages] = useState(false);
 
   // New skill inputs
   const [newCoreSkill, setNewCoreSkill] = useState("");
   const [newDbSkill, setNewDbSkill] = useState("");
   const [newAiSkill, setNewAiSkill] = useState("");
+  const [newLanguage, setNewLanguage] = useState("");
+
+  // dataAI state from MongoDB
+  const [dataAI, setDataAI] = useState<any>(null);
+  const [isPollingAI, setIsPollingAI] = useState(false);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const mergeAIData = (aiData: any) => {
+    if (!aiData) return;
+    const parsed = aiData.parsedData || aiData;
+
+    setPersonalInfo((prev) => {
+      const nameVal = parsed.fullName || parsed.name || parsed.candidateName || prev.name;
+      const headlineVal = parsed.title || parsed.headline || parsed.role || parsed.position || prev.headline;
+      const bioVal = parsed.about || parsed.bio || parsed.summary || parsed.profileSummary || parsed.about || prev.bio;
+      const locationVal = parsed.location || parsed.address || prev.location;
+      const phoneVal = parsed.contacts?.phone || parsed.phone || parsed.telephone || parsed.phoneNumber || prev.phone;
+      const portfolioVal = parsed.contacts?.portfolio || parsed.portfolio || parsed.portfolioUrl || parsed.website || prev.portfolio;
+      const linkedinVal = parsed.contacts?.linkedin || parsed.linkedin || prev.linkedin;
+      const githubVal = parsed.contacts?.github || parsed.github || prev.github;
+
+      return {
+        ...prev,
+        name: prev.name && prev.name !== "Candidate Name" && prev.name !== "Mehdi Ben Taleb" ? prev.name : nameVal,
+        headline: prev.headline && prev.headline !== "Full-Stack Developer" ? prev.headline : headlineVal,
+        bio: prev.bio && !prev.bio.startsWith("Passionate full-stack developer") ? prev.bio : bioVal,
+        location: prev.location && prev.location !== "Casablanca, Morocco" ? prev.location : locationVal,
+        phone: prev.phone && prev.phone !== "+212 600-000000" ? prev.phone : phoneVal,
+        portfolio: prev.portfolio && prev.portfolio !== "https://bentaleb.dev" ? prev.portfolio : portfolioVal,
+        linkedin: prev.linkedin && prev.linkedin !== "" ? prev.linkedin : linkedinVal,
+        github: prev.github && prev.github !== "" ? prev.github : githubVal,
+      };
+    });
+
+    const aiSkills = parsed.technicalSkills || parsed.skills || [];
+    if (aiSkills && aiSkills.length > 0) {
+      let skillStrings: string[] = [];
+      if (Array.isArray(aiSkills)) {
+        skillStrings = aiSkills.map((s: any) => (typeof s === "string" ? s : s.name || s.skill || "")).filter(Boolean);
+      }
+      if (skillStrings.length > 0) {
+        setSkills((prev) => ({
+          ...prev,
+          core: Array.from(new Set([...prev.core, ...skillStrings]))
+        }));
+      }
+    }
+
+    const rawExp = parsed.experience || parsed.experiences || parsed.workExperience || parsed.positions;
+    if (Array.isArray(rawExp) && rawExp.length > 0) {
+      setExperiences(rawExp.map((item: any, idx: number) => ({
+        id: String(idx + 1),
+        company: item.company || item.companyName || "Previous Company",
+        role: item.title || item.role || item.position || "Developer",
+        period: item.duration || item.period || (item.startDate ? `${item.startDate} - ${item.endDate || "Present"}` : ""),
+        description: item.description || item.summary || item.responsibilities || ""
+      })));
+    }
+
+    const rawEdu = parsed.education;
+    if (Array.isArray(rawEdu) && rawEdu.length > 0) {
+      setEducationList(rawEdu.map((item: any) => ({
+        degree: item.degree || item.diploma || "Degree",
+        institution: item.institution || item.school || "Institution",
+        year: item.year || item.period || ""
+      })));
+    }
+
+    const rawLangs = parsed.languages;
+    if (Array.isArray(rawLangs) && rawLangs.length > 0) {
+      setLanguages(rawLangs);
+    }
+
+    const rawProj = parsed.projects;
+    if (Array.isArray(rawProj) && rawProj.length > 0) {
+      setProjectsList(rawProj.map((item: any) => ({
+        name: item.name || item.projectName || "Project Name",
+        description: item.description || item.summary || "",
+        technologies: Array.isArray(item.technologies) ? item.technologies : [],
+        link: item.link || null
+      })));
+    }
+  };
+
+  const fetchDataAI = async () => {
+    try {
+      const response: any = await api.get("/api/candidates/data-ai");
+      if (response.success && response.data) {
+        const aiData = response.data;
+        setDataAI(aiData);
+        mergeAIData(aiData);
+      }
+    } catch (err) {
+      console.error("Error loading dataAI:", err);
+    }
+  };
+
+  const pollDataAI = () => {
+    setIsPollingAI(true);
+    let attempts = 0;
+    const interval = setInterval(async () => {
+      attempts++;
+      try {
+        const response: any = await api.get("/api/candidates/data-ai");
+        if (response.success && response.data) {
+          const aiData = response.data;
+          setDataAI(aiData);
+          mergeAIData(aiData);
+          clearInterval(interval);
+          setIsPollingAI(false);
+        }
+      } catch (err) {
+        console.error("Polling error:", err);
+      }
+
+      if (attempts >= 15) {
+        clearInterval(interval);
+        setIsPollingAI(false);
+      }
+    }, 4000);
+  };
 
   const fetchProfile = async () => {
     try {
       const response: any = await api.get("/api/candidates/profile");
       if (response.success && response.data) {
         const profile = response.data;
+        const aiData = profile.dataAI || null;
+        if (aiData) {
+          setDataAI(aiData);
+        } else {
+          fetchDataAI();
+        }
+
+        const parsed = aiData?.parsedData || aiData || {};
+
+        const name = (profile.user?.name && profile.user?.name !== "Mehdi Ben Taleb" && profile.user?.name !== "Candidate Name") 
+          ? profile.user.name 
+          : (parsed.fullName || parsed.name || parsed.candidateName || profile.user?.name || "Candidate Name");
+        const email = profile.user?.email || parsed.contacts?.email || parsed.email || "";
+        const headline = (profile.title && profile.title !== "Developer" && profile.title !== "Full-Stack Developer") 
+          ? profile.title 
+          : (parsed.title || parsed.headline || parsed.role || "Developer");
+        const bio = (profile.bio && !profile.bio.startsWith("Passionate full-stack developer"))
+          ? profile.bio
+          : (parsed.about || parsed.bio || parsed.summary || "");
+        const location = profile.location || parsed.location || parsed.address || "";
+        const phone = profile.phone || parsed.contacts?.phone || parsed.phone || "";
+        const portfolio = profile.portfolioUrl || parsed.contacts?.portfolio || parsed.portfolio || "";
+        const linkedin = profile.linkedinUrl || parsed.contacts?.linkedin || parsed.linkedin || "";
+        const github = profile.githubUrl || parsed.contacts?.github || parsed.github || "";
+        const avatarUrl = profile.user?.image || "";
+
         setPersonalInfo({
-          name: profile.user?.name || "Candidate Name",
-          email: profile.user?.email || "",
-          headline: profile.title || "Full-Stack Developer",
-          bio: profile.bio || "",
-          location: profile.location || "",
-          phone: profile.phone || "",
-          portfolio: profile.portfolioUrl || "",
-          avatarUrl: profile.user?.image || ""
+          name,
+          email,
+          headline,
+          bio,
+          location,
+          phone,
+          portfolio,
+          linkedin,
+          github,
+          avatarUrl
         });
+
         setFileName(profile.cvPath || "");
 
-        // Parse experience string or JSON
+        // 1. Experiences resolution
+        let loadedExp: WorkExperienceItem[] = [];
+
         if (profile.experience) {
           try {
-            const parsed = JSON.parse(profile.experience);
-            if (Array.isArray(parsed) && parsed.length > 0) {
-              setExperiences(parsed);
-            } else if (typeof profile.experience === "string" && profile.experience.trim()) {
-              setExperiences([{
-                id: "1",
-                company: "Previous Experience",
-                role: profile.title || "Developer",
-                period: "",
-                description: profile.experience
-              }]);
+            const parsedExp = JSON.parse(profile.experience);
+            if (Array.isArray(parsedExp) && parsedExp.length > 0 && parsedExp[0].company !== "Tech Solutions Inc.") {
+              loadedExp = parsedExp;
             }
-          } catch {
-            setExperiences([{
-              id: "1",
-              company: "Previous Experience",
-              role: profile.title || "Developer",
-              period: "",
-              description: String(profile.experience)
-            }]);
+          } catch {}
+        }
+
+        if (loadedExp.length === 0 && parsed) {
+          const rawExp = parsed.experience || parsed.experiences || parsed.workExperience || parsed.positions;
+          if (Array.isArray(rawExp) && rawExp.length > 0) {
+            loadedExp = rawExp.map((item: any, idx: number) => ({
+              id: String(idx + 1),
+              company: item.company || item.companyName || "Previous Company",
+              role: item.title || item.role || item.position || "Developer",
+              period: item.duration || item.period || (item.startDate ? `${item.startDate} - ${item.endDate || "Present"}` : ""),
+              description: item.description || item.summary || item.responsibilities || ""
+            }));
           }
         }
 
-        const skillNames = profile.skills ? profile.skills.map((s: any) => s.name) : [];
-        setSkills({
-          core: skillNames,
-          database: [],
-          ai: []
-        });
+        if (loadedExp.length > 0) {
+          setExperiences(loadedExp);
+        }
+
+        // 2. Education resolution
+        if (parsed.education) {
+          const rawEdu = parsed.education;
+          if (Array.isArray(rawEdu) && rawEdu.length > 0) {
+            setEducationList(rawEdu.map((item: any) => ({
+              degree: item.degree || item.diploma || "Degree",
+              institution: item.institution || item.school || "Institution",
+              year: item.year || item.period || ""
+            })));
+          }
+        }
+
+        // 2.5. Languages resolution
+        if (parsed.languages) {
+          const rawLangs = parsed.languages;
+          if (Array.isArray(rawLangs) && rawLangs.length > 0) {
+            setLanguages(rawLangs);
+          }
+        }
+
+        // 2.7. Projects resolution
+        if (parsed.projects) {
+          const rawProj = parsed.projects;
+          if (Array.isArray(rawProj) && rawProj.length > 0) {
+            setProjectsList(rawProj.map((item: any) => ({
+              name: item.name || item.projectName || "Project Name",
+              description: item.description || item.summary || "",
+              technologies: Array.isArray(item.technologies) ? item.technologies : [],
+              link: item.link || null
+            })));
+          }
+        }
+
+        // 3. Skills resolution
+        const dbSkills = profile.skills ? profile.skills.map((s: any) => s.name) : [];
+        let aiSkillNames: string[] = [];
+        const aiSkills = parsed.technicalSkills || parsed.skills || [];
+        if (Array.isArray(aiSkills)) {
+          aiSkillNames = aiSkills.map((s: any) => (typeof s === "string" ? s : s.name || s.skill || "")).filter(Boolean);
+        }
+
+        const mergedCoreSkills = Array.from(new Set([...dbSkills, ...aiSkillNames]));
+
+        const currentSkills = {
+          core: mergedCoreSkills,
+          database: [] as string[],
+          ai: [] as string[]
+        };
+
+        setSkills(currentSkills);
+
+        // Sync details to localStorage so top navbar updates instantly
+        const payload = {
+          name,
+          email,
+          headline,
+          bio,
+          location,
+          phone,
+          portfolio,
+          avatarUrl,
+          personalInfo: {
+            name,
+            email,
+            headline,
+            bio,
+            location,
+            phone,
+            portfolio,
+            linkedin,
+            github,
+            avatarUrl
+          },
+          skills: currentSkills
+        };
+        localStorage.setItem("candidate-profile", JSON.stringify(payload));
+        window.dispatchEvent(new Event("candidate-profile-updated"));
       }
     } catch (e) {
       console.error("Error loading profile:", e);
@@ -148,7 +383,10 @@ export default function CandidateProfile() {
     updatedPersonalInfo: typeof personalInfo = personalInfo,
     updatedSkills: typeof skills = skills,
     updatedExperiences: WorkExperienceItem[] = experiences,
-    updatedFileName = fileName
+    updatedFileName = fileName,
+    updatedEducation: EducationItem[] = educationList,
+    updatedProjects: ProjectItem[] = projectsList,
+    updatedLanguages: string[] = languages
   ) => {
     try {
       const flatSkills = [
@@ -168,8 +406,13 @@ export default function CandidateProfile() {
         experience: serializedExp,
         phone: updatedPersonalInfo.phone,
         portfolioUrl: updatedPersonalInfo.portfolio,
+        githubUrl: updatedPersonalInfo.github,
+        linkedinUrl: updatedPersonalInfo.linkedin,
         skills: flatSkills,
-        cvPath: updatedFileName
+        cvPath: updatedFileName,
+        languages: updatedLanguages,
+        education: updatedEducation,
+        projects: updatedProjects
       });
 
       if (response.success) {
@@ -354,6 +597,26 @@ export default function CandidateProfile() {
                         placeholder="https://yourportfolio.com"
                       />
                     </div>
+                    <div>
+                      <label className="block text-xs font-bold text-default-450 uppercase mb-1.5">LinkedIn Profile</label>
+                      <input
+                        type="url"
+                        value={personalInfo.linkedin || ""}
+                        onChange={(e) => setPersonalInfo({ ...personalInfo, linkedin: e.target.value })}
+                        className="w-full px-3 py-2 text-sm border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 transition-all font-medium text-slate-800 dark:text-slate-200"
+                        placeholder="https://linkedin.com/in/username"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-bold text-default-450 uppercase mb-1.5">GitHub Profile</label>
+                      <input
+                        type="url"
+                        value={personalInfo.github || ""}
+                        onChange={(e) => setPersonalInfo({ ...personalInfo, github: e.target.value })}
+                        className="w-full px-3 py-2 text-sm border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 transition-all font-medium text-slate-800 dark:text-slate-200"
+                        placeholder="https://github.com/username"
+                      />
+                    </div>
                     <div className="md:col-span-2">
                       <label className="block text-xs font-bold text-default-450 uppercase mb-1.5">Bio / About Me</label>
                       <textarea
@@ -419,13 +682,49 @@ export default function CandidateProfile() {
                         )}
                       </p>
                     </div>
+                    <div>
+                      <h5 className="text-[10px] font-bold text-default-400 uppercase tracking-wider mb-1">LinkedIn Profile</h5>
+                      <p className="text-sm font-semibold text-default-800 dark:text-default-200">
+                        {personalInfo.linkedin ? (
+                          <a 
+                            href={personalInfo.linkedin} 
+                            target="_blank" 
+                            rel="noopener noreferrer" 
+                            className="text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1"
+                          >
+                            <Icon icon="logos:linkedin-icon" className="w-3.5 h-3.5 shrink-0" />
+                            {personalInfo.linkedin.replace("https://www.linkedin.com/in/", "").replace("https://linkedin.com/in/", "").replace("http://www.linkedin.com/in/", "").replace("http://linkedin.com/in/", "")}
+                          </a>
+                        ) : (
+                          <span className="text-default-450 italic font-normal">Not connected</span>
+                        )}
+                      </p>
+                    </div>
+                    <div>
+                      <h5 className="text-[10px] font-bold text-default-400 uppercase tracking-wider mb-1">GitHub Profile</h5>
+                      <p className="text-sm font-semibold text-default-800 dark:text-default-200">
+                        {personalInfo.github ? (
+                          <a 
+                            href={personalInfo.github} 
+                            target="_blank" 
+                            rel="noopener noreferrer" 
+                            className="text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1"
+                          >
+                            <Icon icon="mdi:github" className="w-3.5 h-3.5 text-slate-800 dark:text-slate-200 shrink-0" />
+                            {personalInfo.github.replace("https://github.com/", "").replace("http://github.com/", "")}
+                          </a>
+                        ) : (
+                          <span className="text-default-450 italic font-normal">Not connected</span>
+                        )}
+                      </p>
+                    </div>
                   </div>
 
                   {/* Bio Section */}
                   <div className="pt-2 border-t border-default-100 dark:border-default-50/10">
                     <h5 className="text-[10px] font-bold text-default-400 uppercase tracking-wider mb-1">Bio / About Me</h5>
                     {personalInfo.bio ? (
-                      <p className="text-sm text-default-700 dark:text-default-300 leading-relaxed font-normal bg-slate-50/70 dark:bg-slate-900/50 p-3.5 rounded-xl border border-slate-200/50 dark:border-slate-800">
+                      <p className="text-sm text-slate-800 dark:text-slate-200 leading-relaxed font-normal bg-slate-50/70 dark:bg-slate-900/50 p-3.5 rounded-xl border border-slate-200/50 dark:border-slate-800">
                         {personalInfo.bio}
                       </p>
                     ) : (
@@ -587,12 +886,306 @@ export default function CandidateProfile() {
             </Card.Content>
           </Card>
 
+          {/* Card 2.5: Education Section */}
+          <Card className="relative">
+            {!isEditingEducation ? (
+              <button 
+                onClick={() => setIsEditingEducation(true)}
+                className="absolute top-4 right-4 w-8 h-8 rounded-full flex items-center justify-center bg-blue-50 hover:bg-blue-100 text-blue-600 dark:bg-blue-950/20 dark:hover:bg-blue-900/30 dark:text-blue-400 transition-all duration-200 border border-blue-100 dark:border-blue-900/35 hover:scale-105 active:scale-95 shadow-sm z-10"
+                title="Edit Education"
+              >
+                <Icon icon="solar:pen-linear" className="w-4 h-4" />
+              </button>
+            ) : (
+              <button 
+                onClick={() => {
+                  saveProfile(personalInfo, skills, experiences, fileName, educationList, projectsList, languages);
+                  setIsEditingEducation(false);
+                }}
+                className="absolute top-4 right-4 w-8 h-8 rounded-full flex items-center justify-center bg-emerald-50 hover:bg-emerald-100 text-emerald-700 dark:bg-emerald-950/20 dark:hover:bg-emerald-900/30 dark:text-emerald-450 transition-all duration-200 border border-emerald-100 dark:border-emerald-900/35 hover:scale-105 active:scale-95 shadow-sm z-10"
+                title="Save Education"
+              >
+                <Icon icon="solar:check-read-bold" className="w-4 h-4" />
+              </button>
+            )}
+            <Card.Header className="flex justify-between items-center pb-2 pr-14">
+              <div>
+                <Card.Title>Education</Card.Title>
+                <Card.Description>Academic background and qualification credentials</Card.Description>
+              </div>
+            </Card.Header>
+            <Card.Content className="space-y-6">
+              {isEditingEducation ? (
+                <div className="space-y-6">
+                  {educationList.map((edu, idx) => (
+                    <div key={idx} className="space-y-3 p-4 bg-slate-50 dark:bg-slate-900/50 rounded-xl border border-slate-200/60 dark:border-slate-800 relative group/item">
+                      <button
+                        onClick={() => {
+                          const updated = educationList.filter((_, i) => i !== idx);
+                          setEducationList(updated);
+                        }}
+                        className="absolute top-3 right-3 text-default-450 hover:text-rose-600 transition-colors"
+                        title="Remove Education"
+                      >
+                        <Icon icon="solar:trash-bin-trash-linear" className="w-4 h-4" />
+                      </button>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                          <label className="block text-[10px] font-bold text-default-450 uppercase mb-1">Degree / Qualification</label>
+                          <input
+                            type="text"
+                            value={edu.degree}
+                            onChange={(e) => {
+                              const updated = [...educationList];
+                              updated[idx].degree = e.target.value;
+                              setEducationList(updated);
+                            }}
+                            className="w-full px-3 py-1.5 text-xs border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 transition-all font-medium text-slate-800 dark:text-slate-200"
+                            placeholder="e.g. Master of Science in Computer Science"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-[10px] font-bold text-default-450 uppercase mb-1">Institution</label>
+                          <input
+                            type="text"
+                            value={edu.institution}
+                            onChange={(e) => {
+                              const updated = [...educationList];
+                              updated[idx].institution = e.target.value;
+                              setEducationList(updated);
+                            }}
+                            className="w-full px-3 py-1.5 text-xs border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 transition-all font-medium text-slate-800 dark:text-slate-200"
+                            placeholder="e.g. Solicode Bootcamp"
+                          />
+                        </div>
+                        <div className="md:col-span-2">
+                          <label className="block text-[10px] font-bold text-default-450 uppercase mb-1">Year / Period</label>
+                          <input
+                            type="text"
+                            value={edu.year}
+                            onChange={(e) => {
+                              const updated = [...educationList];
+                              updated[idx].year = e.target.value;
+                              setEducationList(updated);
+                            }}
+                            className="w-full px-3 py-1.5 text-xs border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 transition-all font-medium text-slate-800 dark:text-slate-200"
+                            placeholder="e.g. 2024 - 2026"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                  <button
+                    onClick={() => {
+                      setEducationList([
+                        ...educationList,
+                        { degree: "", institution: "", year: "" }
+                      ]);
+                    }}
+                    className="w-full py-2.5 px-4 border border-dashed border-blue-300 dark:border-blue-800/60 hover:border-blue-500 bg-blue-50/50 hover:bg-blue-50 dark:bg-blue-950/20 text-blue-600 dark:text-blue-400 rounded-xl text-xs font-semibold flex items-center justify-center gap-2 transition-all"
+                  >
+                    + Add Education
+                  </button>
+                </div>
+              ) : (
+                <div className="space-y-6">
+                  {educationList && educationList.length > 0 ? (
+                    educationList.map((edu, index) => (
+                      <div 
+                        key={index} 
+                        className={`pb-5 ${index !== educationList.length - 1 ? 'border-b border-default-100 dark:border-default-50/10' : ''}`}
+                      >
+                        <div className="flex flex-wrap items-baseline justify-between gap-2 mb-1">
+                          <div>
+                            <h4 className="text-sm font-bold text-default-900 dark:text-default-50">{edu.degree || "Degree"}</h4>
+                            <p className="text-xs font-semibold text-blue-600 dark:text-blue-400">{edu.institution}</p>
+                          </div>
+                          {edu.year && (
+                            <span className="text-[11px] font-medium text-default-450 bg-slate-100 dark:bg-slate-800/80 px-2.5 py-0.5 rounded-full">
+                              {edu.year}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    ))
+                  ) : (
+                    <p className="text-xs text-default-450 italic">No education history extracted from CV yet.</p>
+                  )}
+                </div>
+              )}
+            </Card.Content>
+          </Card>
+
+          {/* Card 2.7: Projects Section */}
+          <Card className="relative">
+            {!isEditingProjects ? (
+              <button 
+                onClick={() => setIsEditingProjects(true)}
+                className="absolute top-4 right-4 w-8 h-8 rounded-full flex items-center justify-center bg-blue-50 hover:bg-blue-100 text-blue-600 dark:bg-blue-950/20 dark:hover:bg-blue-900/30 dark:text-blue-400 transition-all duration-200 border border-blue-100 dark:border-blue-900/35 hover:scale-105 active:scale-95 shadow-sm z-10"
+                title="Edit Projects"
+              >
+                <Icon icon="solar:pen-linear" className="w-4 h-4" />
+              </button>
+            ) : (
+              <button 
+                onClick={() => {
+                  saveProfile(personalInfo, skills, experiences, fileName, educationList, projectsList, languages);
+                  setIsEditingProjects(false);
+                }}
+                className="absolute top-4 right-4 w-8 h-8 rounded-full flex items-center justify-center bg-emerald-50 hover:bg-emerald-100 text-emerald-700 dark:bg-emerald-950/20 dark:hover:bg-emerald-900/30 dark:text-emerald-450 transition-all duration-200 border border-emerald-100 dark:border-emerald-900/35 hover:scale-105 active:scale-95 shadow-sm z-10"
+                title="Save Projects"
+              >
+                <Icon icon="solar:check-read-bold" className="w-4 h-4" />
+              </button>
+            )}
+            <Card.Header className="flex justify-between items-center pb-2 pr-14">
+              <div>
+                <Card.Title>Projects</Card.Title>
+                <Card.Description>Notable projects and technical applications</Card.Description>
+              </div>
+            </Card.Header>
+            <Card.Content className="space-y-6">
+              {isEditingProjects ? (
+                <div className="space-y-6">
+                  {projectsList.map((project, idx) => (
+                    <div key={idx} className="space-y-3 p-4 bg-slate-50 dark:bg-slate-900/50 rounded-xl border border-slate-200/60 dark:border-slate-800 relative group/item">
+                      <button
+                        onClick={() => {
+                          const updated = projectsList.filter((_, i) => i !== idx);
+                          setProjectsList(updated);
+                        }}
+                        className="absolute top-3 right-3 text-default-450 hover:text-rose-600 transition-colors"
+                        title="Remove Project"
+                      >
+                        <Icon icon="solar:trash-bin-trash-linear" className="w-4 h-4" />
+                      </button>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                          <label className="block text-[10px] font-bold text-default-450 uppercase mb-1">Project Name</label>
+                          <input
+                            type="text"
+                            value={project.name}
+                            onChange={(e) => {
+                              const updated = [...projectsList];
+                              updated[idx].name = e.target.value;
+                              setProjectsList(updated);
+                            }}
+                            className="w-full px-3 py-1.5 text-xs border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 transition-all font-medium text-slate-800 dark:text-slate-200"
+                            placeholder="e.g. Intelligent Recruitment Platform"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-[10px] font-bold text-default-450 uppercase mb-1">Project Link / URL</label>
+                          <input
+                            type="text"
+                            value={project.link || ""}
+                            onChange={(e) => {
+                              const updated = [...projectsList];
+                              updated[idx].link = e.target.value;
+                              setProjectsList(updated);
+                            }}
+                            className="w-full px-3 py-1.5 text-xs border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 transition-all font-medium text-slate-800 dark:text-slate-200"
+                            placeholder="e.g. https://github.com/..."
+                          />
+                        </div>
+                        <div className="md:col-span-2">
+                          <label className="block text-[10px] font-bold text-default-450 uppercase mb-1">Technologies (Comma separated)</label>
+                          <input
+                            type="text"
+                            value={project.technologies.join(", ")}
+                            onChange={(e) => {
+                              const updated = [...projectsList];
+                              updated[idx].technologies = e.target.value.split(",").map(t => t.trim()).filter(Boolean);
+                              setProjectsList(updated);
+                            }}
+                            className="w-full px-3 py-1.5 text-xs border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 transition-all font-medium text-slate-800 dark:text-slate-200"
+                            placeholder="e.g. React, Next.js, Tailwind, Node.js"
+                          />
+                        </div>
+                        <div className="md:col-span-2">
+                          <label className="block text-[10px] font-bold text-default-450 uppercase mb-1">Description</label>
+                          <textarea
+                            value={project.description || ""}
+                            onChange={(e) => {
+                              const updated = [...projectsList];
+                              updated[idx].description = e.target.value;
+                              setProjectsList(updated);
+                            }}
+                            rows={3}
+                            className="w-full px-3 py-1.5 text-xs border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 transition-all font-medium text-slate-800 dark:text-slate-200"
+                            placeholder="Describe the application features and your role..."
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                  <button
+                    onClick={() => {
+                      setProjectsList([
+                        ...projectsList,
+                        { name: "", description: "", technologies: [], link: "" }
+                      ]);
+                    }}
+                    className="w-full py-2.5 px-4 border border-dashed border-blue-300 dark:border-blue-800/60 hover:border-blue-500 bg-blue-50/50 hover:bg-blue-50 dark:bg-blue-950/20 text-blue-600 dark:text-blue-400 rounded-xl text-xs font-semibold flex items-center justify-center gap-2 transition-all"
+                  >
+                    + Add Project
+                  </button>
+                </div>
+              ) : (
+                <div className="space-y-6">
+                  {projectsList && projectsList.length > 0 ? (
+                    projectsList.map((project, index) => (
+                      <div 
+                        key={index} 
+                        className={`pb-5 ${index !== projectsList.length - 1 ? 'border-b border-default-100 dark:border-default-50/10' : ''}`}
+                      >
+                        <div className="flex flex-wrap items-baseline justify-between gap-2 mb-1">
+                          <div>
+                            <h4 className="text-sm font-bold text-default-900 dark:text-default-50">{project.name || "Project Name"}</h4>
+                            {project.link && (
+                              <a 
+                                href={project.link} 
+                                target="_blank" 
+                                rel="noopener noreferrer" 
+                                className="text-xs font-semibold text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1 mt-0.5"
+                              >
+                                <Icon icon="solar:link-linear" className="w-3.5 h-3.5" />
+                                View Link
+                              </a>
+                            )}
+                          </div>
+                        </div>
+                        {project.description && (
+                          <p className="text-xs text-default-600 dark:text-default-400 leading-relaxed mt-2">
+                            {project.description}
+                          </p>
+                        )}
+                        {project.technologies && project.technologies.length > 0 && (
+                          <div className="flex flex-wrap gap-1 mt-3">
+                            {project.technologies.map((tech) => (
+                              <Chip key={tech} color="default" variant="soft">
+                                {tech}
+                              </Chip>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    ))
+                  ) : (
+                    <p className="text-xs text-default-450 italic">No projects history extracted from CV yet.</p>
+                  )}
+                </div>
+              )}
+            </Card.Content>
+          </Card>
+
           {/* Card 3: CV Drag & Drop */}
           <CvUploader
             fileName={fileName}
             onChange={(name) => {
               setFileName(name);
               saveProfile(personalInfo, skills, experiences, name);
+              pollDataAI();
             }}
           />
 
@@ -642,9 +1235,8 @@ export default function CandidateProfile() {
                 </div>
               )}
 
-              {/* Core Technical */}
+              {/* All Skills Container */}
               <div>
-                <h5 className="text-xs font-bold text-default-400 uppercase tracking-wider mb-2">Core Technical</h5>
                 <div className="flex flex-wrap gap-1.5">
                   {skills.core.map((skill) => 
                     isEditingSkills ? (
@@ -672,10 +1264,10 @@ export default function CandidateProfile() {
                   )}
                 </div>
                 {isEditingSkills && (
-                  <div className="flex gap-2 mt-2 group relative">
+                  <div className="flex gap-2 mt-3 group relative">
                     <input
                       type="text"
-                      placeholder="Add core skill..."
+                      placeholder="Add a skill..."
                       value={newCoreSkill}
                       onChange={(e) => setNewCoreSkill(e.target.value)}
                       onKeyDown={(e) => {
@@ -707,138 +1299,104 @@ export default function CandidateProfile() {
                   </div>
                 )}
               </div>
+            </Card.Content>
+          </Card>
 
-              {/* Database & Tools */}
+          {/* Card 3.5: Languages Section */}
+          <Card className="relative">
+            {!isEditingLanguages ? (
+              <button 
+                onClick={() => setIsEditingLanguages(true)}
+                className="absolute top-4 right-4 w-8 h-8 rounded-full flex items-center justify-center bg-blue-50 hover:bg-blue-100 text-blue-600 dark:bg-blue-950/20 dark:hover:bg-blue-900/30 dark:text-blue-400 transition-all duration-200 border border-blue-100 dark:border-blue-900/35 hover:scale-105 active:scale-95 shadow-sm z-10"
+                title="Edit Languages"
+              >
+                <Icon icon="solar:pen-linear" className="w-4 h-4" />
+              </button>
+            ) : (
+              <button 
+                onClick={() => {
+                  saveProfile(personalInfo, skills, experiences, fileName, educationList, projectsList, languages);
+                  setIsEditingLanguages(false);
+                }}
+                className="absolute top-4 right-4 w-8 h-8 rounded-full flex items-center justify-center bg-emerald-50 hover:bg-emerald-100 text-emerald-700 dark:bg-emerald-950/20 dark:hover:bg-emerald-900/30 dark:text-emerald-450 transition-all duration-200 border border-emerald-100 dark:border-emerald-900/35 hover:scale-105 active:scale-95 shadow-sm z-10"
+                title="Save Languages"
+              >
+                <Icon icon="solar:check-read-bold" className="w-4 h-4" />
+              </button>
+            )}
+            <Card.Header className="flex justify-between items-center pb-2 pr-14">
               <div>
-                <h5 className="text-xs font-bold text-default-400 uppercase tracking-wider mb-2">Database & Tools</h5>
-                <div className="flex flex-wrap gap-1.5">
-                  {skills.database.map((skill) => 
-                    isEditingSkills ? (
+                <Card.Title>Languages</Card.Title>
+                <Card.Description>Communication languages & proficiency</Card.Description>
+              </div>
+            </Card.Header>
+            <Card.Content className="space-y-4">
+              <div className="flex flex-wrap gap-2">
+                {languages && languages.length > 0 ? (
+                  languages.map((lang, idx) => 
+                    isEditingLanguages ? (
                       <span 
-                        key={skill}
+                        key={idx}
                         className="inline-flex items-center gap-1.5 bg-slate-50 hover:bg-rose-50 dark:bg-slate-900 dark:hover:bg-rose-950/20 text-slate-700 hover:text-rose-700 dark:text-slate-300 dark:hover:text-rose-450 border border-slate-200/60 hover:border-rose-200/80 dark:border-slate-800 dark:hover:border-rose-900/40 font-semibold px-2.5 py-0.5 text-xs rounded-full transition-all duration-150 select-none shadow-sm cursor-pointer"
                       >
-                        {skill}
+                        {lang}
                         <button
                           onClick={() => {
-                            const updated = skills.database.filter(s => s !== skill);
-                            const newSkills = { ...skills, database: updated };
-                            setSkills(newSkills);
-                            saveProfile(personalInfo, newSkills, experiences);
+                            const updated = languages.filter((_, i) => i !== idx);
+                            setLanguages(updated);
+                            saveProfile(personalInfo, skills, experiences, fileName, educationList, projectsList, updated);
                           }}
                           className="hover:scale-125 focus:outline-none transition-transform"
-                          title={`Remove ${skill}`}
+                          title={`Remove ${lang}`}
                         >
                           <Icon icon="solar:close-circle-bold" className="w-4 h-4 text-slate-400 hover:text-rose-600 transition-colors" />
                         </button>
                       </span>
                     ) : (
-                      <Chip key={skill} color="default" variant="soft">{skill}</Chip>
+                      <Chip key={idx} color="default" variant="soft">
+                        {lang}
+                      </Chip>
                     )
-                  )}
-                </div>
-                {isEditingSkills && (
-                  <div className="flex gap-2 mt-2 group relative">
-                    <input
-                      type="text"
-                      placeholder="Add tool/db..."
-                      value={newDbSkill}
-                      onChange={(e) => setNewDbSkill(e.target.value)}
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter") {
-                          e.preventDefault();
-                          if (newDbSkill.trim()) {
-                            const newSkills = { ...skills, database: [...skills.database, newDbSkill.trim()] };
-                            setSkills(newSkills);
-                            saveProfile(personalInfo, newSkills, experiences);
-                            setNewDbSkill("");
-                          }
-                        }
-                      }}
-                      className="flex-1 px-3 py-1.5 text-xs border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 transition-all font-medium"
-                    />
-                    <button
-                      onClick={() => {
-                        if (newDbSkill.trim()) {
-                          const newSkills = { ...skills, database: [...skills.database, newDbSkill.trim()] };
-                          setSkills(newSkills);
-                          saveProfile(personalInfo, newSkills, experiences);
-                          setNewDbSkill("");
-                        }
-                      }}
-                      className="px-2.5 bg-blue-600 hover:bg-blue-750 text-white rounded-xl transition-all duration-200 flex items-center justify-center hover:scale-105 active:scale-95 shadow-sm shadow-blue-500/10 text-xs font-bold"
-                    >
-                      <Icon icon="solar:add-circle-bold" className="w-4 h-4" />
-                    </button>
-                  </div>
+                  )
+                ) : (
+                  <p className="text-xs text-default-450 italic">No communication languages extracted from CV yet.</p>
                 )}
               </div>
-
-              {/* AI & ML */}
-              <div>
-                <h5 className="text-xs font-bold text-default-400 uppercase tracking-wider mb-2">AI & Machine Learning</h5>
-                <div className="flex flex-wrap gap-1.5">
-                  {skills.ai.map((skill) => 
-                    isEditingSkills ? (
-                      <span 
-                        key={skill}
-                        className="inline-flex items-center gap-1.5 bg-slate-50 hover:bg-rose-50 dark:bg-slate-900 dark:hover:bg-rose-950/20 text-slate-700 hover:text-rose-700 dark:text-slate-300 dark:hover:text-rose-450 border border-slate-200/60 hover:border-rose-200/80 dark:border-slate-800 dark:hover:border-rose-900/40 font-semibold px-2.5 py-0.5 text-xs rounded-full transition-all duration-150 select-none shadow-sm cursor-pointer"
-                      >
-                        {skill}
-                        <button
-                          onClick={() => {
-                            const updated = skills.ai.filter(s => s !== skill);
-                            const newSkills = { ...skills, ai: updated };
-                            setSkills(newSkills);
-                            saveProfile(personalInfo, newSkills, experiences);
-                          }}
-                          className="hover:scale-125 focus:outline-none transition-transform"
-                          title={`Remove ${skill}`}
-                        >
-                          <Icon icon="solar:close-circle-bold" className="w-4 h-4 text-slate-400 hover:text-rose-600 transition-colors" />
-                        </button>
-                      </span>
-                    ) : (
-                      <Chip key={skill} color="default" variant="soft">{skill}</Chip>
-                    )
-                  )}
+              {isEditingLanguages && (
+                <div className="flex gap-2 mt-3 group relative">
+                  <input
+                    type="text"
+                    placeholder="Add a language..."
+                    value={newLanguage}
+                    onChange={(e) => setNewLanguage(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        e.preventDefault();
+                        if (newLanguage.trim()) {
+                          const updated = [...languages, newLanguage.trim()];
+                          setLanguages(updated);
+                          saveProfile(personalInfo, skills, experiences, fileName, educationList, projectsList, updated);
+                          setNewLanguage("");
+                        }
+                      }
+                    }}
+                    className="flex-1 px-3 py-1.5 text-xs border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 transition-all font-medium text-slate-800 dark:text-slate-200"
+                  />
+                  <button
+                    onClick={() => {
+                      if (newLanguage.trim()) {
+                        const updated = [...languages, newLanguage.trim()];
+                        setLanguages(updated);
+                        saveProfile(personalInfo, skills, experiences, fileName, educationList, projectsList, updated);
+                        setNewLanguage("");
+                      }
+                    }}
+                    className="px-2.5 bg-blue-600 hover:bg-blue-750 text-white rounded-xl transition-all duration-200 flex items-center justify-center hover:scale-105 active:scale-95 shadow-sm shadow-blue-500/10 text-xs font-bold"
+                  >
+                    <Icon icon="solar:add-circle-bold" className="w-4 h-4" />
+                  </button>
                 </div>
-                {isEditingSkills && (
-                  <div className="flex gap-2 mt-2 group relative">
-                    <input
-                      type="text"
-                      placeholder="Add AI skill..."
-                      value={newAiSkill}
-                      onChange={(e) => setNewAiSkill(e.target.value)}
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter") {
-                          e.preventDefault();
-                          if (newAiSkill.trim()) {
-                            const newSkills = { ...skills, ai: [...skills.ai, newAiSkill.trim()] };
-                            setSkills(newSkills);
-                            saveProfile(personalInfo, newSkills, experiences);
-                            setNewAiSkill("");
-                          }
-                        }
-                      }}
-                      className="flex-1 px-3 py-1.5 text-xs border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 transition-all font-medium"
-                    />
-                    <button
-                      onClick={() => {
-                        if (newAiSkill.trim()) {
-                          const newSkills = { ...skills, ai: [...skills.ai, newAiSkill.trim()] };
-                          setSkills(newSkills);
-                          saveProfile(personalInfo, newSkills, experiences);
-                          setNewAiSkill("");
-                        }
-                      }}
-                      className="px-2.5 bg-blue-600 hover:bg-blue-750 text-white rounded-xl transition-all duration-200 flex items-center justify-center hover:scale-105 active:scale-95 shadow-sm shadow-blue-500/10 text-xs font-bold"
-                    >
-                      <Icon icon="solar:add-circle-bold" className="w-4 h-4" />
-                    </button>
-                  </div>
-                )}
-              </div>
+              )}
             </Card.Content>
           </Card>
 
@@ -856,6 +1414,36 @@ export default function CandidateProfile() {
           </Card>
         </div>
       </div>
+      {/* Loading Overlay Modal */}
+      {isPollingAI && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl max-w-md w-full p-6 text-center shadow-2xl space-y-4 animate-in fade-in zoom-in-95 duration-200 relative">
+            <button
+              onClick={() => setIsPollingAI(false)}
+              className="absolute top-3.5 right-3.5 w-7 h-7 rounded-full flex items-center justify-center text-default-450 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-default-700 transition-all duration-150"
+              title="Close"
+            >
+              <Icon icon="solar:close-circle-bold" className="w-5 h-5" />
+            </button>
+            <div className="flex justify-center">
+              <div className="w-16 h-16 rounded-full bg-blue-50 dark:bg-blue-950/30 flex items-center justify-center">
+                <Icon icon="solar:radial-blur-bold-duotone" className="w-10 h-10 text-blue-600 dark:text-blue-450 animate-spin" />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <h3 className="text-lg font-bold text-default-900 dark:text-default-50">AI CV Parsing in Progress</h3>
+              <p className="text-xs text-default-500 dark:text-default-400 leading-relaxed">
+                Please wait a moment. The AI is extracting your personal details, work experience, education history, languages, and technical skills from your resume to configure your profile automatically.
+              </p>
+            </div>
+            <div className="pt-2">
+              <div className="h-1.5 w-full bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden relative">
+                <div className="absolute top-0 bottom-0 left-0 bg-blue-600 rounded-full animate-pulse w-full"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
