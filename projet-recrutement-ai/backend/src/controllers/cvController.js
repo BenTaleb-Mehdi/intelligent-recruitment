@@ -1,3 +1,5 @@
+import mongoose from "mongoose";
+import Cv from "../models/Cv.js";
 import * as cvService from "../services/cvService.js";
 
 /**
@@ -151,49 +153,115 @@ export const viewCv = async (req, res) => {
 };
 
 /**
- * Controller: Stream PDF directly for n8n workflow integration
- * GET /api/cvs/:userId/file
+ * Controller: Stream PDF directly from GridFS for n8n workflow consumption
+ * GET /api/cvs/:id/file
+ * Accepts: GridFS fileId (ObjectId), Cv document _id (ObjectId), or candidate userId (String/UUID)
  */
 export const getCvFileForN8n = async (req, res) => {
     try {
-        const { userId } = req.params;
-        const cvDoc = await cvService.getCvMetadataByUserId(userId);
+        const { id } = req.params;
 
-        if (!cvDoc) {
-            return res.status(404).json({
+        if (!id) {
+            return res.status(400).json({
                 success: false,
-                message: "Not Found",
-                error: "No CV file found for this userId.",
+                message: "Bad Request",
+                error: "Missing required identifier in request path.",
             });
         }
 
-        res.setHeader("Content-Type", cvDoc.mimeType || "application/pdf");
-        res.setHeader("Content-Disposition", `inline; filename="${encodeURIComponent(cvDoc.originalName)}"`);
-        if (cvDoc.size) {
-            res.setHeader("Content-Length", cvDoc.size);
+        if (!mongoose.connection || !mongoose.connection.db) {
+            return res.status(500).json({
+                success: false,
+                message: "Internal Server Error",
+                error: "MongoDB connection is not established.",
+            });
         }
 
-        const downloadStream = cvService.getCvDownloadStream(cvDoc.fileId);
+        const db = mongoose.connection.db;
+        const isObjId = mongoose.Types.ObjectId.isValid(id);
 
-        downloadStream.on("error", (error) => {
-            console.error("GridFS n8n stream error:", error);
+        let fileMeta = null;
+        let targetBucket = null;
+
+        // 1. Try resolving :id directly as a GridFS _id (fileId) in 'fs' or 'cvs' buckets
+        if (isObjId) {
+            const objectId = new mongoose.Types.ObjectId(id);
+            for (const bName of ["fs", "cvs"]) {
+                const b = new mongoose.mongo.GridFSBucket(db, { bucketName: bName });
+                const found = await b.find({ _id: objectId }).toArray();
+                if (found && found.length > 0) {
+                    fileMeta = found[0];
+                    targetBucket = b;
+                    break;
+                }
+            }
+        }
+
+        // 2. If not found directly in GridFS, search Cv collection by cvDoc _id, fileId, or userId
+        if (!fileMeta) {
+            const query = isObjId
+                ? { $or: [{ _id: id }, { fileId: id }, { userId: id }] }
+                : { userId: id };
+
+            const cvDoc = await Cv.findOne(query);
+
+            if (cvDoc && cvDoc.fileId) {
+                const targetFileId = new mongoose.Types.ObjectId(cvDoc.fileId);
+                for (const bName of ["cvs", "fs"]) {
+                    const b = new mongoose.mongo.GridFSBucket(db, { bucketName: bName });
+                    const found = await b.find({ _id: targetFileId }).toArray();
+                    if (found && found.length > 0) {
+                        fileMeta = found[0];
+                        targetBucket = b;
+                        break;
+                    }
+                }
+            }
+        }
+
+        // 3. Return 404 if file still cannot be found
+        if (!fileMeta || !targetBucket) {
+            return res.status(404).json({
+                success: false,
+                message: "Not Found",
+                error: `PDF file for identifier '${id}' was not found in GridFS or database.`,
+            });
+        }
+
+        const filename = encodeURIComponent(fileMeta.filename || fileMeta.metadata?.originalName || "CV.pdf");
+
+        // 4. Set response headers for inline PDF streaming
+        res.setHeader("Content-Type", fileMeta.contentType || "application/pdf");
+        res.setHeader("Content-Disposition", `inline; filename="${filename}"`);
+        if (fileMeta.length) {
+            res.setHeader("Content-Length", fileMeta.length);
+        }
+
+        // 5. Open download stream and pipe to Express response
+        const downloadStream = targetBucket.openDownloadStream(fileMeta._id);
+
+        downloadStream.on("error", (streamErr) => {
+            console.error(`GridFS Stream Error (ID: ${id}):`, streamErr);
             if (!res.headersSent) {
-                res.status(500).json({
+                return res.status(500).json({
                     success: false,
                     message: "Internal Server Error",
-                    error: "Failed to stream PDF for n8n workflow.",
+                    error: "Error streaming file from GridFS.",
                 });
             }
+            res.end();
         });
 
         downloadStream.pipe(res);
     } catch (error) {
         console.error("Error in getCvFileForN8n controller:", error);
-        return res.status(500).json({
-            success: false,
-            message: "Internal Server Error",
-            error: error.message,
-        });
+        if (!res.headersSent) {
+            return res.status(500).json({
+                success: false,
+                message: "Internal Server Error",
+                error: error.message || "An error occurred while streaming the file.",
+            });
+        }
     }
 };
 

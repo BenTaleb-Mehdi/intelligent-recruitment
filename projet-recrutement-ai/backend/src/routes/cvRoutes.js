@@ -14,8 +14,8 @@ router.get("/api/cvs/:userId/download", requireAuth, authorizeCvAccess, cvContro
 // View PDF inline in browser
 router.get("/api/cvs/:userId/view", requireAuth, authorizeCvAccess, cvController.viewCv);
 
-// n8n Workflow Direct Stream Endpoint
-router.get("/api/cvs/:userId/file", requireAuth, authorizeCvAccess, cvController.getCvFileForN8n);
+// n8n Workflow Direct Stream Endpoint by GridFS file/document ObjectId
+router.get("/api/cvs/:id/file", cvController.getCvFileForN8n);
 
 // Get CV Metadata status
 router.get("/api/cvs/:userId", requireAuth, authorizeCvAccess, cvController.getCvStatus);
