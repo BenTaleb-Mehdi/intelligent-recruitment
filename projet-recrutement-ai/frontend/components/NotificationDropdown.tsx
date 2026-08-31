@@ -90,8 +90,6 @@ export default function NotificationDropdown() {
     <Popover
       isOpen={isOpen}
       onOpenChange={handleOpenChange}
-      placement="bottom-end"
-      offset={12}
     >
       <PopoverTrigger>
         <Button
