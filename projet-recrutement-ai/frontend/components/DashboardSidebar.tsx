@@ -53,7 +53,7 @@ function SidebarUserFooter({
       </div>
       <Button
         isIconOnly
-        variant="light"
+        variant="ghost"
         size="sm"
         onPress={handleLogout}
         aria-label="Sign out"
