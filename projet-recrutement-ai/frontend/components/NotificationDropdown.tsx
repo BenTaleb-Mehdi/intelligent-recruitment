@@ -90,14 +90,11 @@ export default function NotificationDropdown() {
     <Popover
       isOpen={isOpen}
       onOpenChange={handleOpenChange}
-      placement="bottom-end"
-      offset={12}
     >
       <PopoverTrigger>
         <Button
           isIconOnly
-          variant="bordered"
-          radius="full"
+          variant="outline"
           aria-label="Notifications"
           className="relative border-default-200 bg-content1 text-default-500 hover:bg-default-100 dark:border-default-100/20 dark:bg-content1 dark:text-default-400 dark:hover:bg-default-100/10"
         >

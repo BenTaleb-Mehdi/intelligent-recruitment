@@ -4,7 +4,6 @@ import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   Card,
-  Input,
   Switch,
   Button,
   Spinner,
@@ -15,7 +14,6 @@ import { useTheme } from "next-themes";
 import ThemeToggleButton from "@/components/ThemeToggleButton";
 import AdminShell from "@/components/admin/AdminShell";
 import { Sidebar } from "@/components/ui/sidebar";
-import DashboardSidebar from "@/components/DashboardSidebar";
 import DashboardNavbar from "@/components/DashboardNavbar";
 
 function SettingsContent() {
@@ -45,27 +43,32 @@ function SettingsContent() {
             <h2 className="text-lg font-semibold text-foreground">Profile Information</h2>
           </div>
           <div className="grid gap-4 sm:grid-cols-2">
-            <Input
-              label="Full name"
-              defaultValue={user?.name ?? ""}
-              variant="bordered"
-              isReadOnly
-            />
-            <Input
-              label="Email address"
-              defaultValue={user?.email ?? ""}
-              variant="bordered"
-              isReadOnly
-            />
-            <Input
-              label="Role"
-              defaultValue={role ?? "—"}
-              variant="bordered"
-              isReadOnly
-              className="sm:col-span-2"
-            />
+            <div className="flex flex-col gap-1">
+              <label className="text-xs font-medium text-default-500">Full name</label>
+              <input
+                readOnly
+                defaultValue={user?.name ?? ""}
+                className="rounded-lg border border-default-200 bg-default-50 px-3 py-2 text-sm text-foreground outline-none dark:border-default-100/20 dark:bg-default-100/10"
+              />
+            </div>
+            <div className="flex flex-col gap-1">
+              <label className="text-xs font-medium text-default-500">Email address</label>
+              <input
+                readOnly
+                defaultValue={user?.email ?? ""}
+                className="rounded-lg border border-default-200 bg-default-50 px-3 py-2 text-sm text-foreground outline-none dark:border-default-100/20 dark:bg-default-100/10"
+              />
+            </div>
+            <div className="flex flex-col gap-1 sm:col-span-2">
+              <label className="text-xs font-medium text-default-500">Role</label>
+              <input
+                readOnly
+                defaultValue={role ?? "—"}
+                className="rounded-lg border border-default-200 bg-default-50 px-3 py-2 text-sm text-foreground outline-none dark:border-default-100/20 dark:bg-default-100/10"
+              />
+            </div>
           </div>
-          <Button className="mt-4" variant="flat" color="primary" isDisabled>
+          <Button className="mt-4" variant="ghost" isDisabled>
             Save changes
           </Button>
         </Card>
@@ -102,7 +105,10 @@ function SettingsContent() {
                   <p className="font-medium text-foreground">{item.label}</p>
                   <p className="text-sm text-default-500">{item.desc}</p>
                 </div>
-                <Switch isSelected={item.value} onValueChange={item.setter} color="primary" />
+                <Switch
+                  isSelected={item.value}
+                  onChange={(e: boolean) => item.setter(e)}
+                />
               </div>
             ))}
           </div>
@@ -118,7 +124,10 @@ function SettingsContent() {
               <p className="font-medium text-foreground">Public profile</p>
               <p className="text-sm text-default-500">Allow recruiters to discover your profile</p>
             </div>
-            <Switch isSelected={profilePublic} onValueChange={setProfilePublic} color="primary" />
+            <Switch
+              isSelected={profilePublic}
+              onChange={(e: boolean) => setProfilePublic(e)}
+            />
           </div>
         </Card>
 
@@ -130,7 +139,7 @@ function SettingsContent() {
           <p className="mb-4 text-sm text-default-600">
             Permanently delete your account and all associated data. This action cannot be undone.
           </p>
-          <Button color="danger" variant="flat" isDisabled>
+          <Button variant="danger-soft" isDisabled>
             Delete account
           </Button>
         </Card>
@@ -163,7 +172,6 @@ function UserSettingsShell({ children }: { children: React.ReactNode }) {
 
   return (
     <Sidebar.Provider variant="sidebar" collapsible="icon" defaultOpen navigate={router.push}>
-      <DashboardSidebar />
       <Sidebar.Main>
         <DashboardNavbar userName={session.user?.name} userEmail={session.user?.email ?? ""} />
         <div className="min-h-[calc(100vh-64px)] flex-1 bg-background p-4 md:p-6">{children}</div>

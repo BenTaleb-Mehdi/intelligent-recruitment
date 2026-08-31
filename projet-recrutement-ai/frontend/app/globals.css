@@ -1,6 +1,7 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
+@import "@heroui/styles";
+
+@config "../tailwind.config.mjs";
 
 :root {
   --background: #ffffff;

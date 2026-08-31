@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { Input, Button } from "@heroui/react";
+import { Button } from "@heroui/react";
 import { Icon } from "@iconify/react";
 import { usePathname, useRouter } from "next/navigation";
 
@@ -32,7 +32,7 @@ export function NavbarSearchMobile({ onSearch }: NavbarSearchMobileProps) {
     return (
       <Button
         isIconOnly
-        variant="light"
+        variant="ghost"
         size="sm"
         aria-label="Search"
         className="md:hidden"
@@ -51,17 +51,20 @@ export function NavbarSearchMobile({ onSearch }: NavbarSearchMobileProps) {
         handleSearch();
       }}
     >
-      <Input
-        autoFocus
-        value={query}
-        onValueChange={setQuery}
-        placeholder="Search..."
-        size="sm"
-        variant="bordered"
-        startContent={<Icon icon="lucide:search" className="size-4 text-default-400" />}
-        className="flex-1"
-      />
-      <Button isIconOnly variant="light" size="sm" aria-label="Close search" onPress={() => setOpen(false)}>
+      <div className="relative flex flex-1 items-center">
+        <Icon
+          icon="lucide:search"
+          className="pointer-events-none absolute left-3 size-4 text-default-400"
+        />
+        <input
+          autoFocus
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          placeholder="Search..."
+          className="w-full rounded-lg border border-default-200 bg-default-50 py-2 pl-9 pr-3 text-sm text-foreground outline-none transition focus:border-primary focus:ring-1 focus:ring-primary dark:border-default-100/20 dark:bg-default-100/10"
+        />
+      </div>
+      <Button isIconOnly variant="ghost" size="sm" aria-label="Close search" onPress={() => setOpen(false)}>
         <Icon icon="lucide:x" className="size-5" />
       </Button>
     </form>

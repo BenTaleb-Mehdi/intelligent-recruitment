@@ -44,9 +44,11 @@ export default function AdminUserDetailPage() {
       <div className="mx-auto max-w-3xl text-center">
         <Icon icon="lucide:user-x" className="mx-auto size-12 text-default-300" />
         <h2 className="mt-4 text-xl font-semibold">User not found</h2>
-        <Button as={Link} href="/admin/users" className="mt-4" color="primary" variant="flat">
-          Back to users
-        </Button>
+        <Link href="/admin/users">
+          <Button className="mt-4" variant="ghost">
+            Back to users
+          </Button>
+        </Link>
       </div>
     );
   }
@@ -70,14 +72,14 @@ export default function AdminUserDetailPage() {
           </div>
           <div className="flex-1">
             <div className="flex flex-wrap items-center gap-2">
-              <Chip size="sm" variant="flat" color={user.role === "admin" ? "danger" : user.role === "recruteur" ? "success" : "primary"}>
+              <Chip size="sm" variant="soft" color={user.role?.toUpperCase() === "ADMIN" ? "danger" : user.role?.toUpperCase() === "RECRUITER" ? "success" : "default"}>
                 {user.role}
               </Chip>
-              <Chip size="sm" variant="flat" color={user.emailVerified ? "success" : "warning"}>
+              <Chip size="sm" variant="soft" color={user.emailVerified ? "success" : "warning"}>
                 {user.emailVerified ? "Verified" : "Unverified"}
               </Chip>
               {user.isOnboarded && (
-                <Chip size="sm" variant="flat" color="secondary">
+                <Chip size="sm" variant="soft" color="default">
                   Onboarded
                 </Chip>
               )}
@@ -97,11 +99,13 @@ export default function AdminUserDetailPage() {
         </div>
 
         <div className="mt-6 flex gap-2">
-          <Button variant="flat" color="primary" isDisabled startContent={<Icon icon="lucide:edit" />}>
-            Edit role
+          <Button variant="ghost" isDisabled>
+            <Icon icon="lucide:edit" />
+            <span>Edit role</span>
           </Button>
-          <Button variant="flat" color="danger" isDisabled startContent={<Icon icon="lucide:ban" />}>
-            Suspend
+          <Button variant="danger-soft" isDisabled>
+            <Icon icon="lucide:ban" />
+            <span>Suspend</span>
           </Button>
         </div>
       </Card>

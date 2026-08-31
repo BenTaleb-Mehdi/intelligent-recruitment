@@ -1,6 +1,6 @@
 "use client";
 import React, { useState, useEffect } from "react";
-import { Card, CardBody, Spinner } from "@heroui/react";
+import { Card, CardContent, Spinner } from "@heroui/react";
 import { authClient } from "@/lib/auth-client";
 import { useRouter } from "next/navigation";
 import { Icon } from "@iconify/react";
@@ -17,13 +17,19 @@ export default function WelcomePage() {
     }, []);
 
     const isOnboarded = (session?.user as any)?.isOnboarded;
+    const role = (session?.user as any)?.role;
 
     useEffect(() => {
         if (!mounted) return;
-        if (isOnboarded) {
-            router.push("/dashboard");
+        const normalizedRole = role?.toUpperCase();
+        if (normalizedRole === "ADMIN") {
+            router.push("/admin/dashboard");
+            return;
         }
-    }, [isOnboarded, router, mounted]);
+        if (isOnboarded) {
+            router.push(normalizedRole === "RECRUITER" ? "/recruiter/dashboard" : "/candidate/dashboard");
+        }
+    }, [isOnboarded, role, router, mounted]);
 
     const handleSelectRole = async (role: "candidat" | "recruteur") => {
         if (!session?.user?.id) return;
@@ -38,7 +44,7 @@ export default function WelcomePage() {
             });
 
             if (response.ok) {
-                window.location.href = "/dashboard";
+                window.location.href = role === "recruteur" ? "/recruiter/dashboard" : "/candidate/dashboard";
             }
         } catch (error) {
             console.error("Error updating role:", error);
@@ -90,16 +96,17 @@ export default function WelcomePage() {
 
             <div className="relative z-10 grid md:grid-cols-2 gap-6 w-full max-w-[700px]">
                 <Card
-                    isPressable
-                    isDisabled={loading}
-                    onPress={() => handleSelectRole("candidat")}
                     className={`flex-1 p-8 border-2 transition-all duration-200 shadow-sm hover:shadow-lg group cursor-pointer
                         ${selected === "candidat" && loading
                             ? "border-primary bg-primary-50 shadow-md"
                             : "border-transparent hover:border-primary/30 hover:-translate-y-1"
                         }`}
+                    role="button"
+                    tabIndex={0}
+                    onClick={loading ? undefined : () => handleSelectRole("candidat")}
+                    onKeyDown={loading ? undefined : (e) => { if (e.key === "Enter") handleSelectRole("candidat"); }}
                 >
-                    <CardBody className="text-center flex flex-col items-center gap-4">
+                    <CardContent className="text-center flex flex-col items-center gap-4">
                         <Icon icon="lucide:user-search" className="size-12 text-primary" />
                         <div>
                             <h2 className="text-xl font-bold mb-1">Job Seeker</h2>
@@ -120,20 +127,21 @@ export default function WelcomePage() {
                             )}
                             {selected === "candidat" && loading ? "Redirecting..." : "Get Started"}
                         </span>
-                    </CardBody>
+                    </CardContent>
                 </Card>
 
                 <Card
-                    isPressable
-                    isDisabled={loading}
-                    onPress={() => handleSelectRole("recruteur")}
                     className={`flex-1 p-8 border-2 transition-all duration-200 shadow-sm hover:shadow-lg group cursor-pointer
                         ${selected === "recruteur" && loading
                             ? "border-success bg-success-50 shadow-md"
                             : "border-transparent hover:border-success/30 hover:-translate-y-1"
                         }`}
+                    role="button"
+                    tabIndex={0}
+                    onClick={loading ? undefined : () => handleSelectRole("recruteur")}
+                    onKeyDown={loading ? undefined : (e) => { if (e.key === "Enter") handleSelectRole("recruteur"); }}
                 >
-                    <CardBody className="text-center flex flex-col items-center gap-4">
+                    <CardContent className="text-center flex flex-col items-center gap-4">
                         <Icon icon="lucide:briefcase" className="size-12 text-success" />
                         <div>
                             <h2 className="text-xl font-bold mb-1">Recruiter</h2>
@@ -154,7 +162,7 @@ export default function WelcomePage() {
                             )}
                             {selected === "recruteur" && loading ? "Redirecting..." : "Get Started"}
                         </span>
-                    </CardBody>
+                    </CardContent>
                 </Card>
             </div>
 

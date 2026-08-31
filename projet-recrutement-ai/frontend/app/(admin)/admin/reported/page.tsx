@@ -4,6 +4,7 @@ import React from "react";
 import Link from "next/link";
 import { Card, Button, Chip, Dropdown, DropdownTrigger, DropdownMenu, DropdownItem } from "@heroui/react";
 import { Icon } from "@iconify/react";
+import { useRouter } from "next/navigation";
 import PageHeader from "@/components/admin/PageHeader";
 
 const MOCK_REPORTED = [
@@ -57,14 +58,15 @@ const MOCK_REPORTED = [
   },
 ];
 
-const statusColor = (status: string) => {
+const statusColor = (status: string): "default" | "success" | "danger" | "warning" | "accent" => {
   if (status === "pending") return "warning";
-  if (status === "reviewing") return "primary";
+  if (status === "reviewing") return "accent";
   if (status === "resolved") return "success";
   return "default";
 };
 
 export default function ReportedUsersPage() {
+  const router = useRouter();
   return (
     <div className="mx-auto max-w-7xl">
       <PageHeader
@@ -130,7 +132,7 @@ export default function ReportedUsersPage() {
                     </div>
                   </td>
                   <td className="px-4 py-3">
-                    <Chip size="sm" variant="flat" color="primary">
+                    <Chip size="sm" variant="soft" color="default">
                       {report.role}
                     </Chip>
                   </td>
@@ -140,41 +142,51 @@ export default function ReportedUsersPage() {
                   <td className="px-4 py-3">
                     <Chip
                       size="sm"
-                      variant="flat"
+                      variant="soft"
                       color={report.severity === "high" ? "danger" : report.severity === "medium" ? "warning" : "default"}
                     >
                       {report.severity}
                     </Chip>
                   </td>
                   <td className="px-4 py-3">
-                    <Chip size="sm" variant="flat" color={statusColor(report.status)}>
+                    <Chip size="sm" variant="soft" color={statusColor(report.status)}>
                       {report.status}
                     </Chip>
                   </td>
                   <td className="px-4 py-3">
                     <Dropdown>
                       <DropdownTrigger>
-                        <Button isIconOnly size="sm" variant="light">
+                        <Button isIconOnly size="sm" variant="ghost">
                           <Icon icon="lucide:more-horizontal" className="size-4" />
                         </Button>
                       </DropdownTrigger>
                       <DropdownMenu aria-label="Report actions">
                         <DropdownItem
                           key="view"
-                          startContent={<Icon icon="lucide:eye" className="size-4" />}
-                          as={Link}
-                          href={`/admin/users/${report.userId}`}
+                          onClick={() => router.push(`/admin/users/${report.userId}`)}
                         >
-                          View user
+                          <div className="flex items-center gap-2">
+                            <Icon icon="lucide:eye" className="size-4" />
+                            <span>View user</span>
+                          </div>
                         </DropdownItem>
-                        <DropdownItem key="review" startContent={<Icon icon="lucide:search" className="size-4" />}>
-                          Mark reviewing
+                        <DropdownItem key="review">
+                          <div className="flex items-center gap-2">
+                            <Icon icon="lucide:search" className="size-4" />
+                            <span>Mark reviewing</span>
+                          </div>
                         </DropdownItem>
-                        <DropdownItem key="ban" color="danger" startContent={<Icon icon="lucide:ban" className="size-4" />}>
-                          Suspend account
+                        <DropdownItem key="ban">
+                          <div className="flex items-center gap-2 text-danger">
+                            <Icon icon="lucide:ban" className="size-4" />
+                            <span>Suspend account</span>
+                          </div>
                         </DropdownItem>
-                        <DropdownItem key="dismiss" startContent={<Icon icon="lucide:x" className="size-4" />}>
-                          Dismiss report
+                        <DropdownItem key="dismiss">
+                          <div className="flex items-center gap-2">
+                            <Icon icon="lucide:x" className="size-4" />
+                            <span>Dismiss report</span>
+                          </div>
                         </DropdownItem>
                       </DropdownMenu>
                     </Dropdown>

@@ -4,7 +4,6 @@ import { authClient } from "@/lib/auth-client";
 import { useRouter } from "next/navigation";
 import { Spinner, Card } from "@heroui/react";
 import { Sidebar } from "@/components/ui/sidebar";
-import DashboardSidebar from "@/components/DashboardSidebar";
 import DashboardNavbar from "@/components/DashboardNavbar";
 
 export default function DashboardPage() {
@@ -24,8 +23,8 @@ export default function DashboardPage() {
             return;
         }
 
-        const role = (session.user as any)?.role;
-        if (role === "admin") {
+        const role = (session.user as any)?.role?.toUpperCase();
+        if (role === "ADMIN") {
             router.push("/admin/dashboard");
             return;
         }
@@ -33,6 +32,10 @@ export default function DashboardPage() {
         const isOnboarded = (session.user as any)?.isOnboarded;
         if (!isOnboarded) {
             router.push("/welcome");
+        } else if (role === "RECRUITER") {
+            router.push("/recruiter/dashboard");
+        } else {
+            router.push("/candidate/dashboard");
         }
     }, [session, isPending, router, mounted]);
 
@@ -41,7 +44,6 @@ export default function DashboardPage() {
 
     return (
         <Sidebar.Provider variant="sidebar" collapsible="icon" defaultOpen navigate={router.push}>
-            <DashboardSidebar />
             <Sidebar.Main>
                 <DashboardNavbar userName={session?.user?.name} />
                 <div className="min-h-[calc(100vh-64px)] flex-1 bg-background p-6">

@@ -8,7 +8,7 @@ export const requireAdmin = async (req, res, next) => {
       return res.status(401).json({ success: false, message: "Authentication required" });
     }
 
-    if (session.user.role !== "admin") {
+    if (session.user.role?.toUpperCase() !== "ADMIN") {
       return res.status(403).json({ success: false, message: "Admin access required" });
     }
 

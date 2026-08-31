@@ -2,18 +2,15 @@
 
 import React, { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
 import {
   Card,
-  Input,
   Button,
   Chip,
   Dropdown,
   DropdownTrigger,
   DropdownMenu,
   DropdownItem,
-  Select,
-  SelectItem,
   Pagination,
 } from "@heroui/react";
 import { Icon } from "@iconify/react";
@@ -33,21 +30,24 @@ function truncateId(id: string) {
   return id.length > 14 ? `${id.slice(0, 12)}…` : id;
 }
 
-function roleColor(role: string): "primary" | "success" | "danger" | "default" {
-  if (role === "admin") return "danger";
-  if (role === "recruteur") return "success";
-  if (role === "candidat") return "primary";
+function roleColor(role: string): "default" | "success" | "danger" | "warning" | "accent" {
+  const r = role?.toUpperCase();
+  if (r === "ADMIN") return "danger";
+  if (r === "RECRUITER" || r === "RECRUTEUR") return "success";
+  if (r === "CANDIDATE" || r === "CANDIDAT") return "accent";
   return "default";
 }
 
 function roleLabel(role: string) {
-  if (role === "candidat") return "Candidat";
-  if (role === "recruteur") return "Recruteur";
-  if (role === "admin") return "Admin";
+  const r = role?.toUpperCase();
+  if (r === "CANDIDATE" || r === "CANDIDAT") return "Candidat";
+  if (r === "RECRUITER" || r === "RECRUTEUR") return "Recruteur";
+  if (r === "ADMIN") return "Admin";
   return role;
 }
 
 export default function AdminUsersPage() {
+  const router = useRouter();
   const searchParams = useSearchParams();
   const initialSearch = searchParams.get("search") ?? "";
 
@@ -125,34 +125,37 @@ export default function AdminUsersPage() {
         <Card className="overflow-hidden border border-default-200 bg-content1 shadow-sm dark:border-default-100/20">
           <div className="border-b border-default-200 p-4 dark:border-default-100/20">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-              <Input
-                placeholder="Search by id, name, or email..."
-                value={search}
-                onValueChange={setSearch}
-                startContent={<Icon icon="lucide:search" className="size-4 text-default-400" />}
-                className="max-w-md"
-                variant="bordered"
-                size="sm"
-                isClearable
-                onClear={() => setSearch("")}
-              />
-              <Select
-                label="Per page"
-                selectedKeys={new Set([String(limit)])}
-                onSelectionChange={(keys) => {
-                  const val = Array.from(keys)[0];
-                  if (val) setLimit(Number(val));
-                }}
-                className="w-36"
-                size="sm"
-                variant="bordered"
+              <div className="relative max-w-md flex items-center">
+                <Icon icon="lucide:search" className="pointer-events-none absolute left-3 size-4 text-default-400" />
+                <input
+                  placeholder="Search by id, name, or email..."
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  className="w-full rounded-lg border border-default-200 bg-default-50 py-2 pl-9 pr-8 text-sm text-foreground outline-none transition focus:border-primary focus:ring-1 focus:ring-primary dark:border-default-100/20 dark:bg-default-100/10"
+                />
+                {search && (
+                  <button
+                    type="button"
+                    onClick={() => setSearch("")}
+                    className="absolute right-2 text-default-400 hover:text-default-600"
+                    aria-label="Clear"
+                  >
+                    <Icon icon="lucide:x" className="size-3.5" />
+                  </button>
+                )}
+              </div>
+              <select
+                value={limit}
+                onChange={(e) => setLimit(Number(e.target.value))}
+                className="h-9 rounded-lg border border-default-200 bg-content1 px-3 text-sm font-medium text-foreground dark:border-default-100/20"
+                aria-label="Items per page"
               >
                 {[5, 10, 20, 50].map((n) => (
-                  <SelectItem key={String(n)} textValue={String(n)}>
-                    {n}
-                  </SelectItem>
+                  <option key={n} value={n}>
+                    {n} per page
+                  </option>
                 ))}
-              </Select>
+              </select>
             </div>
           </div>
 
@@ -189,7 +192,7 @@ export default function AdminUsersPage() {
                           <Button
                             isIconOnly
                             size="sm"
-                            variant="light"
+                            variant="ghost"
                             aria-label="Copy ID"
                             onPress={() => copyId(user.id)}
                           >
@@ -212,14 +215,14 @@ export default function AdminUsersPage() {
                       <td className="px-4 py-3">
                         <Chip
                           size="sm"
-                          variant="flat"
+                          variant="soft"
                           color={user.emailVerified ? "success" : "warning"}
                         >
                           {user.emailVerified ? "Verified" : "Pending"}
                         </Chip>
                       </td>
                       <td className="px-4 py-3">
-                        <Chip size="sm" variant="flat" color={roleColor(user.role)}>
+                        <Chip size="sm" variant="soft" color={roleColor(user.role)}>
                           {roleLabel(user.role)}
                         </Chip>
                       </td>
@@ -227,25 +230,28 @@ export default function AdminUsersPage() {
                       <td className="px-4 py-3">
                         <Dropdown>
                           <DropdownTrigger>
-                            <Button isIconOnly size="sm" variant="light" aria-label="Actions">
+                            <Button isIconOnly size="sm" variant="ghost" aria-label="Actions">
                               <Icon icon="lucide:more-horizontal" className="size-4" />
                             </Button>
                           </DropdownTrigger>
                           <DropdownMenu aria-label="User actions">
                             <DropdownItem
                               key="view"
-                              startContent={<Icon icon="lucide:eye" className="size-4" />}
-                              as={Link}
-                              href={`/admin/users/${user.id}`}
+                              onClick={() => router.push(`/admin/users/${user.id}`)}
                             >
-                              View profile
+                              <div className="flex items-center gap-2">
+                                <Icon icon="lucide:eye" className="size-4" />
+                                <span>View profile</span>
+                              </div>
                             </DropdownItem>
                             <DropdownItem
                               key="report"
-                              startContent={<Icon icon="lucide:flag" className="size-4" />}
-                              className="text-warning"
+                              onClick={() => router.push("/admin/reported")}
                             >
-                              View reports
+                              <div className="flex items-center gap-2 text-warning">
+                                <Icon icon="lucide:flag" className="size-4" />
+                                <span>View reports</span>
+                              </div>
                             </DropdownItem>
                           </DropdownMenu>
                         </Dropdown>
@@ -262,14 +268,24 @@ export default function AdminUsersPage() {
               <p className="text-sm text-default-500">
                 Page {page} of {totalPages}
               </p>
-              <Pagination
-                total={totalPages}
-                page={page}
-                onChange={setPage}
-                size="sm"
-                showControls
-                color="primary"
-              />
+              <div className="flex items-center gap-2">
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  isDisabled={page <= 1}
+                  onPress={() => setPage((p) => Math.max(1, p - 1))}
+                >
+                  Previous
+                </Button>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  isDisabled={page >= totalPages}
+                  onPress={() => setPage((p) => Math.min(totalPages, p + 1))}
+                >
+                  Next
+                </Button>
+              </div>
             </div>
           )}
         </Card>

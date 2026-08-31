@@ -1,0 +1,110 @@
+{
+  "conversations": [
+    {
+      "id": "conv1",
+      "candidateId": "1",
+      "candidateName": "Amine Benali",
+      "candidateAvatar": "AB",
+      "candidateTitle": "Fullstack Developer",
+      "lastMessage": "Parfait, je serai disponible pour un entretien cette semaine.",
+      "lastTime": "10:42",
+      "unread": 2,
+      "online": true,
+      "messages": [
+        { "id": "m1", "sender": "recruiter", "text": "Bonjour Amine, votre profil Fullstack nous a beaucoup intéressés.", "time": "09:30" },
+        { "id": "m2", "sender": "candidate", "text": "Bonjour, merci beaucoup ! De quel poste s'agit-il exactement ?", "time": "09:33" },
+        { "id": "m3", "sender": "recruiter", "text": "C'est pour un poste de Développeur Fullstack Senior chez Iksatech. Vous correspondiez parfaitement au profil recherché.", "time": "09:35" },
+        { "id": "m4", "sender": "candidate", "text": "Cela a l'air très intéressant ! Pouvez-vous m'en dire plus sur les missions ?", "time": "09:38" },
+        { "id": "m5", "sender": "recruiter", "text": "Bien sûr ! Vous travaillerez sur notre plateforme de recrutement IA avec React, Node.js et TypeScript. Une équipe de 5 développeurs.", "time": "09:42" },
+        { "id": "m6", "sender": "candidate", "text": "Super, ça correspond exactement à mes compétences. Quel est le process de recrutement ?", "time": "09:50" },
+        { "id": "m7", "sender": "recruiter", "text": "Un entretien technique avec notre lead dev, puis un entretien RH. On peut planifier ça dès cette semaine si vous êtes disponible.", "time": "10:00" },
+        { "id": "m8", "sender": "candidate", "text": "Parfait, je serai disponible pour un entretien cette semaine.", "time": "10:42" }
+      ]
+    },
+    {
+      "id": "conv2",
+      "candidateId": "2",
+      "candidateName": "Sara El Moudden",
+      "candidateAvatar": "SE",
+      "candidateTitle": "Backend Engineer",
+      "lastMessage": "Je vous envoie mon portfolio par email aujourd'hui.",
+      "lastTime": "Hier",
+      "unread": 0,
+      "online": false,
+      "messages": [
+        { "id": "m9", "sender": "recruiter", "text": "Bonjour Sara, votre profil Backend est impressionnant.", "time": "Lun 14:00" },
+        { "id": "m10", "sender": "candidate", "text": "Merci beaucoup ! Je suis très intéressée par votre offre.", "time": "Lun 14:15" },
+        { "id": "m11", "sender": "recruiter", "text": "Avez-vous un portfolio ou des projets GitHub à nous montrer ?", "time": "Lun 14:20" },
+        { "id": "m12", "sender": "candidate", "text": "Je vous envoie mon portfolio par email aujourd'hui.", "time": "Hier" }
+      ]
+    },
+    {
+      "id": "conv3",
+      "candidateId": "6",
+      "candidateName": "Nadia Berrada",
+      "candidateAvatar": "NB",
+      "candidateTitle": "Angular Developer Senior",
+      "lastMessage": "Très bien, j'attends votre retour avec impatience !",
+      "lastTime": "Hier",
+      "unread": 1,
+      "online": true,
+      "messages": [
+        { "id": "m13", "sender": "candidate", "text": "Bonjour, j'ai postulé au poste Angular Developer chez vous.", "time": "Mar 10:00" },
+        { "id": "m14", "sender": "recruiter", "text": "Bonjour Nadia, nous avons bien reçu votre candidature. Votre profil est excellent !", "time": "Mar 10:30" },
+        { "id": "m15", "sender": "candidate", "text": "Merci ! J'ai 7 ans d'expérience avec Angular, je pense correspondre parfaitement.", "time": "Mar 10:45" },
+        { "id": "m16", "sender": "recruiter", "text": "Effectivement, nous aimerions vous rencontrer. Je reviens vers vous pour planifier un entretien.", "time": "Mar 11:00" },
+        { "id": "m17", "sender": "candidate", "text": "Très bien, j'attends votre retour avec impatience !", "time": "Hier" }
+      ]
+    },
+    {
+      "id": "conv4",
+      "candidateId": "9",
+      "candidateName": "Hicham El Idrissi",
+      "candidateAvatar": "HE",
+      "candidateTitle": "DevOps Engineer",
+      "lastMessage": "Oui, je suis certifié AWS Solutions Architect.",
+      "lastTime": "Mar 16:20",
+      "unread": 0,
+      "online": false,
+      "messages": [
+        { "id": "m18", "sender": "recruiter", "text": "Bonjour Hicham, votre parcours DevOps est très solide.", "time": "Mar 15:00" },
+        { "id": "m19", "sender": "candidate", "text": "Bonjour, merci beaucoup ! Je suis passionné par l'infrastructure cloud.", "time": "Mar 15:10" },
+        { "id": "m20", "sender": "recruiter", "text": "Avez-vous de l'expérience avec AWS EKS et Terraform ?", "time": "Mar 15:30" },
+        { "id": "m21", "sender": "candidate", "text": "Oui, je suis certifié AWS Solutions Architect.", "time": "Mar 16:20" }
+      ]
+    },
+    {
+      "id": "conv5",
+      "candidateId": "10",
+      "candidateName": "Imane Rharbi",
+      "candidateAvatar": "IR",
+      "candidateTitle": "Data Scientist",
+      "lastMessage": "Je prépare un test technique que vous m'avez envoyé.",
+      "lastTime": "Mar 12:00",
+      "unread": 0,
+      "online": false,
+      "messages": [
+        { "id": "m22", "sender": "recruiter", "text": "Bonjour Imane, bienvenue dans le process de recrutement !", "time": "Lun 09:00" },
+        { "id": "m23", "sender": "candidate", "text": "Bonjour, merci ! J'ai hâte de collaborer avec votre équipe.", "time": "Lun 09:30" },
+        { "id": "m24", "sender": "recruiter", "text": "Nous avons préparé un quiz technique pour évaluer vos compétences en Data Science.", "time": "Lun 10:00" },
+        { "id": "m25", "sender": "candidate", "text": "Je prépare un test technique que vous m'avez envoyé.", "time": "Mar 12:00" }
+      ]
+    },
+    {
+      "id": "conv6",
+      "candidateId": "15",
+      "candidateName": "Karim El Fassi",
+      "candidateAvatar": "KF",
+      "candidateTitle": "ML Engineer",
+      "lastMessage": "Très intéressé par le projet ML chez vous !",
+      "lastTime": "Lun 08:15",
+      "unread": 0,
+      "online": true,
+      "messages": [
+        { "id": "m26", "sender": "candidate", "text": "Bonjour, je viens de postuler pour le poste ML Engineer.", "time": "Dim 20:00" },
+        { "id": "m27", "sender": "recruiter", "text": "Bonjour Karim, nous avons vu votre profil. Très impressionnant !", "time": "Lun 08:00" },
+        { "id": "m28", "sender": "candidate", "text": "Très intéressé par le projet ML chez vous !", "time": "Lun 08:15" }
+      ]
+    }
+  ]
+}

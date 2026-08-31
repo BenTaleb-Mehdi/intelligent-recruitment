@@ -1,0 +1,267 @@
+"use client";
+
+import React, { useState, useEffect, useMemo } from "react";
+import { useParams, useRouter } from "next/navigation";
+import Link from "next/link";
+import { Icon } from "@iconify/react";
+import { Card } from "@/components/candidate/Card";
+import { Button } from "@/components/candidate/Button";
+import { Chip } from "@/components/candidate/Chip";
+import { Alert } from "@/components/candidate/Alert";
+import { api } from "@/lib/api";
+
+export default function CandidateQuizRoom() {
+  const params = useParams();
+  const router = useRouter();
+  const [quiz, setQuiz] = useState<any>(null);
+  const [questions, setQuestions] = useState<any[]>([]);
+  const [currentQuestion, setCurrentQuestion] = useState(0);
+  const [selectedAnswers, setSelectedAnswers] = useState<Record<number, number>>({});
+  const [timeLeft, setTimeLeft] = useState(600); // 10 minutes in seconds
+  const [finished, setFinished] = useState(false);
+  const [score, setScore] = useState(0);
+  const [loading, setLoading] = useState(true);
+
+  // Load quiz from database
+  const loadQuiz = async () => {
+    try {
+      const res: any = await api.get("/api/candidates/quizzes");
+      if (res.success && Array.isArray(res.data)) {
+        const found = res.data.find((q: any) => q.id === params.id);
+        if (found) {
+          setQuiz(found);
+          setQuestions(found.questions || []);
+        }
+      }
+    } catch (e) {
+      console.error("Error loading quiz:", e);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadQuiz();
+  }, [params.id]);
+
+  // Countdown timer effect
+  useEffect(() => {
+    if (timeLeft <= 0 || finished || loading) return;
+    const interval = setInterval(() => {
+      setTimeLeft((prev) => prev - 1);
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [timeLeft, finished, loading]);
+
+  // Format time (MM:SS)
+  const formattedTime = useMemo(() => {
+    const minutes = Math.floor(timeLeft / 60);
+    const seconds = timeLeft % 60;
+    return `${minutes.toString().padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`;
+  }, [timeLeft]);
+
+  const handleSelectOption = (optIdx: number) => {
+    if (finished) return;
+    setSelectedAnswers({
+      ...selectedAnswers,
+      [currentQuestion]: optIdx,
+    });
+  };
+
+  const handleNext = () => {
+    if (currentQuestion < questions.length - 1) {
+      setCurrentQuestion((prev) => prev + 1);
+    }
+  };
+
+  const handlePrev = () => {
+    if (currentQuestion > 0) {
+      setCurrentQuestion((prev) => prev - 1);
+    }
+  };
+
+  const handleSubmit = async () => {
+    if (questions.length === 0) return;
+    let correctCount = 0;
+    questions.forEach((q, idx) => {
+      if (selectedAnswers[idx] === q.correctAnswer) {
+        correctCount++;
+      }
+    });
+    const finalScore = Math.round((correctCount / questions.length) * 100);
+    setScore(finalScore);
+
+    try {
+      const response: any = await api.post(`/api/candidates/quizzes/${params.id}/submit`, {
+        score: finalScore
+      });
+      if (response.success) {
+        setFinished(true);
+      }
+    } catch (err) {
+      console.error("Error submitting quiz result:", err);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="p-8 text-center text-default-450 font-bold max-w-3xl mx-auto py-24">
+        <Icon icon="solar:spinner-bold" className="animate-spin text-3xl mx-auto mb-2 text-accent" />
+        Loading Quiz Room...
+      </div>
+    );
+  }
+
+  if (questions.length === 0) {
+    return (
+      <div className="p-8 text-center text-danger font-bold max-w-3xl mx-auto py-24">
+        No questions found for this quiz.
+      </div>
+    );
+  }
+
+  return (
+    <div className="p-8 max-w-3xl mx-auto space-y-8">
+      {/* Header Info */}
+      <div className="flex items-center justify-between border-b border-default-100 dark:border-default-50/10 pb-4">
+        <div>
+          <span className="text-xs font-semibold text-default-450 uppercase tracking-wider">Assessment Room</span>
+          <h1 className="text-xl font-bold tracking-tight">{quiz?.title || "React Core Architecture Quiz"}</h1>
+        </div>
+        {!finished && (
+          <div className="flex items-center gap-2 px-4 py-2 bg-blue-50/50 dark:bg-slate-800 rounded-xl font-mono text-sm font-bold text-accent">
+            <Icon icon="solar:clock-circle-bold" className="text-base shrink-0 animate-spin" />
+            <span>{formattedTime}</span>
+          </div>
+        )}
+      </div>
+
+      {finished ? (
+        // Results Screen
+        <div className="space-y-6">
+          <Alert
+            status={score >= 70 ? "success" : "warning"}
+            title={score >= 70 ? "Quiz Passed Successfully!" : "Quiz Completed"}
+            description={`You achieved a compatibility rating of ${score}% in technical skills.`}
+          />
+
+          <Card>
+            <Card.Header>
+              <div>
+                <Card.Title>AI Evaluation Grade Card</Card.Title>
+                <Card.Description>Summary report generated by AI models</Card.Description>
+              </div>
+            </Card.Header>
+            <Card.Content className="space-y-6">
+              <div className="text-center py-6 bg-blue-50/10 dark:bg-[#1a202c]/30 rounded-xl border border-blue-100/50 dark:border-slate-850">
+                <span className={`text-4xl font-black ${score >= 70 ? "text-success" : "text-warning"}`}>
+                  {score}%
+                </span>
+                <p className="text-xs text-default-450 font-medium mt-1">Final Score Grade</p>
+              </div>
+
+              <div className="space-y-3">
+                <h4 className="text-xs font-bold text-default-400 uppercase tracking-wider">Feedback Summary</h4>
+                <p className="text-sm text-default-550 leading-relaxed">
+                  {score >= 70
+                    ? "Excellent frontend capabilities. Your score confirms a high density of matching skills required by sponsor company. We have updated your employability index accordingly."
+                    : "Review some missing core principles. You can retake another AI-generated skills evaluation in 7 days to improve this matching rating."}
+                </p>
+              </div>
+            </Card.Content>
+            <Card.Footer className="flex justify-between gap-4">
+              <Link href="/candidate/quizzes" className="flex-1">
+                <Button variant="outline" className="w-full">
+                  Back to Assessments
+                </Button>
+              </Link>
+              <Link href="/candidate/dashboard" className="flex-1">
+                <Button variant="primary" className="w-full">
+                  Go to Dashboard
+                </Button>
+              </Link>
+            </Card.Footer>
+          </Card>
+        </div>
+      ) : (
+        // Active Quiz Screen
+        <div className="space-y-6">
+          {/* Question Counter Card */}
+          <Card>
+            <Card.Content className="p-6 space-y-6">
+              <div className="flex justify-between items-center text-xs font-semibold text-default-450 border-b border-default-100 dark:border-default-50/10 pb-4">
+                <span>Evaluation Question {currentQuestion + 1} of {questions.length}</span>
+                <Chip variant="soft">Single Choice QCM</Chip>
+              </div>
+
+              {/* Question Text */}
+              <h3 className="text-base font-bold text-default-900 dark:text-default-50 leading-relaxed">
+                {questions[currentQuestion]?.text}
+              </h3>
+
+              {/* Options */}
+              <div className="space-y-3 pt-2">
+                {Array.isArray(questions[currentQuestion]?.options) && 
+                  questions[currentQuestion].options.map((opt: string, optIdx: number) => {
+                    const isSelected = selectedAnswers[currentQuestion] === optIdx;
+                    return (
+                      <button
+                        key={optIdx}
+                        onClick={() => handleSelectOption(optIdx)}
+                        className={[
+                          "w-full text-left p-4 rounded-xl border text-sm transition-all duration-150 flex items-center justify-between",
+                          isSelected
+                            ? "border-accent bg-accent/5 text-accent font-semibold shadow-sm shadow-accent/5"
+                            : "border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-800/10 hover:border-accent/40 dark:hover:border-slate-700 hover:bg-blue-50/20 dark:hover:bg-slate-800/20",
+                        ].join(" ")}
+                      >
+                        <span>{opt}</span>
+                        <div className={[
+                          "w-4 h-4 rounded-full border flex items-center justify-center shrink-0 ml-3",
+                          isSelected ? "border-accent bg-accent" : "border-slate-300 dark:border-slate-700",
+                        ].join(" ")}>
+                          {isSelected && <div className="w-1.5 h-1.5 rounded-full bg-white" />}
+                        </div>
+                      </button>
+                    );
+                  })
+                }
+              </div>
+            </Card.Content>
+            {/* Nav controls footer */}
+            <Card.Footer className="justify-between border-t border-slate-100 dark:border-slate-800/80">
+              <Button
+                startIcon="solar:alt-arrow-left-bold"
+                variant="outline"
+                onClick={handlePrev}
+                isDisabled={currentQuestion === 0}
+              >
+                Previous
+              </Button>
+
+              {currentQuestion === questions.length - 1 ? (
+                <Button
+                  startIcon="solar:verified-check-bold"
+                  variant="primary"
+                  onClick={handleSubmit}
+                  isDisabled={selectedAnswers[currentQuestion] === undefined}
+                >
+                  Finish & Submit
+                </Button>
+              ) : (
+                <Button
+                  endIcon="solar:alt-arrow-right-bold"
+                  variant="primary"
+                  onClick={handleNext}
+                  isDisabled={selectedAnswers[currentQuestion] === undefined}
+                >
+                  Next Question
+                </Button>
+              )}
+            </Card.Footer>
+          </Card>
+        </div>
+      )}
+    </div>
+  );
+}

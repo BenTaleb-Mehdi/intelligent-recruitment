@@ -1,0 +1,44 @@
+{
+  "notifications": [
+    {
+      "id": 1,
+      "title": "Quiz technique assigné",
+      "description": "ViteTech Solutions vous a assigné le test 'React Core Architecture'.",
+      "time": "Il y a 5 min",
+      "type": "quiz",
+      "unread": true,
+      "icon": "solar:clipboard-list-linear",
+      "color": "bg-rose-50 text-rose-600 border-rose-100"
+    },
+    {
+      "id": 2,
+      "title": "CV analysé par l'IA",
+      "description": "Votre CV a été importé et 24 compétences clés ont été extraites.",
+      "time": "Il y a 1 heure",
+      "type": "cv",
+      "unread": true,
+      "icon": "solar:document-text-linear",
+      "color": "bg-blue-50 text-blue-600 border-blue-100"
+    },
+    {
+      "id": 3,
+      "title": "Nouvelle offre recommandée",
+      "description": "L'offre 'Lead Frontend Engineer' chez CognitiveAI match à 89% avec votre profil.",
+      "time": "Il y a 3 heures",
+      "type": "matching",
+      "unread": false,
+      "icon": "solar:magic-stick-3-linear",
+      "color": "bg-purple-50 text-purple-600 border-purple-100"
+    },
+    {
+      "id": 4,
+      "title": "GitHub synchronisé",
+      "description": "14 dépôts synchronisés avec succès. Stack dominante: TypeScript.",
+      "time": "Il y a 1 jour",
+      "type": "github",
+      "unread": false,
+      "icon": "solar:link-linear",
+      "color": "bg-emerald-50 text-emerald-600 border-emerald-100"
+    }
+  ]
+}

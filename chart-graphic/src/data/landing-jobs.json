@@ -1,0 +1,28 @@
+{
+  "jobs": [
+    {
+      "title": "Lead Fullstack Engineer",
+      "company": "CashPlus Maroc",
+      "loc": "Casablanca · Hybride",
+      "salary": "18k – 24k DH",
+      "match": "97%",
+      "tech": ["Next.js", "Node.js", "PostgreSQL"]
+    },
+    {
+      "title": "Senior DevOps / Cloud Engineer",
+      "company": "Inwi Digital Hub",
+      "loc": "Rabat · Remote OK",
+      "salary": "20k – 28k DH",
+      "match": "94%",
+      "tech": ["AWS", "Docker", "Terraform"]
+    },
+    {
+      "title": "Data Engineer – IA & Analytics",
+      "company": "OCP Insights",
+      "loc": "Casablanca · Full Remote",
+      "salary": "À négocier",
+      "match": "91%",
+      "tech": ["Python", "Spark", "dbt"]
+    }
+  ]
+}

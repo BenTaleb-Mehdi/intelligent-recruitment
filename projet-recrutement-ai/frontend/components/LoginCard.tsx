@@ -1,15 +1,17 @@
 "use client";
 import React, { useState } from "react";
-import { Card, CardHeader, CardBody, CardFooter, Input, Button, Link } from "@heroui/react";
+import { Card, CardHeader, CardContent, CardFooter, TextField, Label, Input, Button, Link } from "@heroui/react";
 import { authClient } from "@/lib/auth-client";
 import { useRouter } from "next/navigation";
 import { Icon } from "@iconify/react";
+import Alert from "@/components/ui/Alert";
 
 interface LoginCardProps {
     setView: (view: "login" | "register") => void;
 }
 
 export default function LoginCard({ setView }: LoginCardProps) {
+    
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [error, setError] = useState("");
@@ -21,27 +23,30 @@ export default function LoginCard({ setView }: LoginCardProps) {
         setError("");
         setLoading(true);
 
-        const { error } = await authClient.signIn.email({ email, password });
+        const { data, error } = await authClient.signIn.email({ email, password });
 
         if (error) {
             setError(error.message || "Invalid email or password.");
             setLoading(false);
-        } else {
-            router.push("/dashboard");
+        } else if (data) {
+            const role = (data.user as any).role;
+
+            router.push(role === "RECRUITER" ? "/recruiter/dashboard" : "/candidate/dashboard");
+
         }
     };
 
     const handleGithubLogin = async () => {
         await authClient.signIn.social({
             provider: "github",
-            callbackURL: "http://localhost:3000/dashboard"
+            callbackURL: window.location.origin
         });
     };
     const handleGoogleLogin = async () => {
     try {
         await authClient.signIn.social({
             provider: "google",
-            callbackURL: "http://localhost:3000/dashboard"
+            callbackURL: window.location.origin
         });
     } catch (error) {
         console.error("Error signing in with Google:", error);
@@ -50,12 +55,10 @@ export default function LoginCard({ setView }: LoginCardProps) {
 
     const handleLinkedinLogin = async () => {
     try {
-        // Safe check dial l-Register state kima drna f l-blan d sessionStorage
-        sessionStorage.setItem("is_signing_up", "false"); // aw true ila knti f RegisterCard
-        
+        sessionStorage.setItem("is_signing_up", "false");
         await authClient.signIn.social({
             provider: "linkedin",
-            callbackURL: "http://localhost:3000/dashboard"
+            callbackURL: window.location.origin
         });
     } catch (error) {
         console.error("Kh6a2 f dkhul b LinkedIn:", error);
@@ -63,86 +66,81 @@ export default function LoginCard({ setView }: LoginCardProps) {
 };
 
     return (
-        <Card className="w-full max-w-[400px] p-4 shadow-lg">
-            <CardHeader className="flex flex-col gap-1 items-center">
-                <h1 className="text-2xl font-bold">Welcome Back</h1>
-                <p className="text-small text-default-500">Sign in to your dashboard</p>
+        <Card className="w-full shadow-none border-none bg-transparent p-0">
+            <CardHeader className="flex flex-col items-center gap-3 pb-2">
+               
+                <div className="text-center space-y-1">
+                    <h1 className="text-2xl font-bold tracking-tight">Welcome back</h1>
+                    <p className="text-sm text-default-500">Sign in to your account</p>
+                </div>
             </CardHeader>
-            <CardBody>
+            <CardContent className="px-6 pt-4">
                 <form onSubmit={handleLogin} className="flex flex-col gap-4">
-                    {error && (
-                        <div className="flex items-start gap-2 bg-danger-50 text-danger border border-danger-200 rounded-lg p-3">
-                            <Icon icon="lucide:circle-alert" className="w-5 h-5 mt-0.5 shrink-0" />
-                            <p className="text-sm">{error}</p>
-                        </div>
-                    )}
-                    <Input
-                        type="email"
-                        label="Email"
-                        placeholder="you@example.com"
-                        variant="bordered"
-                        value={email}
-                        onValueChange={setEmail}
-                        isRequired
-                    />
-                    <Input
-                        type="password"
-                        label="Password"
-                        placeholder="Enter your password"
-                        variant="bordered"
-                        value={password}
-                        onValueChange={setPassword}
-                        isRequired
-                    />
-                    <div className="flex justify-end">
-                        <Link href="/reset-password" size="sm" className="cursor-pointer">
+                    {error && <Alert variant="danger" message={error} />}
+                    <TextField isRequired value={email} onChange={setEmail}>
+                        <Label>Email</Label>
+                        <Input type="email" placeholder="you@example.com" />
+                    </TextField>
+                    <TextField isRequired value={password} onChange={setPassword}>
+                        <Label>Password</Label>
+                        <Input type="password" placeholder="Enter your password" />
+                    </TextField>
+                    <div className="flex justify-end -mt-1">
+                        <Link href="/reset-password" className="cursor-pointer text-primary text-sm">
                             Forgot password?
                         </Link>
                     </div>
-                    <Button type="submit" color="success" className="text-white font-medium" isLoading={loading}>
-                        Sign In
+                    <Button
+                        type="submit"
+                        variant="primary"
+                        size="lg"
+                        className="font-semibold"
+                        isDisabled={loading}
+                    >
+                        {loading ? "Signing in..." : "Sign In"}
                     </Button>
-                    <div className="relative my-2">
-                        <div className="absolute inset-0 flex items-center">
-                            <span className="w-full border-t border-divider" />
-                        </div>
-                        <div className="relative flex justify-center text-xs uppercase">
-                            <span className="bg-content1 px-2 text-default-400">Or continue with</span>
-                        </div>
+                   <div className="flex items-center gap-4 my-5">
+                        <hr className="flex-1 border-t border-default-200" />
+                        <span className="text-xs font-medium text-default-500 uppercase tracking-wider">
+                            Or continue with
+                        </span>
+                        <hr className="flex-1 border-t border-default-200" />
                     </div>
-                    <Button 
-                            variant="bordered"
-                            className="w-full border-default-200 hover:border-default-400 font-medium"
-                            startContent={<Icon icon="logos:google-icon" className="w-5 h-5" />}
+                    <div className="flex flex-col gap-2.5">
+                        <Button
+                            variant="outline"
+                            className="w-full h-11 font-medium"
                             onPress={handleGoogleLogin}
                         >
-                            Sign in with Google
-                    </Button>
-                    <Button
-                        variant="bordered"
-                        className="w-full border-default-200 hover:border-default-400 font-medium"
-                        startContent={<Icon icon="lucide:github" className="size-5 text-default-900" />}
-                        onPress={handleGithubLogin}
-                    >
-                        Sign in with GitHub
-                    </Button>
-                    <Button 
-                        variant="bordered"
-                        className="w-full border-default-200 hover:border-default-400 font-medium"
-                        startContent={<Icon icon="logos:linkedin-icon" className="w-5 h-5" />}
-                        onPress={handleLinkedinLogin}
-                    >
-                        Sign in with LinkedIn
-                    </Button>
+                            <Icon icon="logos:google-icon" className="w-5 h-5" />
+                            Continue with Google
+                        </Button>
+                        <Button
+                            variant="outline"
+                            className="w-full h-11 font-medium"
+                            onPress={handleLinkedinLogin}
+                        >
+                            <Icon icon="logos:linkedin-icon" className="w-5 h-5" />
+                            Continue with LinkedIn
+                        </Button>
+                        <Button
+                            variant="outline"
+                            className="w-full h-11 font-medium"
+                            onPress={handleGithubLogin}
+                        >
+                            <Icon icon="lucide:github" className="w-5 h-5 text-default-900" />
+                            Continue with GitHub
+                        </Button>
+                    </div>
                 </form>
-            </CardBody>
-            <CardFooter className="justify-center">
-                <p className="text-small">
-                    Don&apos;t have an account?{" "}
-                    <Link size="sm" className="cursor-pointer" onPress={() => setView("register")}>
-                        Create one
-                    </Link>
+            </CardContent>
+            <CardFooter className="justify-center gap-1 pt-2 pb-0">
+                <p className="text-sm text-default-500">
+                    Don&apos;t have an account?
                 </p>
+                <Link className="cursor-pointer font-medium text-primary text-sm" onPress={() => setView("register")}>
+                    Create one
+                </Link>
             </CardFooter>
         </Card>
     );
