@@ -137,7 +137,35 @@ export default function ApplicantsTable({ applicants, jobId }: ApplicantsTablePr
                     </div>
                   </td>
                   <td className="py-3.5 px-4 text-slate-600 dark:text-slate-400">
-                    {applicant.experience || "-"}
+                    {(() => {
+                      const experienceVal = applicant.experience;
+                      if (!experienceVal) return "-";
+                      try {
+                        const parsed = JSON.parse(experienceVal);
+                        if (Array.isArray(parsed)) {
+                          if (parsed.length === 0) return "-";
+                          return (
+                            <div className="space-y-1 max-w-[280px]">
+                              {parsed.map((exp: any, index: number) => {
+                                const role = exp.role || exp.title || "";
+                                const company = exp.company || "";
+                                const period = exp.period || "";
+                                return (
+                                  <div key={index} className="leading-normal border-b border-slate-50 last:border-0 pb-1 last:pb-0">
+                                    {role && <span className="font-semibold text-slate-800 dark:text-slate-200 block truncate" title={role}>{role}</span>}
+                                    <div className="flex items-center justify-between gap-2 text-[10px] text-slate-500">
+                                      {company && <span className="truncate" title={company}>{company}</span>}
+                                      {period && <span className="text-slate-400 shrink-0">{period}</span>}
+                                    </div>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          );
+                        }
+                      } catch (e) {}
+                      return <span className="truncate max-w-[200px] block" title={experienceVal}>{experienceVal}</span>;
+                    })()}
                   </td>
                   <td className="py-3.5 px-4">
                     {applicant.rating && applicant.rating > 0 ? (
@@ -246,9 +274,32 @@ export default function ApplicantsTable({ applicants, jobId }: ApplicantsTablePr
                   <span className="text-slate-400">Téléphone</span>
                   <p className="text-slate-600 font-medium">{applicant.phone || "-"}</p>
                 </div>
-                <div>
-                  <span className="text-slate-400">Expérience</span>
-                  <p className="text-slate-600 font-medium">{applicant.experience || "-"}</p>
+                <div className="col-span-2 mt-1">
+                  <span className="text-slate-400 block mb-0.5">Expérience</span>
+                  {(() => {
+                    const experienceVal = applicant.experience;
+                    if (!experienceVal) return <p className="text-slate-600 font-medium">-</p>;
+                    try {
+                      const parsed = JSON.parse(experienceVal);
+                      if (Array.isArray(parsed)) {
+                        if (parsed.length === 0) return <p className="text-slate-600 font-medium">-</p>;
+                        return (
+                          <div className="space-y-1.5 mt-1">
+                            {parsed.map((exp: any, index: number) => (
+                              <div key={index} className="text-xs bg-slate-50 dark:bg-zinc-800/50 p-2 rounded-lg border border-slate-100 dark:border-zinc-700/50">
+                                <div className="font-semibold text-slate-800 dark:text-slate-200 flex justify-between gap-2">
+                                  <span>{exp.role || exp.title}</span>
+                                  {exp.period && <span className="text-[10px] text-slate-400 font-normal">{exp.period}</span>}
+                                </div>
+                                {exp.company && <div className="text-[10px] text-blue-600 dark:text-blue-400 font-semibold mt-0.5">{exp.company}</div>}
+                              </div>
+                            ))}
+                          </div>
+                        );
+                      }
+                    } catch (e) {}
+                    return <p className="text-slate-600 font-medium">{experienceVal}</p>;
+                  })()}
                 </div>
                 <div>
                   <span className="text-slate-400">Note</span>

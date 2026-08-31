@@ -254,9 +254,33 @@ export default function ApplicantDetailPage() {
         </h3>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-          <div className="space-y-2">
+          <div className="space-y-2 col-span-1 md:col-span-2">
             <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Expérience</span>
-            <p className="text-sm font-semibold text-slate-800">{applicant.experience || "-"}</p>
+            {(() => {
+              const experienceVal = applicant.experience;
+              if (!experienceVal) return <p className="text-sm font-semibold text-slate-800">-</p>;
+              try {
+                const parsed = JSON.parse(experienceVal);
+                if (Array.isArray(parsed)) {
+                  if (parsed.length === 0) return <p className="text-sm font-semibold text-slate-800">-</p>;
+                  return (
+                    <div className="space-y-3 mt-2">
+                      {parsed.map((exp: any, index: number) => (
+                        <div key={index} className="bg-slate-50 border border-slate-200/50 p-4 rounded-xl space-y-1">
+                          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1">
+                            <span className="text-sm font-bold text-slate-800">{exp.role || exp.title || "Poste"}</span>
+                            {exp.period && <span className="text-[11px] font-semibold text-slate-400">{exp.period}</span>}
+                          </div>
+                          {exp.company && <div className="text-xs font-semibold text-blue-600">{exp.company}</div>}
+                          {exp.description && <p className="text-xs text-slate-500 mt-1 leading-relaxed">{exp.description}</p>}
+                        </div>
+                      ))}
+                    </div>
+                  );
+                }
+              } catch (e) {}
+              return <p className="text-sm font-semibold text-slate-800">{experienceVal}</p>;
+            })()}
           </div>
           <div className="space-y-2">
             <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Note de matching</span>
