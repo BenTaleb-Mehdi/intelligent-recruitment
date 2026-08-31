@@ -19,7 +19,6 @@ export default function AuthPage() {
         setMounted(true);
     }, []);
 
-<<<<<<< HEAD
     useEffect(() => {
         if (!mounted) return;
         if (session) {
@@ -36,9 +35,6 @@ export default function AuthPage() {
     }, [session, router, mounted]);
 
     if (!mounted || isPending) {
-=======
-    if (!mounted) {
->>>>>>> 90525170874bf82114ff0e60a532cde0614c93da
         return null;
     }
 
@@ -137,4 +133,3 @@ export default function AuthPage() {
         </div>
     );
 }
-

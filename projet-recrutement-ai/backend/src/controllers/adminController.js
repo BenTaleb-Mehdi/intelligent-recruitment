@@ -5,7 +5,6 @@ export async function getAdminStats(req, res) {
     const weekAgo = new Date();
     weekAgo.setDate(weekAgo.getDate() - 7);
 
-<<<<<<< HEAD
     const [
       totalUsers,
       candidats,
@@ -19,32 +18,19 @@ export async function getAdminStats(req, res) {
       quizResults,
     ] = await Promise.all([
       prisma.user.count(),
-      // Role enum values are CANDIDATE / RECRUITER / ADMIN (uppercase)
-=======
-    const [totalUsers, candidats, recruteurs, admins, newThisWeek, verifiedEmails, onboardedUsers, pendingReports] =
-      await Promise.all([
-      prisma.user.count(),
->>>>>>> 90525170874bf82114ff0e60a532cde0614c93da
       prisma.user.count({ where: { role: "CANDIDATE" } }),
       prisma.user.count({ where: { role: "RECRUITER" } }),
       prisma.user.count({ where: { role: "ADMIN" } }),
       prisma.user.count({ where: { createdAt: { gte: weekAgo } } }),
       prisma.user.count({ where: { emailVerified: true } }),
       prisma.user.count({ where: { isOnboarded: true } }),
-<<<<<<< HEAD
       prisma.jobOffer.count(),
       prisma.application.count(),
       prisma.testResult.count(),
     ]);
 
-    // pendingReports: no Report model yet — return 0 until Sprint 4
     const pendingReports = 0;
 
-=======
-      Promise.resolve(3),
-    ]);
-
->>>>>>> 90525170874bf82114ff0e60a532cde0614c93da
     res.json({
       success: true,
       stats: {
@@ -56,15 +42,9 @@ export async function getAdminStats(req, res) {
         verifiedEmails,
         onboardedUsers,
         pendingReports,
-<<<<<<< HEAD
         jobOffers,
         applications,
         quizResults,
-=======
-        jobOffers: 0,
-        applications: 0,
-        quizResults: 0,
->>>>>>> 90525170874bf82114ff0e60a532cde0614c93da
       },
     });
   } catch (error) {

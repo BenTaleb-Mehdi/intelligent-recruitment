@@ -44,17 +44,11 @@ export default function AdminUserDetailPage() {
       <div className="mx-auto max-w-3xl text-center">
         <Icon icon="lucide:user-x" className="mx-auto size-12 text-default-300" />
         <h2 className="mt-4 text-xl font-semibold">User not found</h2>
-<<<<<<< HEAD
         <Link href="/admin/users">
           <Button className="mt-4" variant="ghost">
             Back to users
           </Button>
         </Link>
-=======
-        <Button as={Link} href="/admin/users" className="mt-4" color="primary" variant="flat">
-          Back to users
-        </Button>
->>>>>>> 90525170874bf82114ff0e60a532cde0614c93da
       </div>
     );
   }
@@ -78,7 +72,6 @@ export default function AdminUserDetailPage() {
           </div>
           <div className="flex-1">
             <div className="flex flex-wrap items-center gap-2">
-<<<<<<< HEAD
               <Chip size="sm" variant="soft" color={user.role?.toUpperCase() === "ADMIN" ? "danger" : user.role?.toUpperCase() === "RECRUITER" ? "success" : "default"}>
                 {user.role}
               </Chip>
@@ -87,16 +80,6 @@ export default function AdminUserDetailPage() {
               </Chip>
               {user.isOnboarded && (
                 <Chip size="sm" variant="soft" color="default">
-=======
-              <Chip size="sm" variant="flat" color={user.role === "admin" ? "danger" : user.role === "recruteur" ? "success" : "primary"}>
-                {user.role}
-              </Chip>
-              <Chip size="sm" variant="flat" color={user.emailVerified ? "success" : "warning"}>
-                {user.emailVerified ? "Verified" : "Unverified"}
-              </Chip>
-              {user.isOnboarded && (
-                <Chip size="sm" variant="flat" color="secondary">
->>>>>>> 90525170874bf82114ff0e60a532cde0614c93da
                   Onboarded
                 </Chip>
               )}
@@ -116,21 +99,13 @@ export default function AdminUserDetailPage() {
         </div>
 
         <div className="mt-6 flex gap-2">
-<<<<<<< HEAD
           <Button variant="ghost" isDisabled>
             <Icon icon="lucide:edit" />
             <span>Edit role</span>
           </Button>
-          <Button variant="danger-soft" isDisabled>
+          <Button variant="ghost" isDisabled className="text-danger">
             <Icon icon="lucide:ban" />
             <span>Suspend</span>
-=======
-          <Button variant="flat" color="primary" isDisabled startContent={<Icon icon="lucide:edit" />}>
-            Edit role
-          </Button>
-          <Button variant="flat" color="danger" isDisabled startContent={<Icon icon="lucide:ban" />}>
-            Suspend
->>>>>>> 90525170874bf82114ff0e60a532cde0614c93da
           </Button>
         </div>
       </Card>

@@ -1,11 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-<<<<<<< HEAD
 import { Button } from "@heroui/react";
-=======
-import { Input } from "@heroui/react";
->>>>>>> 90525170874bf82114ff0e60a532cde0614c93da
 import { Icon } from "@iconify/react";
 import { usePathname, useRouter } from "next/navigation";
 
@@ -49,7 +45,6 @@ export default function NavbarSearch() {
         handleSearch(query);
       }}
     >
-<<<<<<< HEAD
       <div className="relative flex w-full items-center">
         <Icon
           icon="lucide:search"
@@ -76,27 +71,6 @@ export default function NavbarSearch() {
           </button>
         )}
       </div>
-=======
-      <Input
-        id="navbar-search"
-        value={query}
-        onValueChange={setQuery}
-        placeholder={placeholder}
-        size="sm"
-        variant="bordered"
-        startContent={<Icon icon="lucide:search" className="size-4 text-default-400" />}
-        endContent={
-          <kbd className="hidden rounded-md border border-default-200 bg-default-100 px-1.5 py-0.5 text-[10px] font-medium text-default-500 lg:inline-block dark:border-default-100/20">
-            ⌘K
-          </kbd>
-        }
-        classNames={{
-          inputWrapper: "bg-default-50 dark:bg-default-100/10 border-default-200 dark:border-default-100/20",
-        }}
-        isClearable
-        onClear={() => setQuery("")}
-      />
->>>>>>> 90525170874bf82114ff0e60a532cde0614c93da
     </form>
   );
 }
