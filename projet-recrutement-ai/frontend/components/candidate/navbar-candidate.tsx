@@ -1,10 +1,12 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
+import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Icon } from "@iconify/react";
 import { Indicator } from "./Indicator";
 import candidateNotificationsData from "@/data/notifications-candidate.json";
+import { useUnreadMessages } from "@/hooks/useUnreadMessages";
 
 interface NavbarCandidateProps {
   onToggleSidebar: () => void;
@@ -17,6 +19,7 @@ export default function NavbarCandidate({ onToggleSidebar }: NavbarCandidateProp
   const dropdownRef = useRef<HTMLDivElement>(null);
   const [candidateName, setCandidateName] = useState("Mehdi Ben Taleb");
   const [avatarUrl, setAvatarUrl] = useState("/avatar-mehdi.png");
+  const { unreadCount: unreadMessageCount } = useUnreadMessages("CANDIDATE");
 
   // Load and listen to profile changes
   useEffect(() => {
@@ -93,6 +96,9 @@ export default function NavbarCandidate({ onToggleSidebar }: NavbarCandidateProp
     if (pathname.includes("/candidate/quizzes")) {
       return "Assessments & Tests";
     }
+    if (pathname.includes("/candidate/messages")) {
+      return "Messagerie Recruteur";
+    }
     return "Dashboard";
   };
 
@@ -123,11 +129,26 @@ export default function NavbarCandidate({ onToggleSidebar }: NavbarCandidateProp
       </div>
 
       {/* Right side: AI Matcher Sync Indicator & Notifications Dropdown */}
-      <div className="flex items-center space-x-4 relative" ref={dropdownRef}>
+      <div className="flex items-center space-x-3 relative" ref={dropdownRef}>
         <div className="flex items-center gap-1.5 px-3 py-1 bg-emerald-50 text-emerald-700 dark:bg-emerald-950/20 dark:text-emerald-400 rounded-full text-xs font-semibold select-none border border-emerald-100/50 dark:border-emerald-900/50">
           <Indicator status="success" pulse={false} />
           AI Matcher Sync Active
         </div>
+
+        {/* Messages Shortcut Button */}
+        <Link
+          href="/candidate/messages"
+          className="relative p-2 text-slate-500 hover:text-blue-600 rounded-full hover:bg-blue-50 transition-colors"
+          aria-label="Messagerie Recruteur"
+          title="Messagerie Recruteur"
+        >
+          {unreadMessageCount > 0 && (
+            <span className="absolute top-1 right-1 px-1 min-w-[16px] h-4 bg-blue-600 text-white text-[9px] font-bold rounded-full flex items-center justify-center border border-white animate-pulse">
+              {unreadMessageCount > 99 ? "99+" : unreadMessageCount}
+            </span>
+          )}
+          <Icon icon="solar:chat-round-dots-linear" className="w-5 h-5" />
+        </Link>
 
         {/* Notification Bell Button */}
         <button 

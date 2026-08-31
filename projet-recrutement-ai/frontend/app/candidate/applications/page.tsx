@@ -50,6 +50,8 @@ export default function CandidateApplications() {
             ];
 
             return {
+              id: app.id,
+              candidateId: app.candidateId,
               company: app.jobOffer?.recruiter?.companyName || "Unknown Company",
               role: app.jobOffer?.title || "Position",
               appliedDate: appliedDateStr,

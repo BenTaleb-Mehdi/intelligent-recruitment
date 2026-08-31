@@ -10,6 +10,7 @@ import ContractTypeSelector from "@/components/recruiter/contract-type-selector"
 import ExperienceSelector from "@/components/recruiter/experience-selector";
 import { api, ApiRecruiter, ApiDropdownItem, DropdownType } from "@/lib/api";
 import { authClient } from "@/lib/auth-client";
+import { useAlert } from "@/contexts/AlertContext";
 
 const DEFAULT_CONTRACT_TYPES = [
   "CDI (Contrat à Durée Indéterminée)",
@@ -48,7 +49,13 @@ export default function CreateJobPage() {
   const [isPublishing, setIsPublishing] = useState(false);
   const [showToast, setShowToast] = useState(false);
 
+  const { showAlert } = useAlert();
+  const showError = (message: string, variant: "danger" | "warning" = "danger") => {
+    showAlert(variant, message);
+  };
+
   const [recruiterId, setRecruiterId] = useState<string | null>(null);
+  const [verificationStatus, setVerificationStatus] = useState<"UNVERIFIED" | "PENDING_VERIFICATION" | "VERIFIED" | "REJECTED">("UNVERIFIED");
   const [dropdownItems, setDropdownItems] = useState<ApiDropdownItem[]>([]);
 
   const refreshDropdownItems = useCallback(async (rid: string) => {
@@ -73,6 +80,7 @@ export default function CreateJobPage() {
         if (!recruiter) return;
 
         setRecruiterId(recruiter.id);
+        setVerificationStatus(recruiter.verificationStatus || "UNVERIFIED");
         await refreshDropdownItems(recruiter.id);
       } catch (error) {
         console.error("Error fetching recruiter:", error);
@@ -133,8 +141,14 @@ export default function CreateJobPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (verificationStatus !== "VERIFIED") {
+      showError("Vous ne pouvez pas créer d'offre d'emploi. Veuillez vérifier votre entreprise (ICE / RC) dans les Paramètres.");
+      return;
+    }
+
     if (!title || !contractType || !locationType || !experience || !description || skills.length === 0) {
-      alert("Veuillez remplir tous les champs obligatoires et ajouter au moins une compétence.");
+      showError("Veuillez remplir tous les champs obligatoires et ajouter au moins une compétence.");
       return;
     }
 
@@ -147,6 +161,11 @@ export default function CreateJobPage() {
       const { data: recruiters } = await api.get<{ data: ApiRecruiter[] }>("/api/recruiters");
       const recruiter = recruiters?.find((r) => r.userId === session.user.id);
       if (!recruiter) return;
+
+      if (recruiter.verificationStatus !== "VERIFIED") {
+        showError("Vous ne pouvez pas créer d'offre d'emploi. Veuillez d'abord vérifier votre entreprise dans les Paramètres.");
+        return;
+      }
 
       const experienceYearsMap: Record<string, number> = {
         "Débutant (Sans expérience)": 0,
@@ -173,7 +192,7 @@ export default function CreateJobPage() {
       }, 1500);
     } catch (error: any) {
       console.error("Error creating job offer:", error);
-      alert(error?.message || "Erreur lors de la publication de l'offre.");
+      showError(error?.message || "Erreur lors de la publication de l'offre. Veuillez vérifier la vérification de votre entreprise dans les Paramètres.");
     } finally {
       setIsPublishing(false);
     }
@@ -185,6 +204,34 @@ export default function CreateJobPage() {
         <div className="fixed bottom-5 right-5 z-50 bg-emerald-600 text-white px-5 py-3.5 rounded-xl shadow-lg flex items-center gap-3 animate-slide-in select-none">
           <Icon icon="solar:check-circle-bold" className="w-5 h-5 flex-shrink-0" />
           <div className="text-xs font-semibold">Offre publiée avec succès ! Redirection...</div>
+        </div>
+      )}
+
+
+      {verificationStatus !== "VERIFIED" && (
+        <div className="bg-amber-50 border-2 border-amber-300 rounded-2xl p-5 shadow-sm space-y-3">
+          <div className="flex items-start gap-3">
+            <div className="p-2 bg-amber-100 rounded-xl text-amber-700">
+              <Icon icon="solar:shield-warning-bold" className="w-6 h-6" />
+            </div>
+            <div className="flex-1">
+              <h3 className="text-sm font-bold text-amber-900">
+                Vous ne pouvez pas publier d'offre d'emploi actuellement
+              </h3>
+              <p className="text-xs text-amber-700 mt-1 leading-relaxed">
+                Afin de garantir l'authenticité des recrues et d'éviter les fausses entreprises, votre compte doit être vérifié avec votre numéro ICE ou RC (Charika.ma).
+              </p>
+            </div>
+          </div>
+          <div className="flex justify-end pt-1">
+            <Link
+              href="/recruiter/settings"
+              className="inline-flex items-center gap-2 bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold px-4 py-2.5 rounded-xl shadow-sm transition-all"
+            >
+              <Icon icon="solar:settings-bold" className="w-4 h-4" />
+              Aller dans les Paramètres pour vérifier l'entreprise &rarr;
+            </Link>
+          </div>
         </div>
       )}
 

@@ -20,9 +20,17 @@ export default function ChatArea({ conversation }: ChatAreaProps) {
       {/* Fixed header — outside the scroll container */}
       <div className="shrink-0 px-4 py-2.5 bg-white border-b border-slate-200 flex items-center gap-3 shadow-sm">
         <div className="relative">
-          <div className="w-9 h-9 rounded-full bg-blue-500 flex items-center justify-center text-white text-[10px] font-bold select-none shadow-sm">
-            {conversation.candidateAvatar}
-          </div>
+          {conversation.candidateImage || conversation.logo || conversation.image ? (
+            <img
+              src={conversation.candidateImage || conversation.logo || conversation.image}
+              alt={conversation.candidateName}
+              className="w-9 h-9 rounded-full object-cover shadow-sm border border-slate-200"
+            />
+          ) : (
+            <div className="w-9 h-9 rounded-full bg-blue-500 flex items-center justify-center text-white text-[10px] font-bold select-none shadow-sm">
+              {conversation.candidateAvatar}
+            </div>
+          )}
           {conversation.online && (
             <span className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-blue-400 border-2 border-white rounded-full" />
           )}

@@ -27,6 +27,7 @@ router.get("/api/recruiters/:recruiterId/recent-applications", async (req, res) 
     }
 });
 router.post("/api/recruiters", protectDashboard, recruiterController.createRecruiter);
+router.post("/api/recruiters/verify-company", protectDashboard, recruiterController.verifyCompany);
 router.put("/api/recruiters/:id", protectDashboard, recruiterController.updateRecruiter);
 router.delete("/api/recruiters/:id", protectDashboard, recruiterController.deleteRecruiter);
 

@@ -6,6 +6,7 @@ import Link from "next/link";
 import { Icon } from "@iconify/react";
 import { api } from "@/lib/api";
 import type { ApiJobOffer } from "@/lib/api";
+import { useAlert } from "@/contexts/AlertContext";
 
 interface DescriptionLine {
   text: string;
@@ -102,6 +103,8 @@ export default function OfferCompletePage() {
   const [error, setError] = useState<string | null>(null);
   const [isRegenerating, setIsRegenerating] = useState(false);
 
+  const { showAlert } = useAlert();
+
   const fetchOffer = async (showMainSpinner = false) => {
     try {
       if (showMainSpinner) setLoading(true);
@@ -131,13 +134,33 @@ export default function OfferCompletePage() {
       setIsRegenerating(true);
       await api.post(`/api/job-offers/${offer.id}/regenerate`, {});
       console.log("Régénération déclenchée avec succès !");
-      setTimeout(async () => {
-        await fetchOffer(false);
-      }, 3000);
+
+      const currentDescription = offer.description;
+      let attempts = 0;
+      const maxAttempts = 15; // 30 seconds
+
+      const pollInterval = setInterval(async () => {
+        attempts++;
+        try {
+          const { data } = await api.get<{ data: ApiJobOffer }>(`/api/job-offers/${jobId}`);
+          if (data && data.description !== currentDescription) {
+            setOffer(data);
+            clearInterval(pollInterval);
+            setIsRegenerating(false);
+          } else if (attempts >= maxAttempts) {
+            clearInterval(pollInterval);
+            setIsRegenerating(false);
+            showAlert("warning", "La régénération prend plus de temps que prévu. Elle sera actualisée plus tard.");
+          }
+        } catch (error) {
+          console.error("Error polling:", error);
+          clearInterval(pollInterval);
+          setIsRegenerating(false);
+        }
+      }, 2000);
     } catch (err: any) {
       console.error("Erreur lors de la régénération:", err);
-      alert(err.message || "Erreur lors de la régénération.");
-    } finally {
+      showAlert("danger", err.message || "Erreur lors de la régénération.");
       setIsRegenerating(false);
     }
   };
@@ -153,7 +176,7 @@ export default function OfferCompletePage() {
       }
     } catch (err: any) {
       console.error("Error toggling job offer status:", err);
-      alert("Erreur lors de la modification du statut de l'offre.");
+      showAlert("danger", "Erreur lors de la modification du statut de l'offre.");
     }
   };
 
@@ -207,6 +230,7 @@ export default function OfferCompletePage() {
 
   return (
     <div className="max-w-6xl mx-auto space-y-6 font-sans">
+
       {/* Header section */}
       <header className="flex flex-col lg:flex-row lg:items-center justify-between gap-5">
         <div className="flex items-start lg:items-center gap-3">
@@ -260,7 +284,7 @@ export default function OfferCompletePage() {
       </header>
 
       {/* Main Content Grid (12 Columns with items-start for sticky functionality) */}
-      <div className="grid grid-cols-2 lg:grid-cols-12 gap-6 items-start">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
         
         {/* Left Column: L'entreprise (Sticky Sidebar) */}
         <aside className="lg:col-span-4 lg:sticky lg:top-6 space-y-6">
@@ -271,9 +295,17 @@ export default function OfferCompletePage() {
             </h3>
             
             <div className="flex items-center gap-3">
-              <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-blue-600 to-indigo-600 text-white flex items-center justify-center font-extrabold text-base shadow-md flex-shrink-0">
-                {offer.recruiter?.companyName?.slice(0, 2).toUpperCase() || "RE"}
-              </div>
+              {offer.recruiter?.logo || offer.recruiter?.image ? (
+                <img
+                  src={offer.recruiter.logo || offer.recruiter.image}
+                  alt={offer.recruiter.companyName || "Entreprise Recruteur"}
+                  className="w-12 h-12 rounded-2xl object-cover shadow-md border border-slate-200 flex-shrink-0"
+                />
+              ) : (
+                <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-blue-600 to-indigo-600 text-white flex items-center justify-center font-extrabold text-base shadow-md flex-shrink-0">
+                  {offer.recruiter?.companyName?.slice(0, 2).toUpperCase() || "RE"}
+                </div>
+              )}
               <div className="min-w-0">
                 <h4 className="text-sm font-bold text-slate-800 truncate">
                   {offer.recruiter?.companyName || "Entreprise Recruteur"}
@@ -299,6 +331,12 @@ export default function OfferCompletePage() {
                 <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Rémunération</span>
                 <p className="text-sm font-semibold text-slate-800">{offer.salary || "Non spécifiée"}</p>
               </div>
+              {offer.recruiter?.headquarters && (
+                <div className="space-y-1.5">
+                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Siège social</span>
+                  <p className="text-sm font-semibold text-slate-800">{offer.recruiter.headquarters}</p>
+                </div>
+              )}
               <div className="space-y-1.5">
                 <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Expérience</span>
                 <p className="text-sm font-semibold text-slate-800">{formatExperience(offer.experienceYears)}</p>
@@ -338,7 +376,7 @@ export default function OfferCompletePage() {
           </div>
 
           {/* Skills Required Card */}
-         <div className="bg-white p-6 sm:p-8 space-y-4">
+          <div className="bg-white rounded-2xl border border-slate-200/60 shadow-sm p-6 sm:p-8 space-y-4">
   <h3 className="text-base font-bold text-slate-800 pb-4 flex items-center gap-2">
     <Icon icon="solar:star-bold-duotone" className="w-5 h-5 text-amber-500" />
     Compétences Clés

@@ -1,10 +1,11 @@
 "use client";
 
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import { Icon } from "@iconify/react";
 import data from "@/data/applicants.json";
+import { api } from "@/lib/api";
 
 const statusStyles: Record<string, string> = {
   Nouveau: "bg-blue-50 text-blue-700 border-blue-100/80",
@@ -13,12 +14,63 @@ const statusStyles: Record<string, string> = {
   Refusé: "bg-rose-50 text-rose-700 border-rose-100/80",
 };
 
+const getInitials = (name: string) => {
+  if (!name) return "C";
+  return name
+    .split(" ")
+    .map((n) => n[0] || "")
+    .join("")
+    .toUpperCase()
+    .slice(0, 2);
+};
+
 export default function ApplicantDetailPage() {
   const params = useParams();
   const jobId = params.id as string;
   const applicantId = params.applicantId as string;
 
-  const applicant = (data.applicants as any[]).find((a) => a.id === applicantId);
+  const [applicant, setApplicant] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchApplicant = async () => {
+      setLoading(true);
+      try {
+        const res = await api.get<{ success: boolean; data: any[] }>(
+          `/api/job-offers/${jobId}/applicants`
+        );
+        if (res?.data && Array.isArray(res.data)) {
+          const found = res.data.find(
+            (a) => a.id === applicantId || a.applicationId === applicantId || a.candidateId === applicantId
+          );
+          if (found) {
+            setApplicant(found);
+            setLoading(false);
+            return;
+          }
+        }
+      } catch (err) {
+        console.error("Error fetching applicant from API:", err);
+      }
+
+      // Fallback to JSON mock data if not found in backend DB
+      const mockFound = (data.applicants as any[]).find((a) => a.id === applicantId);
+      setApplicant(mockFound || null);
+      setLoading(false);
+    };
+
+    if (jobId && applicantId) {
+      fetchApplicant();
+    }
+  }, [jobId, applicantId]);
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-20">
+        <div className="w-8 h-8 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
 
   if (!applicant) {
     return (
@@ -42,20 +94,33 @@ export default function ApplicantDetailPage() {
   return (
     <div className="max-w-3xl mx-auto space-y-6 font-sans">
       {/* Header */}
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-4">
         <Link
           href={`/recruiter/jobs/${jobId}/applicants`}
-          className="p-2 text-slate-400 hover:text-slate-800 hover:bg-slate-100 rounded-lg transition-colors"
+          className="p-2 text-slate-400 hover:text-slate-800 hover:bg-slate-100 rounded-lg transition-colors shrink-0"
         >
           <Icon icon="solar:alt-arrow-left-linear" className="w-5 h-5" />
         </Link>
-        <div className="flex-1">
-          <div className="flex items-center gap-3">
+
+        {applicant.image ? (
+          <img
+            src={applicant.image}
+            alt={applicant.name || "Candidat"}
+            className="w-16 h-16 rounded-2xl object-cover border-2 border-white shadow-md shrink-0"
+          />
+        ) : (
+          <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-indigo-500 to-blue-600 text-white font-bold text-lg flex items-center justify-center shadow-md shrink-0">
+            {getInitials(applicant.name)}
+          </div>
+        )}
+
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-3 flex-wrap">
             <h2 className="text-2xl font-bold text-slate-900 tracking-tight">
               {applicant.name}
             </h2>
             <span
-              className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold border leading-none ${statusStyles[applicant.status]}`}
+              className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold border leading-none ${statusStyles[applicant.status] || statusStyles["Nouveau"]}`}
             >
               <span className={`w-1.5 h-1.5 rounded-full ${
                 applicant.status === "Nouveau" ? "bg-blue-500" :
@@ -71,6 +136,23 @@ export default function ApplicantDetailPage() {
         </div>
       </div>
 
+      {/* Bio & Presentation Section */}
+      <div className="bg-white rounded-2xl border border-slate-200/70 shadow-sm p-6 sm:p-8 space-y-3">
+        <h3 className="text-sm font-bold text-slate-800 border-b border-slate-100 pb-2 flex items-center gap-2">
+          <Icon icon="solar:notes-linear" className="w-4 h-4 text-blue-500" />
+          Biographie &amp; Présentation
+        </h3>
+        {applicant.bio ? (
+          <p className="text-sm text-slate-600 leading-relaxed bg-slate-50/70 p-4 rounded-xl border border-slate-100 italic">
+            &ldquo;{applicant.bio}&rdquo;
+          </p>
+        ) : (
+          <p className="text-xs text-slate-400 italic">
+            Aucune biographie renseignée par ce candidat.
+          </p>
+        )}
+      </div>
+
       {/* Contact Info */}
       <div className="bg-white rounded-2xl border border-slate-200/70 shadow-sm p-6 sm:p-8 space-y-6">
         <h3 className="text-sm font-bold text-slate-800 border-b border-slate-100 pb-2 flex items-center gap-2">
@@ -81,24 +163,30 @@ export default function ApplicantDetailPage() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
           <div className="space-y-2">
             <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Nom complet</span>
-            <p className="text-sm font-semibold text-slate-800">{applicant.name}</p>
+            <p className="text-sm font-semibold text-slate-800">{applicant.name || "-"}</p>
           </div>
           <div className="space-y-2">
             <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Téléphone</span>
-            <p className="text-sm font-semibold text-slate-800">{applicant.phone}</p>
+            <p className="text-sm font-semibold text-slate-800">{applicant.phone || "-"}</p>
           </div>
           <div className="space-y-2">
             <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Email</span>
-            <p className="text-sm font-semibold text-slate-800">{applicant.email}</p>
+            <p className="text-sm font-semibold text-slate-800">{applicant.email || "-"}</p>
           </div>
           <div className="space-y-2">
             <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Date de candidature</span>
             <p className="text-sm font-semibold text-slate-800">
-              {new Date(applicant.appliedDate).toLocaleDateString("fr-FR", {
-                day: "numeric",
-                month: "long",
-                year: "numeric",
-              })}
+              {applicant.appliedDate ? (
+                isNaN(new Date(applicant.appliedDate).getTime())
+                  ? applicant.appliedDate
+                  : new Date(applicant.appliedDate).toLocaleDateString("fr-FR", {
+                      day: "numeric",
+                      month: "long",
+                      year: "numeric",
+                    })
+              ) : (
+                "-"
+              )}
             </p>
           </div>
         </div>
@@ -151,6 +239,9 @@ export default function ApplicantDetailPage() {
                 Voir le CV
               </a>
             )}
+            {!applicant.github && !applicant.linkedin && !applicant.portfolio && !applicant.cv && (
+              <span className="text-slate-400 text-xs font-normal">Aucun lien disponible</span>
+            )}
           </div>
         </div>
       </div>
@@ -163,15 +254,39 @@ export default function ApplicantDetailPage() {
         </h3>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-          <div className="space-y-2">
+          <div className="space-y-2 col-span-1 md:col-span-2">
             <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Expérience</span>
-            <p className="text-sm font-semibold text-slate-800">{applicant.experience}</p>
+            {(() => {
+              const experienceVal = applicant.experience;
+              if (!experienceVal) return <p className="text-sm font-semibold text-slate-800">-</p>;
+              try {
+                const parsed = JSON.parse(experienceVal);
+                if (Array.isArray(parsed)) {
+                  if (parsed.length === 0) return <p className="text-sm font-semibold text-slate-800">-</p>;
+                  return (
+                    <div className="space-y-3 mt-2">
+                      {parsed.map((exp: any, index: number) => (
+                        <div key={index} className="bg-slate-50 border border-slate-200/50 p-4 rounded-xl space-y-1">
+                          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1">
+                            <span className="text-sm font-bold text-slate-800">{exp.role || exp.title || "Poste"}</span>
+                            {exp.period && <span className="text-[11px] font-semibold text-slate-400">{exp.period}</span>}
+                          </div>
+                          {exp.company && <div className="text-xs font-semibold text-blue-600">{exp.company}</div>}
+                          {exp.description && <p className="text-xs text-slate-500 mt-1 leading-relaxed">{exp.description}</p>}
+                        </div>
+                      ))}
+                    </div>
+                  );
+                }
+              } catch (e) {}
+              return <p className="text-sm font-semibold text-slate-800">{experienceVal}</p>;
+            })()}
           </div>
           <div className="space-y-2">
             <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Note de matching</span>
             <div className="flex items-center gap-1.5">
               <Icon icon="solar:star-bold" className="w-4 h-4 text-amber-400" />
-              <span className="text-sm font-bold text-slate-800">{applicant.rating}</span>
+              <span className="text-sm font-bold text-slate-800">{applicant.rating || 0}</span>
               <span className="text-xs text-slate-400">/ 5</span>
             </div>
           </div>
@@ -180,20 +295,31 @@ export default function ApplicantDetailPage() {
         <div className="space-y-2">
           <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Compétences</span>
           <div className="flex flex-wrap gap-1.5">
-            {applicant.skills.map((skill: string) => (
-              <span
-                key={skill}
-                className="bg-blue-50 text-blue-700 text-[10px] font-semibold px-2.5 py-1 rounded-md border border-blue-100/80"
-              >
-                {skill}
-              </span>
-            ))}
+            {applicant.skills && applicant.skills.length > 0 ? (
+              applicant.skills.map((skill: string) => (
+                <span
+                  key={skill}
+                  className="bg-blue-50 text-blue-700 text-[10px] font-semibold px-2.5 py-1 rounded-md border border-blue-100/80"
+                >
+                  {skill}
+                </span>
+              ))
+            ) : (
+              <span className="text-slate-400 text-xs font-normal">Aucune compétence renseignée</span>
+            )}
           </div>
         </div>
       </div>
 
       {/* Actions */}
-      <div className="flex items-center justify-end gap-3">
+      <div className="flex items-center justify-between gap-3">
+        <Link
+          href={`/recruiter/messages?candidateId=${applicant.id || applicant.candidateId}&candidateName=${encodeURIComponent(applicant.name || "")}`}
+          className="inline-flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs py-3 px-5 rounded-xl shadow-sm transition-all"
+        >
+          <Icon icon="solar:chat-round-dots-bold" className="w-4 h-4" />
+          Contacter le candidat
+        </Link>
         <Link
           href={`/recruiter/jobs/${jobId}/applicants`}
           className="inline-flex items-center gap-2 bg-white border border-slate-200/80 hover:bg-slate-50 text-slate-700 font-semibold text-xs py-3 px-5 rounded-xl transition-all select-none"

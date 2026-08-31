@@ -11,6 +11,9 @@ export interface Conversation {
   candidateName: string;
   candidateAvatar: string;
   candidateTitle: string;
+  candidateImage?: string;
+  logo?: string;
+  image?: string;
   lastMessage: string;
   lastTime: string;
   unread: number;

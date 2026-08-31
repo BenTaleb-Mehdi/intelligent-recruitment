@@ -57,6 +57,10 @@ export interface ApiRecruiter {
     headquarters?: string;
     description?: string;
     logo?: string;
+    iceNumber?: string;
+    rcNumber?: string;
+    verificationStatus?: "UNVERIFIED" | "PENDING_VERIFICATION" | "VERIFIED" | "REJECTED";
+    isProfileComplete?: boolean;
     contractTypes?: string;
     locations?: string;
     experienceLevels?: string;
@@ -75,7 +79,7 @@ export interface ApiJobOffer {
     location?: string;
     status: "OPEN" | "CLOSED";
     createdAt: string;
-    recruiter?: { id: string; companyName: string };
+    recruiter?: { id: string; companyName: string; logo?: string; image?: string; headquarters?: string; iceNumber?: string; rcNumber?: string };
     skills: { id: string; name: string }[];
     _count?: { applications: number };
     applications?: any[];

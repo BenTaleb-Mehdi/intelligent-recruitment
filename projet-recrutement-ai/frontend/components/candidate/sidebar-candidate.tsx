@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { Icon } from "@iconify/react";
 import { authClient } from "@/lib/auth-client";
+import { useUnreadMessages } from "@/hooks/useUnreadMessages";
 
 interface SidebarCandidateProps {
   isOpen: boolean;
@@ -17,12 +18,14 @@ const NAVIGATION_ITEMS = [
   { href: "/candidate/jobs", label: "Job Feed (AI)", icon: "solar:case-linear" },
   { href: "/candidate/applications", label: "Applications", icon: "solar:document-linear" },
   { href: "/candidate/quizzes", label: "Skills Assessments", icon: "solar:clipboard-list-linear" },
+  { href: "/candidate/messages", label: "Messages", icon: "solar:chat-round-dots-linear" },
   { href: "/candidate/settings", label: "Settings", icon: "solar:settings-linear" },
 ];
 
 export default function SidebarCandidate({ isOpen, onClose }: SidebarCandidateProps) {
   const router = useRouter();
   const pathname = usePathname() || "";
+  const { unreadCount } = useUnreadMessages("CANDIDATE");
 
   const handleLogout = async () => {
     await authClient.signOut();
@@ -67,31 +70,45 @@ export default function SidebarCandidate({ isOpen, onClose }: SidebarCandidatePr
 
       {/* Main Navigation Area */}
       <nav className={`flex-1 overflow-y-auto mt-2 ${isOpen ? "p-3 space-y-1" : "p-2 space-y-3"}`}>
-        {NAVIGATION_ITEMS.map((item) => (
-          <Link 
-            key={item.href}
-            href={item.href}
-            onClick={() => {
-              if (window.innerWidth < 768) onClose();
-            }}
-            className={`flex items-center transition-all duration-200 ${
-              isOpen 
-                ? "px-3 py-2 text-xs font-semibold rounded-lg gap-3" 
-                : "w-10 h-10 justify-center mx-auto rounded-xl"
-            } ${
-              isActive(item.href)
-                ? "bg-slate-100 text-slate-900 shadow-sm"
-                : "text-slate-600 hover:bg-slate-100/70 hover:text-slate-900"
-            }`}
-            title={!isOpen ? item.label : undefined}
-          >
-            <Icon 
-              icon={item.icon} 
-              className="w-5 h-5 flex-shrink-0" 
-            />
-            {isOpen && <span className="truncate">{item.label}</span>}
-          </Link>
-        ))}
+        {NAVIGATION_ITEMS.map((item) => {
+          const isMessagesItem = item.href === "/candidate/messages";
+          return (
+            <Link 
+              key={item.href}
+              href={item.href}
+              onClick={() => {
+                if (window.innerWidth < 768) onClose();
+              }}
+              className={`flex items-center transition-all duration-200 ${
+                isOpen 
+                  ? "px-3 py-2 text-xs font-semibold rounded-lg gap-3 justify-between" 
+                  : "w-10 h-10 justify-center mx-auto rounded-xl relative"
+              } ${
+                isActive(item.href)
+                  ? "bg-slate-100 text-slate-900 shadow-sm"
+                  : "text-slate-600 hover:bg-slate-100/70 hover:text-slate-900"
+              }`}
+              title={!isOpen ? item.label : undefined}
+            >
+              <div className="flex items-center gap-3 truncate">
+                <Icon 
+                  icon={item.icon} 
+                  className="w-5 h-5 flex-shrink-0" 
+                />
+                {isOpen && <span className="truncate">{item.label}</span>}
+              </div>
+              {isMessagesItem && unreadCount > 0 && (
+                <span className={`bg-blue-600 text-white font-bold rounded-full flex items-center justify-center ${
+                  isOpen
+                    ? "text-[10px] px-1.5 py-0.5 min-w-[18px]"
+                    : "absolute -top-1 -right-1 w-4 h-4 text-[9px] border-2 border-white"
+                }`}>
+                  {unreadCount > 99 ? "99+" : unreadCount}
+                </span>
+              )}
+            </Link>
+          );
+        })}
       </nav>
 
       {/* Footer Navigation Area (Logout) */}

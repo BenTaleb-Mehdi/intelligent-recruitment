@@ -30,6 +30,7 @@ export default function CandidateProfile() {
     name: "Mehdi Ben Taleb",
     email: "m.bentaleb@example.com",
     headline: "Full-Stack Developer",
+    bio: "Développeur passionné par l'IA et les applications web modernes.",
     phone: "+212 600-000000",
     portfolio: "https://bentaleb.dev",
     avatarUrl: "/avatar-mehdi.png"
@@ -62,6 +63,7 @@ export default function CandidateProfile() {
           name: profile.user.name,
           email: profile.user.email,
           headline: profile.title || "Full-Stack Developer",
+          bio: profile.bio || "",
           phone: profile.phone || "",
           portfolio: profile.portfolioUrl || "",
           avatarUrl: profile.user.image || ""
@@ -102,6 +104,7 @@ export default function CandidateProfile() {
         name: updatedPersonalInfo.name,
         image: updatedPersonalInfo.avatarUrl || undefined,
         title: updatedPersonalInfo.headline,
+        bio: updatedPersonalInfo.bio,
         phone: updatedPersonalInfo.phone,
         portfolioUrl: updatedPersonalInfo.portfolio,
         skills: flatSkills,
@@ -270,6 +273,16 @@ export default function CandidateProfile() {
                         onChange={(e) => setPersonalInfo({ ...personalInfo, portfolio: e.target.value })}
                         className="w-full px-3 py-2 text-sm border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 transition-all font-medium text-slate-800 dark:text-slate-200"
                         placeholder="https://yourportfolio.com"
+                      />
+                    </div>
+                    <div className="md:col-span-2">
+                      <label className="block text-xs font-bold text-default-450 uppercase mb-1.5">Bio / Présentation</label>
+                      <textarea
+                        rows={3}
+                        value={personalInfo.bio || ""}
+                        onChange={(e) => setPersonalInfo({ ...personalInfo, bio: e.target.value })}
+                        className="w-full px-3 py-2 text-sm border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 transition-all font-medium text-slate-800 dark:text-slate-200 resize-none"
+                        placeholder="Présentez votre parcours, vos aspirations et vos points forts..."
                       />
                     </div>
                   </div>

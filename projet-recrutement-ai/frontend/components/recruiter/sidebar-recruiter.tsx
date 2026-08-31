@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { Icon } from "@iconify/react";
 import { authClient } from "@/lib/auth-client";
+import { useUnreadMessages } from "@/hooks/useUnreadMessages";
 
 interface SidebarRecruiterProps {
   isOpen: boolean;
@@ -17,6 +18,7 @@ export default function SidebarRecruiter({ isOpen, onClose, logo, companyName }:
   const router = useRouter();
   const pathname = usePathname() || "";
   const [isJobsOpen, setIsJobsOpen] = useState(true);
+  const { unreadCount } = useUnreadMessages("RECRUITER");
 
   const handleLogout = async () => {
     await authClient.signOut();
@@ -202,8 +204,8 @@ export default function SidebarRecruiter({ isOpen, onClose, logo, companyName }:
           }}
           className={`flex items-center transition-all duration-200 ${
             isOpen 
-              ? "px-3 py-2 text-xs font-semibold rounded-lg gap-3" 
-              : "w-10 h-10 justify-center mx-auto rounded-xl"
+              ? "px-3 py-2 text-xs font-semibold rounded-lg gap-3 justify-between" 
+              : "w-10 h-10 justify-center mx-auto rounded-xl relative"
           } ${
             isActive("/recruiter/messages")
               ? "bg-slate-100 text-slate-900 shadow-sm"
@@ -211,11 +213,22 @@ export default function SidebarRecruiter({ isOpen, onClose, logo, companyName }:
           }`}
           title={!isOpen ? "Messages" : undefined}
         >
-          <Icon 
-            icon="solar:chat-round-dots-linear" 
-            className="w-5 h-5 flex-shrink-0" 
-          />
-          {isOpen && <span className="truncate">Messages</span>}
+          <div className="flex items-center gap-3">
+            <Icon 
+              icon="solar:chat-round-dots-linear" 
+              className="w-5 h-5 flex-shrink-0" 
+            />
+            {isOpen && <span className="truncate">Messages</span>}
+          </div>
+          {unreadCount > 0 && (
+            <span className={`bg-blue-600 text-white font-bold rounded-full flex items-center justify-center ${
+              isOpen
+                ? "text-[10px] px-1.5 py-0.5 min-w-[18px]"
+                : "absolute -top-1 -right-1 w-4 h-4 text-[9px] border-2 border-white"
+            }`}>
+              {unreadCount > 99 ? "99+" : unreadCount}
+            </span>
+          )}
         </Link>
 
         {/* Candidates Matching (with "New" badge when open) */}
