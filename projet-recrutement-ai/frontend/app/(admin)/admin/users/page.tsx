@@ -2,15 +2,27 @@
 
 import React, { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
+<<<<<<< HEAD
 import { useSearchParams, useRouter } from "next/navigation";
 import {
   Card,
+=======
+import { useSearchParams } from "next/navigation";
+import {
+  Card,
+  Input,
+>>>>>>> 90525170874bf82114ff0e60a532cde0614c93da
   Button,
   Chip,
   Dropdown,
   DropdownTrigger,
   DropdownMenu,
   DropdownItem,
+<<<<<<< HEAD
+=======
+  Select,
+  SelectItem,
+>>>>>>> 90525170874bf82114ff0e60a532cde0614c93da
   Pagination,
 } from "@heroui/react";
 import { Icon } from "@iconify/react";
@@ -30,24 +42,40 @@ function truncateId(id: string) {
   return id.length > 14 ? `${id.slice(0, 12)}…` : id;
 }
 
+<<<<<<< HEAD
 function roleColor(role: string): "default" | "success" | "danger" | "warning" | "accent" {
   const r = role?.toUpperCase();
   if (r === "ADMIN") return "danger";
   if (r === "RECRUITER" || r === "RECRUTEUR") return "success";
   if (r === "CANDIDATE" || r === "CANDIDAT") return "accent";
+=======
+function roleColor(role: string): "primary" | "success" | "danger" | "default" {
+  if (role === "admin") return "danger";
+  if (role === "recruteur") return "success";
+  if (role === "candidat") return "primary";
+>>>>>>> 90525170874bf82114ff0e60a532cde0614c93da
   return "default";
 }
 
 function roleLabel(role: string) {
+<<<<<<< HEAD
   const r = role?.toUpperCase();
   if (r === "CANDIDATE" || r === "CANDIDAT") return "Candidat";
   if (r === "RECRUITER" || r === "RECRUTEUR") return "Recruteur";
   if (r === "ADMIN") return "Admin";
+=======
+  if (role === "candidat") return "Candidat";
+  if (role === "recruteur") return "Recruteur";
+  if (role === "admin") return "Admin";
+>>>>>>> 90525170874bf82114ff0e60a532cde0614c93da
   return role;
 }
 
 export default function AdminUsersPage() {
+<<<<<<< HEAD
   const router = useRouter();
+=======
+>>>>>>> 90525170874bf82114ff0e60a532cde0614c93da
   const searchParams = useSearchParams();
   const initialSearch = searchParams.get("search") ?? "";
 
@@ -125,6 +153,7 @@ export default function AdminUsersPage() {
         <Card className="overflow-hidden border border-default-200 bg-content1 shadow-sm dark:border-default-100/20">
           <div className="border-b border-default-200 p-4 dark:border-default-100/20">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+<<<<<<< HEAD
               <div className="relative max-w-md flex items-center">
                 <Icon icon="lucide:search" className="pointer-events-none absolute left-3 size-4 text-default-400" />
                 <input
@@ -156,6 +185,36 @@ export default function AdminUsersPage() {
                   </option>
                 ))}
               </select>
+=======
+              <Input
+                placeholder="Search by id, name, or email..."
+                value={search}
+                onValueChange={setSearch}
+                startContent={<Icon icon="lucide:search" className="size-4 text-default-400" />}
+                className="max-w-md"
+                variant="bordered"
+                size="sm"
+                isClearable
+                onClear={() => setSearch("")}
+              />
+              <Select
+                label="Per page"
+                selectedKeys={new Set([String(limit)])}
+                onSelectionChange={(keys) => {
+                  const val = Array.from(keys)[0];
+                  if (val) setLimit(Number(val));
+                }}
+                className="w-36"
+                size="sm"
+                variant="bordered"
+              >
+                {[5, 10, 20, 50].map((n) => (
+                  <SelectItem key={String(n)} textValue={String(n)}>
+                    {n}
+                  </SelectItem>
+                ))}
+              </Select>
+>>>>>>> 90525170874bf82114ff0e60a532cde0614c93da
             </div>
           </div>
 
@@ -192,7 +251,11 @@ export default function AdminUsersPage() {
                           <Button
                             isIconOnly
                             size="sm"
+<<<<<<< HEAD
                             variant="ghost"
+=======
+                            variant="light"
+>>>>>>> 90525170874bf82114ff0e60a532cde0614c93da
                             aria-label="Copy ID"
                             onPress={() => copyId(user.id)}
                           >
@@ -215,14 +278,22 @@ export default function AdminUsersPage() {
                       <td className="px-4 py-3">
                         <Chip
                           size="sm"
+<<<<<<< HEAD
                           variant="soft"
+=======
+                          variant="flat"
+>>>>>>> 90525170874bf82114ff0e60a532cde0614c93da
                           color={user.emailVerified ? "success" : "warning"}
                         >
                           {user.emailVerified ? "Verified" : "Pending"}
                         </Chip>
                       </td>
                       <td className="px-4 py-3">
+<<<<<<< HEAD
                         <Chip size="sm" variant="soft" color={roleColor(user.role)}>
+=======
+                        <Chip size="sm" variant="flat" color={roleColor(user.role)}>
+>>>>>>> 90525170874bf82114ff0e60a532cde0614c93da
                           {roleLabel(user.role)}
                         </Chip>
                       </td>
@@ -230,13 +301,18 @@ export default function AdminUsersPage() {
                       <td className="px-4 py-3">
                         <Dropdown>
                           <DropdownTrigger>
+<<<<<<< HEAD
                             <Button isIconOnly size="sm" variant="ghost" aria-label="Actions">
+=======
+                            <Button isIconOnly size="sm" variant="light" aria-label="Actions">
+>>>>>>> 90525170874bf82114ff0e60a532cde0614c93da
                               <Icon icon="lucide:more-horizontal" className="size-4" />
                             </Button>
                           </DropdownTrigger>
                           <DropdownMenu aria-label="User actions">
                             <DropdownItem
                               key="view"
+<<<<<<< HEAD
                               onClick={() => router.push(`/admin/users/${user.id}`)}
                             >
                               <div className="flex items-center gap-2">
@@ -252,6 +328,20 @@ export default function AdminUsersPage() {
                                 <Icon icon="lucide:flag" className="size-4" />
                                 <span>View reports</span>
                               </div>
+=======
+                              startContent={<Icon icon="lucide:eye" className="size-4" />}
+                              as={Link}
+                              href={`/admin/users/${user.id}`}
+                            >
+                              View profile
+                            </DropdownItem>
+                            <DropdownItem
+                              key="report"
+                              startContent={<Icon icon="lucide:flag" className="size-4" />}
+                              className="text-warning"
+                            >
+                              View reports
+>>>>>>> 90525170874bf82114ff0e60a532cde0614c93da
                             </DropdownItem>
                           </DropdownMenu>
                         </Dropdown>
@@ -268,6 +358,7 @@ export default function AdminUsersPage() {
               <p className="text-sm text-default-500">
                 Page {page} of {totalPages}
               </p>
+<<<<<<< HEAD
               <div className="flex items-center gap-2">
                 <Button
                   size="sm"
@@ -286,6 +377,16 @@ export default function AdminUsersPage() {
                   Next
                 </Button>
               </div>
+=======
+              <Pagination
+                total={totalPages}
+                page={page}
+                onChange={setPage}
+                size="sm"
+                showControls
+                color="primary"
+              />
+>>>>>>> 90525170874bf82114ff0e60a532cde0614c93da
             </div>
           )}
         </Card>

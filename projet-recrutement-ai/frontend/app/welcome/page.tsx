@@ -27,7 +27,17 @@ export default function WelcomePage() {
             return;
         }
         if (isOnboarded) {
+<<<<<<< HEAD
             router.push(normalizedRole === "RECRUITER" ? "/recruiter/dashboard" : "/candidate/dashboard");
+=======
+            if (role === "admin" || role === "ADMIN") {
+                router.push("/admin/dashboard");
+            } else if (role === "RECRUITER" || role === "recruteur") {
+                router.push("/recruiter/dashboard");
+            } else {
+                router.push("/candidate/dashboard");
+            }
+>>>>>>> 90525170874bf82114ff0e60a532cde0614c93da
         }
     }, [isOnboarded, role, router, mounted]);
 

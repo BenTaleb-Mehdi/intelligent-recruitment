@@ -32,7 +32,11 @@ function SidebarUserFooter({
         <p className="truncate text-sm font-medium">{session.user.name || "Admin"}</p>
         <p className="truncate text-xs text-default-400">{session.user.email || ""}</p>
       </div>
+<<<<<<< HEAD
       <Button isIconOnly variant="ghost" size="sm" onPress={handleLogout} aria-label="Sign out">
+=======
+      <Button isIconOnly variant="light" size="sm" onPress={handleLogout} aria-label="Sign out">
+>>>>>>> 90525170874bf82114ff0e60a532cde0614c93da
         <Icon icon="lucide:log-out" className="size-4" />
       </Button>
     </div>

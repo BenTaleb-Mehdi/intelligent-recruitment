@@ -1,11 +1,19 @@
 "use client";
 
 import { authClient } from "@/lib/auth-client";
+<<<<<<< HEAD
 import { Button } from "@heroui/react";
 import { useRouter, usePathname } from "next/navigation";
 import { useSidebar } from "@/components/ui/sidebar";
 import { Icon } from "@iconify/react";
 import React, { useRef, useEffect, useState } from "react";
+=======
+import { Button, Dropdown, DropdownTrigger, DropdownMenu, DropdownItem } from "@heroui/react";
+import { useRouter, usePathname } from "next/navigation";
+import { useSidebar } from "@/components/ui/sidebar";
+import { Icon } from "@iconify/react";
+import React from "react";
+>>>>>>> 90525170874bf82114ff0e60a532cde0614c93da
 import ThemeToggleButton from "@/components/ThemeToggleButton";
 import NotificationDropdown from "@/components/NotificationDropdown";
 import NavbarSearch from "@/components/NavbarSearch";
@@ -22,6 +30,7 @@ export default function DashboardNavbar({ userName = "User", userEmail = "" }: D
   const { toggleSidebar } = useSidebar();
   const isAdmin = pathname.startsWith("/admin");
 
+<<<<<<< HEAD
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
@@ -38,21 +47,31 @@ export default function DashboardNavbar({ userName = "User", userEmail = "" }: D
 
   const handleLogout = async () => {
     setMenuOpen(false);
+=======
+  const handleLogout = async () => {
+>>>>>>> 90525170874bf82114ff0e60a532cde0614c93da
     await authClient.signOut();
     router.push("/");
   };
 
+<<<<<<< HEAD
   const navigate = (path: string) => {
     setMenuOpen(false);
     router.push(path);
   };
 
+=======
+>>>>>>> 90525170874bf82114ff0e60a532cde0614c93da
   return (
     <header className="relative flex h-16 items-center gap-2 border-b border-default-200 bg-content1 px-4 dark:border-default-100/20">
       <div className="flex shrink-0 items-center gap-2">
         <Button
           isIconOnly
+<<<<<<< HEAD
           variant="ghost"
+=======
+          variant="light"
+>>>>>>> 90525170874bf82114ff0e60a532cde0614c93da
           size="sm"
           onPress={toggleSidebar}
           aria-label="Toggle sidebar"
@@ -71,15 +90,20 @@ export default function DashboardNavbar({ userName = "User", userEmail = "" }: D
         <span className="text-base font-bold text-foreground md:hidden">Recruitment AI</span>
       </div>
 
+<<<<<<< HEAD
       <div className="flex-1 max-w-xl">
         <NavbarSearch />
       </div>
+=======
+      <NavbarSearch />
+>>>>>>> 90525170874bf82114ff0e60a532cde0614c93da
 
       <div className="ml-auto flex shrink-0 items-center gap-2">
         <NavbarSearchMobile />
         <ThemeToggleButton />
         <NotificationDropdown />
 
+<<<<<<< HEAD
         {/* Custom profile dropdown */}
         <div ref={menuRef} className="relative">
           <button
@@ -139,6 +163,48 @@ export default function DashboardNavbar({ userName = "User", userEmail = "" }: D
             </div>
           )}
         </div>
+=======
+        <Dropdown placement="bottom-end">
+          <DropdownTrigger>
+            <button type="button" className="flex cursor-pointer items-center gap-3">
+              <div className="flex size-8 items-center justify-center rounded-full bg-primary/10 text-sm font-semibold text-primary">
+                {userName.charAt(0).toUpperCase()}
+              </div>
+              <div className="hidden text-left sm:block">
+                <p className="text-sm font-medium text-foreground">{userName}</p>
+              </div>
+              <Icon icon="lucide:chevron-down" className="size-4 text-default-400" />
+            </button>
+          </DropdownTrigger>
+          <DropdownMenu aria-label="Profile actions">
+            <DropdownItem key="email" isReadOnly className="opacity-70">
+              {userEmail}
+            </DropdownItem>
+            <DropdownItem
+              key="profile"
+              startContent={<Icon icon="lucide:user" />}
+              onPress={() => router.push("/settings")}
+            >
+              Edit profile
+            </DropdownItem>
+            <DropdownItem
+              key="settings"
+              startContent={<Icon icon="lucide:settings" />}
+              onPress={() => router.push("/settings")}
+            >
+              Account settings
+            </DropdownItem>
+            <DropdownItem
+              key="signout"
+              color="danger"
+              startContent={<Icon icon="lucide:log-out" />}
+              onPress={handleLogout}
+            >
+              Sign out
+            </DropdownItem>
+          </DropdownMenu>
+        </Dropdown>
+>>>>>>> 90525170874bf82114ff0e60a532cde0614c93da
       </div>
     </header>
   );

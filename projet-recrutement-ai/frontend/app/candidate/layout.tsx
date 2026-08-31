@@ -30,9 +30,11 @@ export default function CandidateLayout({
           router.replace("/admin/dashboard");
         } else if (!isOnboarded) {
           router.replace("/welcome");
-        } else if (role !== "CANDIDATE") {
-          if (role === "RECRUITER") {
+        } else if (role !== "CANDIDATE" && role !== "candidat") {
+          if (role === "RECRUITER" || role === "recruteur") {
             router.replace("/recruiter/dashboard");
+          } else if (role === "admin" || role === "ADMIN") {
+            router.replace("/admin/dashboard");
           } else {
             router.replace("/welcome");
           }

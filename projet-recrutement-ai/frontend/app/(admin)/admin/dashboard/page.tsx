@@ -13,6 +13,12 @@ import StatCard, { StatCardsSkeleton } from "@/components/admin/StatCard";
 import PageHeader from "@/components/admin/PageHeader";
 import { fetchAdminStats, type AdminStats } from "@/services/adminService";
 
+const MOCK_REPORTS = [
+  { id: "1", name: "John Smith", reason: "Fake CV / misleading profile", date: "2 hours ago", severity: "high" },
+  { id: "2", name: "Marie Dupont", reason: "Spam job applications", date: "5 hours ago", severity: "medium" },
+  { id: "3", name: "Alex Chen", reason: "Harassment in messages", date: "1 day ago", severity: "high" },
+];
+
 const QUICK_LINKS = [
   { href: "/admin/users", label: "Manage Users", icon: "solar:users-group-two-rounded-bold-duotone", desc: "Browse & verify all accounts" },
   { href: "/admin/reported", label: "Reported Users", icon: "solar:shield-warning-bold-duotone", desc: "Anti-Fake CV moderation" },
@@ -83,11 +89,11 @@ export default function AdminDashboardPage() {
 
   return (
     <div className="p-8 space-y-8 max-w-7xl mx-auto">
-      {/* Title Header — mirrors candidate dashboard style */}
+      {/* Title Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold tracking-tight">
-            {greeting}, {adminName}
+            {greeting}, {adminName} 👋
           </h1>
           <p className="text-sm text-default-500 mt-1">
             Global platform statistics, moderation queue &amp; ecosystem health
@@ -133,9 +139,9 @@ export default function AdminDashboardPage() {
         </>
       )}
 
-      {/* Trust & Verification section — mirrors candidate card style */}
+      {/* Trust & Verification section */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Platform Trust card — lg:col-span-2 */}
+        {/* Platform Trust card */}
         <Card className="flex flex-col justify-between lg:col-span-2">
           <Card.Header>
             <div>
@@ -251,7 +257,7 @@ export default function AdminDashboardPage() {
         </Card>
       </div>
 
-      {/* AI Matching Banner — mirrors candidate alert section */}
+      {/* AI Matching Banner */}
       <Alert
         status="accent"
         customIcon="solar:brain-bold-duotone"
@@ -261,7 +267,7 @@ export default function AdminDashboardPage() {
 
       {/* Quick Actions & Ecosystem Pipeline */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Quick Actions — lg:col-span-2 */}
+        {/* Quick Actions */}
         <Card className="flex flex-col lg:col-span-2">
           <Card.Header>
             <div>
@@ -321,6 +327,42 @@ export default function AdminDashboardPage() {
           </Card.Content>
         </Card>
       </div>
+
+      {/* Team's Recent Reports Section */}
+      <Card className="flex flex-col">
+        <Card.Header className="flex items-center justify-between">
+          <div>
+            <Card.Title>Recent Reports</Card.Title>
+            <Card.Description>Users flagged for moderation review</Card.Description>
+          </div>
+          <Link href="/admin/reported">
+            <Button size="sm" variant="outline">
+              View all
+            </Button>
+          </Link>
+        </Card.Header>
+        <Card.Content className="divide-y divide-default-100 dark:divide-default-100/10 p-0">
+          {MOCK_REPORTS.map((report) => (
+            <div key={report.id} className="flex items-center justify-between gap-4 p-4">
+              <div className="flex items-center gap-3">
+                <div className="flex size-9 items-center justify-center rounded-full bg-danger/10 text-sm font-semibold text-danger">
+                  {report.name.charAt(0)}
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-foreground">{report.name}</p>
+                  <p className="text-xs text-default-500">{report.reason}</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-3">
+                <Chip size="sm" variant="soft" color={report.severity === "high" ? "danger" : "warning"}>
+                  {report.severity}
+                </Chip>
+                <span className="hidden text-xs text-default-400 sm:block">{report.date}</span>
+              </div>
+            </div>
+          ))}
+        </Card.Content>
+      </Card>
     </div>
   );
 }

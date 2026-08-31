@@ -1,4 +1,9 @@
 import { auth } from "../lib/auth.js";
+<<<<<<< HEAD
+=======
+import { fromNodeHeaders } from "better-auth/node";
+
+>>>>>>> 90525170874bf82114ff0e60a532cde0614c93da
 
 export const requireAdmin = async (req, res, next) => {
   try {
@@ -8,7 +13,11 @@ export const requireAdmin = async (req, res, next) => {
       return res.status(401).json({ success: false, message: "Authentication required" });
     }
 
+<<<<<<< HEAD
     if (session.user.role?.toUpperCase() !== "ADMIN") {
+=======
+    if (session.user.role !== "ADMIN") {
+>>>>>>> 90525170874bf82114ff0e60a532cde0614c93da
       return res.status(403).json({ success: false, message: "Admin access required" });
     }
 

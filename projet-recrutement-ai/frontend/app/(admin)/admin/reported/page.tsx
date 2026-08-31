@@ -4,7 +4,10 @@ import React from "react";
 import Link from "next/link";
 import { Card, Button, Chip, Dropdown, DropdownTrigger, DropdownMenu, DropdownItem } from "@heroui/react";
 import { Icon } from "@iconify/react";
+<<<<<<< HEAD
 import { useRouter } from "next/navigation";
+=======
+>>>>>>> 90525170874bf82114ff0e60a532cde0614c93da
 import PageHeader from "@/components/admin/PageHeader";
 
 const MOCK_REPORTED = [
@@ -58,15 +61,24 @@ const MOCK_REPORTED = [
   },
 ];
 
+<<<<<<< HEAD
 const statusColor = (status: string): "default" | "success" | "danger" | "warning" | "accent" => {
   if (status === "pending") return "warning";
   if (status === "reviewing") return "accent";
+=======
+const statusColor = (status: string) => {
+  if (status === "pending") return "warning";
+  if (status === "reviewing") return "primary";
+>>>>>>> 90525170874bf82114ff0e60a532cde0614c93da
   if (status === "resolved") return "success";
   return "default";
 };
 
 export default function ReportedUsersPage() {
+<<<<<<< HEAD
   const router = useRouter();
+=======
+>>>>>>> 90525170874bf82114ff0e60a532cde0614c93da
   return (
     <div className="mx-auto max-w-7xl">
       <PageHeader
@@ -132,7 +144,11 @@ export default function ReportedUsersPage() {
                     </div>
                   </td>
                   <td className="px-4 py-3">
+<<<<<<< HEAD
                     <Chip size="sm" variant="soft" color="default">
+=======
+                    <Chip size="sm" variant="flat" color="primary">
+>>>>>>> 90525170874bf82114ff0e60a532cde0614c93da
                       {report.role}
                     </Chip>
                   </td>
@@ -142,27 +158,40 @@ export default function ReportedUsersPage() {
                   <td className="px-4 py-3">
                     <Chip
                       size="sm"
+<<<<<<< HEAD
                       variant="soft"
+=======
+                      variant="flat"
+>>>>>>> 90525170874bf82114ff0e60a532cde0614c93da
                       color={report.severity === "high" ? "danger" : report.severity === "medium" ? "warning" : "default"}
                     >
                       {report.severity}
                     </Chip>
                   </td>
                   <td className="px-4 py-3">
+<<<<<<< HEAD
                     <Chip size="sm" variant="soft" color={statusColor(report.status)}>
+=======
+                    <Chip size="sm" variant="flat" color={statusColor(report.status)}>
+>>>>>>> 90525170874bf82114ff0e60a532cde0614c93da
                       {report.status}
                     </Chip>
                   </td>
                   <td className="px-4 py-3">
                     <Dropdown>
                       <DropdownTrigger>
+<<<<<<< HEAD
                         <Button isIconOnly size="sm" variant="ghost">
+=======
+                        <Button isIconOnly size="sm" variant="light">
+>>>>>>> 90525170874bf82114ff0e60a532cde0614c93da
                           <Icon icon="lucide:more-horizontal" className="size-4" />
                         </Button>
                       </DropdownTrigger>
                       <DropdownMenu aria-label="Report actions">
                         <DropdownItem
                           key="view"
+<<<<<<< HEAD
                           onClick={() => router.push(`/admin/users/${report.userId}`)}
                         >
                           <div className="flex items-center gap-2">
@@ -187,6 +216,22 @@ export default function ReportedUsersPage() {
                             <Icon icon="lucide:x" className="size-4" />
                             <span>Dismiss report</span>
                           </div>
+=======
+                          startContent={<Icon icon="lucide:eye" className="size-4" />}
+                          as={Link}
+                          href={`/admin/users/${report.userId}`}
+                        >
+                          View user
+                        </DropdownItem>
+                        <DropdownItem key="review" startContent={<Icon icon="lucide:search" className="size-4" />}>
+                          Mark reviewing
+                        </DropdownItem>
+                        <DropdownItem key="ban" color="danger" startContent={<Icon icon="lucide:ban" className="size-4" />}>
+                          Suspend account
+                        </DropdownItem>
+                        <DropdownItem key="dismiss" startContent={<Icon icon="lucide:x" className="size-4" />}>
+                          Dismiss report
+>>>>>>> 90525170874bf82114ff0e60a532cde0614c93da
                         </DropdownItem>
                       </DropdownMenu>
                     </Dropdown>

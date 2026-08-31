@@ -19,7 +19,12 @@ export default function ThemeToggleButton() {
   return (
     <Button
       isIconOnly
+<<<<<<< HEAD
       variant="outline"
+=======
+      variant="bordered"
+      radius="full"
+>>>>>>> 90525170874bf82114ff0e60a532cde0614c93da
       aria-label="Toggle theme"
       onPress={toggleTheme}
       className="border-default-200 bg-content1 text-default-500 hover:bg-default-100 dark:border-default-100/20 dark:bg-content1 dark:text-default-400 dark:hover:bg-default-100/10"

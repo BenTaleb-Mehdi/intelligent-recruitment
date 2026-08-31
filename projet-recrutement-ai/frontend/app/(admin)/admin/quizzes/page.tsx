@@ -26,7 +26,11 @@ export default function AdminQuizzesPage() {
           AI-generated quizzes will appear here once the Python microservice and Quiz model are
           connected in a later sprint.
         </p>
+<<<<<<< HEAD
         <Button className="mt-6" variant="ghost" isDisabled>
+=======
+        <Button className="mt-6" variant="flat" color="secondary" isDisabled>
+>>>>>>> 90525170874bf82114ff0e60a532cde0614c93da
           No quizzes yet
         </Button>
       </Card>
