@@ -23,12 +23,11 @@ export default function AuthPage() {
         if (!mounted) return;
         if (session) {
             const isOnboarded = (session.user as any).isOnboarded;
-            const role = (session.user as any).role;
-            if (isOnboarded) {
-
+            const role = (session.user as any).role?.toUpperCase();
+            if (role === "ADMIN") {
+                router.push("/admin/dashboard");
+            } else if (isOnboarded) {
                 router.push(role === "RECRUITER" ? "/recruiter/dashboard" : "/candidate/dashboard");
-
-
             } else {
                 router.push("/welcome");
             }
@@ -134,4 +133,3 @@ export default function AuthPage() {
         </div>
     );
 }
-

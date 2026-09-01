@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { Icon } from "@iconify/react";
@@ -119,7 +119,7 @@ export default function JobQuizPage() {
     if (jobId) {
       fetchQuiz(true);
     }
-  }, [jobId]);
+  }, [fetchQuiz, jobId]);
 
   const handleCorrectChange = (qId: string, optIndex: number) => {
     setQuestions((prev) =>

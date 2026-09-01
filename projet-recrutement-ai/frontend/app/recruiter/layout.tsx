@@ -60,10 +60,13 @@ export default function RecruiterLayout({
     if (!isPending) {
       if (!session) {
         router.replace("/");
-
-      } else if ((session.user as any).role !== "RECRUITER") {
-        router.replace("/");
-
+      } else {
+        const role = (session.user as any).role?.toUpperCase();
+        if (role === "ADMIN") {
+          router.replace("/admin/dashboard");
+        } else if (role !== "RECRUITER") {
+          router.replace("/");
+        }
       }
     }
   }, [session, isPending, router]);
