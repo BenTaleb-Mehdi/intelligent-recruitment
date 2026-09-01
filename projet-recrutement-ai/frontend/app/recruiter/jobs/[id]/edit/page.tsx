@@ -10,6 +10,7 @@ import ContractTypeSelector from "@/components/recruiter/contract-type-selector"
 import ExperienceSelector from "@/components/recruiter/experience-selector";
 import { api, ApiJobOffer, ApiRecruiter, ApiDropdownItem, DropdownType } from "@/lib/api";
 import { authClient } from "@/lib/auth-client";
+import { useAlert } from "@/contexts/AlertContext";
 
 const DEFAULT_CONTRACT_TYPES = [
   "CDI (Contrat à Durée Indéterminée)",
@@ -52,6 +53,8 @@ export default function EditJobPage() {
 
   const [isSaving, setIsSaving] = useState(false);
   const [showToast, setShowToast] = useState(false);
+
+  const { showAlert } = useAlert();
 
   const [recruiterId, setRecruiterId] = useState<string | null>(null);
   const [dropdownItems, setDropdownItems] = useState<ApiDropdownItem[]>([]);
@@ -172,7 +175,7 @@ export default function EditJobPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!title || !contractType || !locationType || !experience || !description || skills.length === 0) {
-      alert("Veuillez remplir tous les champs obligatoires et ajouter au moins une compétence.");
+      showAlert("warning", "Veuillez remplir tous les champs obligatoires et ajouter au moins une compétence.");
       return;
     }
 
@@ -203,7 +206,7 @@ export default function EditJobPage() {
       }, 1500);
     } catch (error) {
       console.error("Error updating job offer:", error);
-      alert("Erreur lors de la mise à jour de l'offre.");
+      showAlert("danger", "Erreur lors de la mise à jour de l'offre.");
     } finally {
       setIsSaving(false);
     }
@@ -238,6 +241,7 @@ export default function EditJobPage() {
 
   return (
     <div className="max-w-4xl mx-auto space-y-6 font-sans relative">
+
       {showToast && (
         <div className="fixed bottom-5 right-5 z-50 bg-emerald-600 text-white px-5 py-3.5 rounded-xl shadow-lg flex items-center gap-3 animate-slide-in select-none">
           <Icon icon="solar:check-circle-bold" className="w-5 h-5 flex-shrink-0" />

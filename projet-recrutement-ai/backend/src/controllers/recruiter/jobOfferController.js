@@ -1,5 +1,4 @@
 import * as jobOfferService from "../../services/jobOfferService.js";
-import prisma from "../../config/db.js";
 
 export const getAllJobOffers = async (req, res) => {
     try {
@@ -60,27 +59,6 @@ export const createJobOffer = async (req, res) => {
         }
 
         const offer = await jobOfferService.createJobOffer(data);
-
-        if (process.env.N8N_WEBHOOK_URL) {
-            fetch(process.env.N8N_WEBHOOK_URL, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    id: offer.id,
-                    title: offer.title,
-                    skills: skills || [],
-                    contractType: offer.contractType,
-                    locationType: offer.locationType,
-                    experienceYears: offer.experienceYears,
-                    location: offer.location,
-                    salary: offer.salary,
-                    description: offer.description,
-                }),
-            }).catch((err) => {
-                console.error("Error calling n8n webhook:", err);
-            });
-        }
-
         res.status(201).json({ success: true, data: offer });
     } catch (error) {
         console.error("Error creating job offer:", error);
@@ -118,23 +96,6 @@ export const updateJobOffer = async (req, res) => {
         }
 
         const updated = await jobOfferService.updateJobOffer(req.params.id, data);
-        if (process.env.N8N_WEBHOOK_URL && (title || contractType || location || experienceYears || skills)) {
-            fetch(process.env.N8N_WEBHOOK_URL, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    id: updated.id,
-                    title: updated.title,
-                    contractType: updated.contractType,
-                    location: updated.location, 
-                    experienceYears: updated.experienceYears,
-                    skills: updated.skills ? updated.skills.map(s => s.name).join(', ') : "",
-                    salary: updated.salary
-                }),
-            }).catch((err) => {
-                console.error("Error calling n8n webhook on update:", err);
-            });
-        }
         res.status(200).json({ success: true, data: updated });
     } catch (error) {
         console.error("Error updating job offer:", error);
@@ -216,29 +177,11 @@ export const updateDescriptionFromWebhook = async (req, res) => {
 
         let normalizedQuiz = null;
         if (finalQuestions.length > 0) {
-            const mappedQuestions = finalQuestions.map((q) => {
-                let correctIdx = 0;
-                if (typeof q.correctAnswer === "number") {
-                    correctIdx = q.correctAnswer;
-                } else if (typeof q.correctAnswer === "string") {
-                    const parsed = parseInt(q.correctAnswer, 10);
-                    if (!isNaN(parsed)) {
-                        correctIdx = parsed;
-                    } else if (Array.isArray(q.options)) {
-                        // Find match index case-insensitively
-                        const idx = q.options.findIndex(
-                            (opt) => opt.toString().trim().toLowerCase() === q.correctAnswer.toString().trim().toLowerCase()
-                        );
-                        if (idx !== -1) correctIdx = idx;
-                    }
-                }
-
-                return {
-                    text: q.text || q.question || "",
-                    options: Array.isArray(q.options) ? q.options : [],
-                    correctAnswer: correctIdx,
-                };
-            }).filter((q) => q.text !== "");
+            const mappedQuestions = finalQuestions.map((q) => ({
+                text: q.text || q.question || "",
+                options: Array.isArray(q.options) ? q.options : [],
+                correctAnswer: q.correctAnswers !== undefined ? q.correctAnswers : q.correctAnswer,
+            })).filter((q) => q.text !== "");
 
             if (mappedQuestions.length > 0) {
                 normalizedQuiz = {
@@ -249,7 +192,6 @@ export const updateDescriptionFromWebhook = async (req, res) => {
             }
         }
 
-        // Pass triggerWebhook = false via calling custom service method
         const updated = await jobOfferService.updateJobOfferDescriptionAndQuiz(id, description, normalizedQuiz);
         if (!updated) {
             return res.status(404).json({ success: false, error: "Job offer not found" });
@@ -269,12 +211,35 @@ export const regenerateJobOfferDescription = async (req, res) => {
             return res.status(404).json({ success: false, error: "Job offer not found" });
         }
 
-        // Trigger the webhook again
         await jobOfferService.triggerN8NWebhook(offer);
-
         res.status(200).json({ success: true, message: "Regeneration triggered successfully" });
     } catch (error) {
         console.error("Error regenerating job offer description:", error);
+        res.status(500).json({ success: false, error: "Internal server error" });
+    }
+};
+
+export const getJobOfferApplicants = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const formattedApplicants = await jobOfferService.getJobOfferApplicants(id);
+        return res.status(200).json({ success: true, data: formattedApplicants });
+    } catch (error) {
+        console.error("Error fetching job offer applicants:", error);
+        return res.status(500).json({ success: false, error: "Internal server error" });
+    }
+};
+
+export const updateJobOfferQuiz = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const updatedQuiz = await jobOfferService.updateJobOfferQuiz(id, req.body);
+        if (!updatedQuiz) {
+            return res.status(404).json({ success: false, error: "Job offer not found" });
+        }
+        res.status(200).json({ success: true, data: updatedQuiz });
+    } catch (error) {
+        console.error("Error updating job offer quiz:", error);
         res.status(500).json({ success: false, error: "Internal server error" });
     }
 };

@@ -34,7 +34,7 @@ export default function CandidateQuizzes() {
               jobRole: q.jobOffer?.title || "Target Position",
               company: q.jobOffer?.recruiter?.companyName || "Sponsor Company",
               questionsCount: q.questions ? q.questions.length : 5,
-              durationMinutes: 10,
+              durationMinutes: q.duration || 30,
               status,
               note
             };

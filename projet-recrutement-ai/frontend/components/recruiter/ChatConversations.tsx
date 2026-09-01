@@ -57,9 +57,17 @@ export default function ChatConversations({
           >
             {/* Avatar */}
             <div className="relative flex-shrink-0">
-              <div className="w-11 h-11 rounded-full bg-blue-500 flex items-center justify-center text-white text-xs font-bold select-none shadow-sm">
-                {conv.candidateAvatar}
-              </div>
+              {conv.candidateImage || conv.logo || conv.image ? (
+                <img
+                  src={conv.candidateImage || conv.logo || conv.image}
+                  alt={conv.candidateName}
+                  className="w-11 h-11 rounded-full object-cover shadow-sm border border-slate-200"
+                />
+              ) : (
+                <div className="w-11 h-11 rounded-full bg-blue-500 flex items-center justify-center text-white text-xs font-bold select-none shadow-sm">
+                  {conv.candidateAvatar}
+                </div>
+              )}
               {conv.online && (
                 <span className="absolute bottom-0 right-0 w-3 h-3 bg-blue-400 border-2 border-white rounded-full" />
               )}

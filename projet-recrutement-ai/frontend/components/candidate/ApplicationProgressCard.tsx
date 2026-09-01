@@ -1,11 +1,11 @@
-"use client";
-
-import React from "react";
+import React, { useState } from "react";
 import Link from "next/link";
 import { Icon } from "@iconify/react";
 import { Card } from "./Card";
 import { Button } from "./Button";
 import { Indicator } from "./Indicator";
+import ChatBox from "@/components/chat/ChatBox";
+import { saveCandidateConversation } from "@/lib/candidateChat";
 
 export interface ApplicationStep {
   name: string;
@@ -15,7 +15,11 @@ export interface ApplicationStep {
 }
 
 export interface Application {
+  id?: string;
+  candidateId?: string;
+  candidateName?: string;
   company: string;
+  logo?: string;
   role: string;
   appliedDate: string;
   status: string; // "quiz-pending" | "interviewing" | "rejected" | other statuses
@@ -29,6 +33,7 @@ interface ApplicationProgressCardProps {
 }
 
 export default function ApplicationProgressCard({ application }: ApplicationProgressCardProps) {
+  const [showChat, setShowChat] = useState(false);
   return (
     <Card>
       <Card.Content className="p-6">
@@ -111,6 +116,18 @@ export default function ApplicationProgressCard({ application }: ApplicationProg
                 size="sm"
                 variant="outline"
                 startIcon="solar:chat-round-bold"
+                onClick={() => {
+                  saveCandidateConversation({
+                    applicationId: application.id || "app-default",
+                    companyName: application.company,
+                    role: application.role,
+                    recruiterName: `Recruteur (${application.company})`,
+                    avatar: (application.company || "RE").slice(0, 2).toUpperCase(),
+                    lastMessage: "Discussion démarrée",
+                    lastTime: "Maintenant",
+                  });
+                  setShowChat(true);
+                }}
               >
                 Contact Hiring
               </Button>
@@ -118,6 +135,28 @@ export default function ApplicationProgressCard({ application }: ApplicationProg
           </div>
         </div>
       </Card.Content>
+
+      {/* Chat Modal */}
+      {showChat && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-xs p-4">
+          <div className="w-full max-w-2xl bg-white rounded-3xl shadow-2xl overflow-hidden relative animate-in fade-in zoom-in-95 duration-200">
+            <button
+              onClick={() => setShowChat(false)}
+              className="absolute top-4 right-4 z-10 w-8 h-8 bg-slate-100 hover:bg-slate-200 text-slate-500 rounded-full flex items-center justify-center transition-all"
+            >
+              <Icon icon="solar:close-square-linear" className="w-5 h-5" />
+            </button>
+            <ChatBox
+              applicationId={application.id || "app-default"}
+              currentUserId={application.candidateId || "candidate-1"}
+              currentUserRole="CANDIDATE"
+              currentUserName={application.candidateName || "Candidat"}
+              otherUserName={application.company}
+              otherUserLogo={application.logo}
+            />
+          </div>
+        </div>
+      )}
     </Card>
   );
 }

@@ -10,6 +10,7 @@ import { api } from "@/lib/api";
 import type { ApiJobOffer } from "@/lib/api";
 
 import QuizQuestionCard, { QuizQuestion } from "@/components/recruiter/QuizQuestionCard";
+import { useAlert } from "@/contexts/AlertContext";
 
 interface QuizData {
   jobTitle: string;
@@ -19,6 +20,23 @@ interface QuizData {
 }
 
 const QUIZZES_DB: Record<string, QuizData> = {};
+
+const decodeCorrectAnswers = (val: any): number | number[] => {
+  if (Array.isArray(val)) {
+    return val.map((x) => Number(x));
+  }
+  const num = typeof val === "number" ? val : parseInt(val, 10);
+  if (isNaN(num)) return 0;
+
+  const indices: number[] = [];
+  for (let i = 0; i < 8; i++) {
+    if ((num & (1 << i)) !== 0) {
+      indices.push(i);
+    }
+  }
+  if (indices.length === 0) return 0;
+  return indices.length === 1 ? indices[0] : indices;
+};
 
 export default function JobQuizPage() {
   const params = useParams();
@@ -37,8 +55,11 @@ export default function JobQuizPage() {
   const [endTime, setEndTime] = useState("23:59");
   const [duration, setDuration] = useState("30");
 
-  const fetchQuiz = useCallback(async () => {
+  const { showAlert } = useAlert();
+
+  const fetchQuiz = async (showMainSpinner = false) => {
     try {
+      if (showMainSpinner) setLoading(true);
       const res = await api.get<{ data: ApiJobOffer }>(`/api/job-offers/${jobId}`);
       if (res?.data) {
         const offer = res.data;
@@ -54,11 +75,28 @@ export default function JobQuizPage() {
                 : typeof q.options === "string"
                 ? JSON.parse(q.options)
                 : [],
-              correctAnswer: q.correctAnswer,
+              correctAnswer: decodeCorrectAnswers(q.correctAnswer),
             }))
           );
           setValidated(offer.quiz.status === "VALIDATED");
           setRejected(offer.quiz.status === "REJECTED");
+          if (offer.quiz.duration) {
+            setDuration(String(offer.quiz.duration));
+          }
+          if (offer.quiz.deadline) {
+            const d = new Date(offer.quiz.deadline);
+            if (!isNaN(d.getTime())) {
+              const yyyy = d.getFullYear();
+              const mm = String(d.getMonth() + 1).padStart(2, "0");
+              const dd = String(d.getDate()).padStart(2, "0");
+              try {
+                setEndDate(parseDate(`${yyyy}-${mm}-${dd}`));
+              } catch {}
+              const hh = String(d.getHours()).padStart(2, "0");
+              const min = String(d.getMinutes()).padStart(2, "0");
+              setEndTime(`${hh}:${min}`);
+            }
+          }
           setAiGeneratedAt(
             new Date(offer.quiz.createdAt).toLocaleDateString("fr-FR", {
               day: "numeric",
@@ -73,19 +111,36 @@ export default function JobQuizPage() {
     } catch (error) {
       console.error("Error fetching quiz:", error);
     } finally {
-      setLoading(false);
+      if (showMainSpinner) setLoading(false);
     }
-  }, [jobId]);
+  };
 
   useEffect(() => {
     if (jobId) {
-      fetchQuiz();
+      fetchQuiz(true);
     }
   }, [fetchQuiz, jobId]);
 
   const handleCorrectChange = (qId: string, optIndex: number) => {
     setQuestions((prev) =>
-      prev.map((q) => (q.id === qId ? { ...q, correctAnswer: optIndex } : q))
+      prev.map((q) => {
+        if (q.id !== qId) return q;
+        const currentArr = Array.isArray(q.correctAnswer)
+          ? q.correctAnswer
+          : typeof q.correctAnswer === "number"
+          ? [q.correctAnswer]
+          : [];
+
+        const exists = currentArr.includes(optIndex);
+        const updated = exists
+          ? currentArr.filter((i) => i !== optIndex)
+          : [...currentArr, optIndex];
+
+        return {
+          ...q,
+          correctAnswer: updated.length === 1 ? updated[0] : updated,
+        };
+      })
     );
     setValidated(false);
   };
@@ -139,7 +194,7 @@ export default function JobQuizPage() {
       setRejected(false);
     } catch (err: any) {
       console.error("Error validating quiz:", err);
-      alert(err.message || "Erreur lors de la validation du quiz.");
+      showAlert("danger", err.message || "Erreur lors de la validation du quiz.");
     } finally {
       setValidating(false);
     }
@@ -155,7 +210,7 @@ export default function JobQuizPage() {
       setValidated(false);
     } catch (err: any) {
       console.error("Error rejecting quiz:", err);
-      alert(err.message || "Erreur lors du rejet du quiz.");
+      showAlert("danger", err.message || "Erreur lors du rejet du quiz.");
     } finally {
       setValidating(false);
     }
@@ -165,15 +220,43 @@ export default function JobQuizPage() {
     setValidating(true);
     try {
       await api.post(`/api/job-offers/${jobId}/regenerate`, {});
-      setTimeout(async () => {
-        await fetchQuiz();
-        setValidating(false);
-        setValidated(false);
-        setRejected(false);
-      }, 4000);
+      
+      const originalQuestionTexts = questions.map((q) => q.question).join("|");
+      let attempts = 0;
+      const maxAttempts = 15; // 30 seconds
+
+      const pollInterval = setInterval(async () => {
+        attempts++;
+        try {
+          const res = await api.get<{ data: ApiJobOffer }>(`/api/job-offers/${jobId}`);
+          if (res?.data && res.data.quiz) {
+            const newQuestionTexts = res.data.quiz.questions.map((q: any) => q.text).join("|");
+            
+            if (newQuestionTexts !== originalQuestionTexts || (questions.length === 0 && res.data.quiz.questions.length > 0)) {
+              clearInterval(pollInterval);
+              await fetchQuiz(false);
+              setValidating(false);
+              setValidated(false);
+              setRejected(false);
+            } else if (attempts >= maxAttempts) {
+              clearInterval(pollInterval);
+              setValidating(false);
+              showAlert("warning", "La régénération prend plus de temps que prévu. Elle sera actualisée plus tard.");
+            }
+          } else if (attempts >= maxAttempts) {
+             clearInterval(pollInterval);
+             setValidating(false);
+          }
+        } catch (error) {
+          console.error("Error polling quiz:", error);
+          clearInterval(pollInterval);
+          setValidating(false);
+        }
+      }, 2000);
+      
     } catch (err: any) {
       console.error("Error triggering regeneration:", err);
-      alert(err.message || "Erreur lors du déclenchement de la régénération.");
+      showAlert("danger", err.message || "Erreur lors du déclenchement de la régénération.");
       setValidating(false);
     }
   };
@@ -204,6 +287,7 @@ export default function JobQuizPage() {
 
   return (
     <div className="max-w-4xl mx-auto space-y-6 font-sans">
+
       {/* Header */}
       <div className="flex items-center gap-3">
         <Link

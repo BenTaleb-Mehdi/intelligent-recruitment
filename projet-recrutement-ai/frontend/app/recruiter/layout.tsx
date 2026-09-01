@@ -7,7 +7,7 @@ import { authClient } from "@/lib/auth-client";
 import { api, ApiRecruiter } from "@/lib/api";
 import SidebarRecruiter from "@/components/recruiter/sidebar-recruiter";
 import NavbarRecruiter from "@/components/recruiter/navbar-recruiter";
-import { ScopedThemeProvider } from "@/app/providers";
+import { AlertProvider } from "@/contexts/AlertContext";
 
 export default function RecruiterLayout({
   children,
@@ -92,8 +92,8 @@ export default function RecruiterLayout({
   };
 
   return (
-    <ScopedThemeProvider storageKey="theme-recruiter">
-      <div className="flex h-screen w-full overflow-hidden bg-slate-50 dark:bg-zinc-950">
+    <AlertProvider>
+      <div className="flex h-screen w-full overflow-hidden bg-slate-50">
         {/* Mobile Backdrop Overlay - closes the sidebar when clicked outside */}
         {isSidebarOpen && (
           <div
@@ -116,11 +116,11 @@ export default function RecruiterLayout({
           <NavbarRecruiter onToggleSidebar={toggleSidebar} />
           
           {/* Render space dyal dashboard / jobs */}
-          <main className="flex-1 overflow-y-auto p-4 md:p-6 bg-slate-50 dark:bg-zinc-950">
+          <main className="flex-1 overflow-y-auto p-4 md:p-6 bg-slate-50">
             {children}
           </main>
         </div>
       </div>
-    </ScopedThemeProvider>
+    </AlertProvider>
   );
 }
