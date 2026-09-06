@@ -8,7 +8,6 @@ import { auth } from "./lib/auth.js";
 
 import connectMongo from "./config/mongo.js";
 import Message from "./models/Message.js";
-
 import authRouter from "./routes/authRoutes.js";
 import userRouter from "./routes/user.js";
 import adminRouter from "./routes/adminRoutes.js";
@@ -17,6 +16,11 @@ import jobOfferRouter from "./routes/recruiter/jobOfferRoutes.js";
 import dropdownListRouter from "./routes/recruiter/dropdownListRoutes.js";
 import candidateRouter from "./routes/candidate/candidateRoutes.js";
 import messageRouter from "./routes/messageRoutes.js";
+// develop merge conflict resolved (deleted some and left what's not mentioned)
+import connectMongo from "./config/mongo.js";
+import Message from "./models/Message.js";
+import userRouter from './routes/user.js';
+import messageRouter from './routes/messageRoutes.js';
 
 const app = express();
 const server = http.createServer(app);
@@ -41,14 +45,16 @@ const allowedOrigins = [
 ];
 
 app.use(cors({
-  origin: (origin, callback) => {
-    if (!origin || allowedOrigins.includes(origin)) {
-      callback(null, true);
-    } else {
-      callback(new Error("Not allowed by CORS"));
-    }
-  },
-  credentials: true,
+    origin: (origin, callback) => {
+        if (!origin || allowedOrigins.includes(origin)) {
+            callback(null, true);
+        } else {
+            callback(new Error("Not allowed by CORS"));
+        }
+    },
+    credentials: true,
+    origin: ["http://localhost:3000", "http://localhost:3001"], // Next.js frontend URL
+    credentials: true, // Required for cookies/sessions with Better Auth
 }));
 
 // Better Auth handler mounted directly on /api/auth/*path for Express 5 compatibility

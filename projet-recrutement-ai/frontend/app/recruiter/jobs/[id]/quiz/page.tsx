@@ -55,7 +55,6 @@ export default function JobQuizPage() {
   const [endTime, setEndTime] = useState("23:59");
   const [duration, setDuration] = useState("30");
 
-
   const { showAlert } = useAlert();
 
   const fetchQuiz = async (showMainSpinner = false) => {
@@ -77,10 +76,8 @@ export default function JobQuizPage() {
                   ? JSON.parse(q.options)
                   : [],
 
-              correctAnswer: decodeCorrectAnswers(q.correctAnswer),
             }))
           );
-          setValidated(offer.quiz.status === "VALIDATED");
           setRejected(offer.quiz.status === "REJECTED");
           if (offer.quiz.duration) {
             setDuration(String(offer.quiz.duration));
@@ -113,10 +110,10 @@ export default function JobQuizPage() {
     } catch (error) {
       console.error("Error fetching quiz:", error);
     } finally {
-
       if (showMainSpinner) setLoading(false);
     }
   };
+
   useEffect(() => {
     if (jobId) {
       fetchQuiz(true);
@@ -222,7 +219,7 @@ export default function JobQuizPage() {
     setValidating(true);
     try {
       await api.post(`/api/job-offers/${jobId}/regenerate`, {});
-
+      
       const originalQuestionTexts = questions.map((q) => q.question).join("|");
       let attempts = 0;
       const maxAttempts = 15; // 30 seconds
@@ -255,7 +252,7 @@ export default function JobQuizPage() {
           setValidating(false);
         }
       }, 2000);
-
+      
     } catch (err: any) {
       console.error("Error triggering regeneration:", err);
       showAlert("danger", err.message || "Erreur lors du déclenchement de la régénération.");
