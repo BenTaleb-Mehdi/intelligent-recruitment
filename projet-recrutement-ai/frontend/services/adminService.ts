@@ -41,6 +41,87 @@ export interface StatsResponse {
   stats: AdminStats;
 }
 
+export type AdminQuizStatus = "PENDING" | "VALIDATED" | "REJECTED";
+
+export interface AdminQuiz {
+  id: string;
+  title: string;
+  skillTarget: string;
+  status: AdminQuizStatus;
+  duration: number;
+  deadline: string | null;
+  createdAt: string;
+  averageScore: number | null;
+  jobOffer: {
+    id: string;
+    title: string;
+    recruiter: { id: string; companyName: string | null };
+  };
+  _count: { questions: number; testResults: number };
+}
+
+export interface AdminQuizResult {
+  id: string;
+  score: number;
+  passed: boolean;
+  completedAt: string;
+  candidate: {
+    id: string;
+    title: string;
+    user: { id: string; name: string; email: string; image: string | null };
+  };
+  quiz: {
+    id: string;
+    title: string;
+    _count: { questions: number };
+    jobOffer: {
+      id: string;
+      title: string;
+      recruiter: { id: string; companyName: string | null };
+    };
+  };
+}
+
+export interface AdminQuizResultDetail extends Omit<AdminQuizResult, "candidate" | "quiz"> {
+  candidate: AdminQuizResult["candidate"] & {
+    bio: string | null;
+    phone: string | null;
+    location: string | null;
+    experience: string | null;
+    githubUrl: string | null;
+    linkedinUrl: string | null;
+    portfolioUrl: string | null;
+    cvPath: string | null;
+    skills: Array<{ id: string; name: string }>;
+  };
+  quiz: Omit<AdminQuizResult["quiz"], "_count" | "jobOffer"> & {
+    skillTarget: string;
+    status: AdminQuizStatus;
+    duration: number;
+    deadline: string | null;
+    questions: Array<{
+      id: string;
+      text: string;
+      options: string[];
+      correctAnswer: number;
+    }>;
+    jobOffer: {
+      id: string;
+      title: string;
+      recruiter: {
+        id: string;
+        companyName: string | null;
+        user: { id: string; name: string; email: string };
+      };
+    };
+  };
+}
+
+interface DataResponse<T> {
+  success: boolean;
+  data: T;
+}
+
 export function fetchAdminStats() {
   return apiFetch<StatsResponse>("/api/admin/stats");
 }
@@ -51,4 +132,23 @@ export function fetchAdminUsers(params: { page?: number; limit?: number; search?
   if (params.limit) query.set("limit", String(params.limit));
   if (params.search) query.set("search", params.search);
   return apiFetch<UsersResponse>(`/api/admin/users?${query.toString()}`);
+}
+
+export function fetchAdminQuizzes() {
+  return apiFetch<DataResponse<AdminQuiz[]>>("/api/admin/quizzes");
+}
+
+export function fetchAdminQuizResults() {
+  return apiFetch<DataResponse<AdminQuizResult[]>>("/api/admin/quiz-results");
+}
+
+export function fetchAdminQuizResult(id: string) {
+  return apiFetch<DataResponse<AdminQuizResultDetail>>(`/api/admin/quiz-results/${id}`);
+}
+
+export function updateAdminQuizStatus(id: string, status: AdminQuizStatus) {
+  return apiFetch<DataResponse<AdminQuiz>>(`/api/admin/quizzes/${id}/status`, {
+    method: "PATCH",
+    body: JSON.stringify({ status }),
+  });
 }

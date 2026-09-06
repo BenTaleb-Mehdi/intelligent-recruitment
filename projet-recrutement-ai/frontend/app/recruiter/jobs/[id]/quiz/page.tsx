@@ -401,8 +401,8 @@ export default function JobQuizPage() {
                       setValidated(false);
                     }}
                     className={`py-2 px-3 text-xs font-semibold rounded-xl border transition-all ${duration === timeOption
-                        ? "bg-purple-50 border-purple-200 text-purple-700 shadow-sm"
-                        : "bg-slate-50 border-slate-200/60 text-slate-600 hover:bg-slate-100"
+                      ? "bg-purple-50 border-purple-200 text-purple-700 shadow-sm"
+                      : "bg-slate-50 border-slate-200/60 text-slate-600 hover:bg-slate-100"
                       }`}
                   >
                     {timeOption} min
