@@ -36,11 +36,12 @@ export const getJobOffersByRecruiter = async (req, res) => {
 
 export const createJobOffer = async (req, res) => {
     try {
-        const { recruiterId, title, description, contractType, locationType, salary, experienceYears, location, skills } = req.body;
+        const { title, description, contractType, locationType, salary, experienceYears, location, skills } = req.body;
+        const recruiterId = req.recruiter?.id;
         if (!recruiterId || !title || !description || !contractType || !locationType) {
             return res.status(400).json({
                 success: false,
-                error: "recruiterId, title, description, contractType, and locationType are required",
+                error: "A verified recruiter profile, title, description, contractType, and locationType are required",
             });
         }
 

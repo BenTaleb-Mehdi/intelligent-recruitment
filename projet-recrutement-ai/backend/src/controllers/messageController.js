@@ -17,7 +17,7 @@ export const getMessagesByApplication = async (req, res) => {
 
 export const getRecruiterConversations = async (req, res) => {
     try {
-        const conversations = await messageService.getRecruiterConversations();
+        const conversations = await messageService.getRecruiterConversations(req.user.id);
         return res.status(200).json({ success: true, data: conversations });
     } catch (error) {
         console.error("Error fetching recruiter conversations:", error);
@@ -27,7 +27,7 @@ export const getRecruiterConversations = async (req, res) => {
 
 export const getCandidateConversations = async (req, res) => {
     try {
-        const conversations = await messageService.getCandidateConversations();
+        const conversations = await messageService.getCandidateConversations(req.user.id);
         return res.status(200).json({ success: true, data: conversations });
     } catch (error) {
         console.error("Error fetching candidate conversations:", error);
@@ -37,19 +37,24 @@ export const getCandidateConversations = async (req, res) => {
 
 export const createMessage = async (req, res) => {
     try {
-        const { applicationId, senderId, senderRole, senderName, content } = req.body;
-        if (!applicationId || !senderId || !content) {
+        const { applicationId, content } = req.body;
+        if (!applicationId || !content) {
             return res.status(400).json({
                 success: false,
-                error: "applicationId, senderId, and content are required",
+                error: "applicationId and content are required",
             });
+        }
+
+        const senderRole = String(req.user?.role || "").toUpperCase();
+        if (senderRole !== "CANDIDATE" && senderRole !== "RECRUITER") {
+            return res.status(403).json({ success: false, error: "This account cannot send messages" });
         }
 
         const newMessage = await messageService.createMessage({
             applicationId,
-            senderId,
+            senderId: req.user.id,
             senderRole,
-            senderName,
+            senderName: req.user.name,
             content,
         });
 
@@ -117,12 +122,12 @@ export const deleteMessage = async (req, res) => {
 
 export const getUnreadCount = async (req, res) => {
     try {
-        const { role } = req.query;
-        if (!role) {
-            return res.status(400).json({ success: false, error: "Role is required" });
+        const role = String(req.user?.role || "").toUpperCase();
+        if (role !== "CANDIDATE" && role !== "RECRUITER") {
+            return res.status(403).json({ success: false, error: "Invalid messaging role" });
         }
 
-        const count = await messageService.getUnreadCount(role);
+        const count = await messageService.getUnreadCount(role, req.user.id);
         return res.status(200).json({ success: true, count });
     } catch (error) {
         console.error("Error fetching unread count:", error);
@@ -133,9 +138,9 @@ export const getUnreadCount = async (req, res) => {
 export const markAsRead = async (req, res) => {
     try {
         const { applicationId } = req.params;
-        const { role } = req.body;
+        const role = String(req.user?.role || "").toUpperCase();
 
-        await messageService.markAsRead(applicationId, role);
+        await messageService.markAsRead(applicationId, role, req.user.id);
 
         const io = req.app.get("io");
         if (io) {

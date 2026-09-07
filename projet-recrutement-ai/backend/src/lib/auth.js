@@ -3,6 +3,11 @@ import { prismaAdapter } from "better-auth/adapters/prisma";
 import prisma from "../config/db.js";
 import nodemailer from "nodemailer";
 
+const trustedOrigins = (process.env.TRUSTED_ORIGINS || "http://localhost:3000,http://localhost:3001")
+    .split(",")
+    .map((origin) => origin.trim())
+    .filter(Boolean);
+
 let transporter;
 
 if (
@@ -97,14 +102,14 @@ sendResetPassword: async ({ user, url }) => {
                 type: "string",
                 required: false,
                 defaultValue: "CANDIDATE",
-                input: true,
+                input: false,
                 returned: true,
             },
             isOnboarded: {
                 type: "boolean",
                 required: false,
                 defaultValue: false,
-                input: true,
+                input: false,
                 returned: true,
             },
         },
@@ -121,5 +126,5 @@ sendResetPassword: async ({ user, url }) => {
         }
     },
     basePath: "/api/auth",
-    trustedOrigins: ["http://localhost:3000", "http://localhost:3001"],
+    trustedOrigins,
 });
