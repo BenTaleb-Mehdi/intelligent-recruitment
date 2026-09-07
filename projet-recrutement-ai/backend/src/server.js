@@ -16,6 +16,7 @@ import jobOfferRouter from "./routes/recruiter/jobOfferRoutes.js";
 import dropdownListRouter from "./routes/recruiter/dropdownListRoutes.js";
 import candidateRouter from "./routes/candidate/candidateRoutes.js";
 import messageRouter from "./routes/messageRoutes.js";
+import reportRouter from "./routes/reportRoutes.js";
 
 const app = express();
 const server = http.createServer(app);
@@ -63,6 +64,7 @@ app.use(jobOfferRouter);
 app.use(dropdownListRouter);
 app.use(candidateRouter);
 app.use("/api", messageRouter);
+app.use(reportRouter);
 
 const getAccessibleApplication = async (applicationId, user) => {
   const application = await prisma.application.findUnique({

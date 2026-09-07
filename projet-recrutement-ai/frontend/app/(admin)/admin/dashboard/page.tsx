@@ -11,13 +11,7 @@ import { Alert } from "@/components/candidate/Alert";
 import { ProgressCircle } from "@/components/candidate/ProgressCircle";
 import StatCard, { StatCardsSkeleton } from "@/components/admin/StatCard";
 import PageHeader from "@/components/admin/PageHeader";
-import { fetchAdminStats, type AdminStats } from "@/services/adminService";
-
-const MOCK_REPORTS = [
-  { id: "1", name: "John Smith", reason: "Fake CV / misleading profile", date: "2 hours ago", severity: "high" },
-  { id: "2", name: "Marie Dupont", reason: "Spam job applications", date: "5 hours ago", severity: "medium" },
-  { id: "3", name: "Alex Chen", reason: "Harassment in messages", date: "1 day ago", severity: "high" },
-];
+import { fetchAdminReports, fetchAdminStats, type AdminReport, type AdminStats } from "@/services/adminService";
 
 const QUICK_LINKS = [
   { href: "/admin/users", label: "Manage Users", icon: "solar:users-group-two-rounded-bold-duotone", desc: "Browse & verify all accounts" },
@@ -62,12 +56,16 @@ export default function AdminDashboardPage() {
   const adminName = session?.user?.name?.split(" ")[0] ?? "Admin";
 
   const [stats, setStats] = useState<AdminStats | null>(null);
+  const [recentReports, setRecentReports] = useState<AdminReport[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    fetchAdminStats()
-      .then((res) => setStats(res.stats))
+    Promise.all([fetchAdminStats(), fetchAdminReports()])
+      .then(([statsResponse, reportsResponse]) => {
+        setStats(statsResponse.stats);
+        setRecentReports(reportsResponse.data.slice(0, 3));
+      })
       .catch((err) => setError(err.message))
       .finally(() => setLoading(false));
   }, []);
@@ -342,25 +340,26 @@ export default function AdminDashboardPage() {
           </Link>
         </Card.Header>
         <Card.Content className="divide-y divide-default-100 dark:divide-default-100/10 p-0">
-          {MOCK_REPORTS.map((report) => (
+          {recentReports.map((report) => (
             <div key={report.id} className="flex items-center justify-between gap-4 p-4">
               <div className="flex items-center gap-3">
                 <div className="flex size-9 items-center justify-center rounded-full bg-danger/10 text-sm font-semibold text-danger">
-                  {report.name.charAt(0)}
+                  {report.reportedUser.name.charAt(0)}
                 </div>
                 <div>
-                  <p className="text-sm font-medium text-foreground">{report.name}</p>
+                  <p className="text-sm font-medium text-foreground">{report.reportedUser.name}</p>
                   <p className="text-xs text-default-500">{report.reason}</p>
                 </div>
               </div>
               <div className="flex items-center gap-3">
-                <Chip size="sm" variant="soft" color={report.severity === "high" ? "danger" : "warning"}>
-                  {report.severity}
+                <Chip size="sm" variant="soft" color={report.severity === "HIGH" ? "danger" : report.severity === "MEDIUM" ? "warning" : "default"}>
+                  {report.severity.toLowerCase()}
                 </Chip>
-                <span className="hidden text-xs text-default-400 sm:block">{report.date}</span>
+                <span className="hidden text-xs text-default-400 sm:block">{new Date(report.createdAt).toLocaleDateString("en-GB")}</span>
               </div>
             </div>
           ))}
+          {!loading && recentReports.length === 0 && <p className="p-6 text-center text-sm text-default-500">No reports have been submitted.</p>}
         </Card.Content>
       </Card>
     </div>

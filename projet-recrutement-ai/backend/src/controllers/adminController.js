@@ -16,6 +16,7 @@ export async function getAdminStats(req, res) {
       jobOffers,
       applications,
       quizResults,
+      pendingReports,
     ] = await Promise.all([
       prisma.user.count(),
       prisma.user.count({ where: { role: "CANDIDATE" } }),
@@ -27,9 +28,8 @@ export async function getAdminStats(req, res) {
       prisma.jobOffer.count(),
       prisma.application.count(),
       prisma.testResult.count(),
+      prisma.report.count({ where: { status: "PENDING" } }),
     ]);
-
-    const pendingReports = 0;
 
     res.json({
       success: true,

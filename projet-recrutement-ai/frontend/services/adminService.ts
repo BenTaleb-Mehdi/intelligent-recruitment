@@ -63,6 +63,22 @@ export interface AdminUserDetail extends AdminUser {
 
 export type AdminQuizStatus = "PENDING" | "VALIDATED" | "REJECTED";
 
+export type AdminReportStatus = "PENDING" | "REVIEWING" | "RESOLVED" | "DISMISSED";
+export type AdminReportSeverity = "LOW" | "MEDIUM" | "HIGH";
+
+export interface AdminReport {
+  id: string;
+  reason: string;
+  severity: AdminReportSeverity;
+  status: AdminReportStatus;
+  createdAt: string;
+  updatedAt: string;
+  resolvedAt: string | null;
+  reportedUser: { id: string; name: string; email: string; role: string; image: string | null };
+  reporterUser: { id: string; name: string; email: string; role: string; image: string | null };
+  resolvedBy: { id: string; name: string; email: string } | null;
+}
+
 export interface AdminQuiz {
   id: string;
   title: string;
@@ -172,6 +188,18 @@ export function fetchAdminQuizResult(id: string) {
 
 export function updateAdminQuizStatus(id: string, status: AdminQuizStatus) {
   return apiFetch<DataResponse<AdminQuiz>>(`/api/admin/quizzes/${id}/status`, {
+    method: "PATCH",
+    body: JSON.stringify({ status }),
+  });
+}
+
+export function fetchAdminReports(status?: AdminReportStatus) {
+  const query = status ? `?status=${encodeURIComponent(status)}` : "";
+  return apiFetch<DataResponse<AdminReport[]>>(`/api/admin/reports${query}`);
+}
+
+export function updateAdminReportStatus(id: string, status: AdminReportStatus) {
+  return apiFetch<DataResponse<AdminReport>>(`/api/admin/reports/${id}/status`, {
     method: "PATCH",
     body: JSON.stringify({ status }),
   });
