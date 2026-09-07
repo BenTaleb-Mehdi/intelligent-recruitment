@@ -89,6 +89,9 @@ io.use(async (socket, next) => {
     const session = await auth.api.getSession({ headers: socket.handshake.headers });
     if (!session) return next(new Error("Unauthorized"));
     socket.user = session.user;
+    if (String(session.user.role || "").toUpperCase() === "ADMIN") {
+      socket.join("admins");
+    }
     next();
   } catch (error) {
     next(new Error("Unable to validate session"));

@@ -78,7 +78,7 @@ export default function DashboardNavbar({ userName = "User", userEmail = "" }: D
       <div className="ml-auto flex shrink-0 items-center gap-2">
         <NavbarSearchMobile />
         <ThemeToggleButton />
-        <NotificationDropdown />
+        <NotificationDropdown isAdmin={isAdmin} />
 
         {/* Custom profile dropdown */}
         <div ref={menuRef} className="relative">

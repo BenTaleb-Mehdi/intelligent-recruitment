@@ -60,6 +60,10 @@ export const createJobOffer = async (req, res) => {
         }
 
         const offer = await jobOfferService.createJobOffer(data);
+        req.app.get("io")?.to("admins").emit("admin_notification", {
+            type: "job",
+            id: offer.id,
+        });
         res.status(201).json({ success: true, data: offer });
     } catch (error) {
         console.error("Error creating job offer:", error);
@@ -198,6 +202,13 @@ export const updateDescriptionFromWebhook = async (req, res) => {
             return res.status(404).json({ success: false, error: "Job offer not found" });
         }
 
+        if (normalizedQuiz) {
+            req.app.get("io")?.to("admins").emit("admin_notification", {
+                type: "quiz",
+                id,
+            });
+        }
+
         res.status(200).json({ success: true, data: updated });
     } catch (error) {
         console.error("Error updating job description and quiz from webhook:", error);
@@ -238,6 +249,10 @@ export const updateJobOfferQuiz = async (req, res) => {
         if (!updatedQuiz) {
             return res.status(404).json({ success: false, error: "Job offer not found" });
         }
+        req.app.get("io")?.to("admins").emit("admin_notification", {
+            type: "quiz",
+            id,
+        });
         res.status(200).json({ success: true, data: updatedQuiz });
     } catch (error) {
         console.error("Error updating job offer quiz:", error);

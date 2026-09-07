@@ -59,6 +59,12 @@ export async function createReport(req, res) {
             include: reportInclude,
         });
 
+        // Notify connected administrators without exposing report details over Socket.IO.
+        req.app.get("io")?.to("admins").emit("admin_notification", {
+            type: "report",
+            id: report.id,
+        });
+
         return res.status(201).json({ success: true, data: report });
     } catch (error) {
         console.error("createReport error:", error);
