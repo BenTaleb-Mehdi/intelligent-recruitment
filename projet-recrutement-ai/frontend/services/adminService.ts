@@ -41,6 +41,26 @@ export interface StatsResponse {
   stats: AdminStats;
 }
 
+export interface AdminUserDetail extends AdminUser {
+  candidate: {
+    id: string;
+    title: string;
+    phone: string | null;
+    location: string | null;
+    status: string;
+    employabilityScore: number;
+    _count: { applications: number; testResults: number };
+  } | null;
+  recruiter: {
+    id: string;
+    companyName: string | null;
+    industry: string | null;
+    headquarters: string | null;
+    verificationStatus: string;
+    _count: { jobOffers: number };
+  } | null;
+}
+
 export type AdminQuizStatus = "PENDING" | "VALIDATED" | "REJECTED";
 
 export interface AdminQuiz {
@@ -132,6 +152,10 @@ export function fetchAdminUsers(params: { page?: number; limit?: number; search?
   if (params.limit) query.set("limit", String(params.limit));
   if (params.search) query.set("search", params.search);
   return apiFetch<UsersResponse>(`/api/admin/users?${query.toString()}`);
+}
+
+export function fetchAdminUser(id: string) {
+  return apiFetch<{ success: boolean; user: AdminUserDetail }>(`/api/admin/users/${id}`);
 }
 
 export function fetchAdminQuizzes() {

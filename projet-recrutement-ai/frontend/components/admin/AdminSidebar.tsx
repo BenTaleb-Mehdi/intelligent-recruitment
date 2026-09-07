@@ -111,7 +111,7 @@ export default function AdminSidebar() {
             <Sidebar.GroupLabel>System</Sidebar.GroupLabel>
             <Sidebar.Menu>
               <Sidebar.MenuItem
-                href="/settings"
+                href="/admin/settings"
                 icon={<Icon icon="lucide:settings" className="size-5" />}
                 label="Settings"
               />

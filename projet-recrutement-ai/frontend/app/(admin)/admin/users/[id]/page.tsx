@@ -6,19 +6,22 @@ import { useParams } from "next/navigation";
 import { Card, Chip, Button, Skeleton } from "@heroui/react";
 import { Icon } from "@iconify/react";
 import PageHeader from "@/components/admin/PageHeader";
-import { apiFetch } from "@/lib/api";
-import type { AdminUser } from "@/services/adminService";
+import { fetchAdminUser, type AdminUserDetail } from "@/services/adminService";
 
 export default function AdminUserDetailPage() {
   const params = useParams();
   const userId = params.id as string;
-  const [user, setUser] = useState<AdminUser | null>(null);
+  const [user, setUser] = useState<AdminUserDetail | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    apiFetch<{ success: boolean; users: AdminUser[] }>(`/api/admin/users?search=${userId}&limit=1`)
-      .then((res) => setUser(res.users.find((u) => u.id === userId) ?? res.users[0] ?? null))
-      .catch(() => setUser(null))
+    fetchAdminUser(userId)
+      .then((res) => setUser(res.user))
+      .catch((caught: unknown) => {
+        setUser(null);
+        setError(caught instanceof Error ? caught.message : "Failed to load user");
+      })
       .finally(() => setLoading(false));
   }, [userId]);
 
@@ -43,7 +46,7 @@ export default function AdminUserDetailPage() {
     return (
       <div className="mx-auto max-w-3xl text-center">
         <Icon icon="lucide:user-x" className="mx-auto size-12 text-default-300" />
-        <h2 className="mt-4 text-xl font-semibold">User not found</h2>
+        <h2 className="mt-4 text-xl font-semibold">{error || "User not found"}</h2>
         <Link href="/admin/users">
           <Button className="mt-4" variant="ghost">
             Back to users
@@ -108,6 +111,22 @@ export default function AdminUserDetailPage() {
             <span>Suspend</span>
           </Button>
         </div>
+
+        {user.candidate && (
+          <div className="mt-6 grid gap-3 border-t border-default-200 pt-6 sm:grid-cols-3">
+            <div><p className="text-xs text-default-400">Candidate title</p><p className="mt-1 text-sm font-semibold">{user.candidate.title}</p></div>
+            <div><p className="text-xs text-default-400">Applications</p><p className="mt-1 text-sm font-semibold">{user.candidate._count.applications}</p></div>
+            <div><p className="text-xs text-default-400">Quiz results</p><p className="mt-1 text-sm font-semibold">{user.candidate._count.testResults}</p></div>
+          </div>
+        )}
+
+        {user.recruiter && (
+          <div className="mt-6 grid gap-3 border-t border-default-200 pt-6 sm:grid-cols-3">
+            <div><p className="text-xs text-default-400">Company</p><p className="mt-1 text-sm font-semibold">{user.recruiter.companyName || "Not set"}</p></div>
+            <div><p className="text-xs text-default-400">Verification</p><p className="mt-1 text-sm font-semibold">{user.recruiter.verificationStatus}</p></div>
+            <div><p className="text-xs text-default-400">Job offers</p><p className="mt-1 text-sm font-semibold">{user.recruiter._count.jobOffers}</p></div>
+          </div>
+        )}
       </Card>
     </div>
   );

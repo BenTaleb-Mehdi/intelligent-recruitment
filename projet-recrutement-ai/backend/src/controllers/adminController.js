@@ -106,6 +106,54 @@ export async function getAdminUsers(req, res) {
   }
 }
 
+export async function getAdminUser(req, res) {
+  try {
+    const user = await prisma.user.findUnique({
+      where: { id: req.params.id },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        emailVerified: true,
+        role: true,
+        isOnboarded: true,
+        createdAt: true,
+        image: true,
+        candidate: {
+          select: {
+            id: true,
+            title: true,
+            phone: true,
+            location: true,
+            status: true,
+            employabilityScore: true,
+            _count: { select: { applications: true, testResults: true } },
+          },
+        },
+        recruiter: {
+          select: {
+            id: true,
+            companyName: true,
+            industry: true,
+            headquarters: true,
+            verificationStatus: true,
+            _count: { select: { jobOffers: true } },
+          },
+        },
+      },
+    });
+
+    if (!user) {
+      return res.status(404).json({ success: false, message: "User not found" });
+    }
+
+    res.json({ success: true, user });
+  } catch (error) {
+    console.error("getAdminUser error:", error);
+    res.status(500).json({ success: false, message: "Failed to fetch user" });
+  }
+}
+
 const QUIZ_STATUSES = new Set(["PENDING", "VALIDATED", "REJECTED"]);
 
 export async function getAdminQuizzes(req, res) {
