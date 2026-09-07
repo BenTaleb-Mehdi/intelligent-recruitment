@@ -1,18 +1,44 @@
 "use client";
 
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { Icon } from "@iconify/react";
 import { Card } from "@/components/candidate/Card";
 import { Button } from "@/components/candidate/Button";
-import { Indicator } from "@/components/candidate/Indicator";
 import { ProgressCircle } from "@/components/candidate/ProgressCircle";
-import { Chip } from "@/components/candidate/Chip";
 import { Alert } from "@/components/candidate/Alert";
 import Link from "next/link";
-import RecommendedJobs from "@/components/candidate/RecommendedJobs";
+import RecommendedJobs, { type RecommendedJob } from "@/components/candidate/RecommendedJobs";
 import ActionChecklist from "@/components/candidate/ActionChecklist";
+import { apiFetch, type ApiJobOffer } from "@/lib/api";
 
 export default function CandidateDashboard() {
+  const [recommendedJobs, setRecommendedJobs] = useState<RecommendedJob[]>([]);
+  const [loadingJobs, setLoadingJobs] = useState(true);
+
+  useEffect(() => {
+    async function loadData() {
+      try {
+        const res = await apiFetch<{ success: boolean; data: ApiJobOffer[] }>("/api/job-offers");
+        if (res.success && Array.isArray(res.data)) {
+          const mapped: RecommendedJob[] = res.data.map((job) => ({
+            id: job.id,
+            company: job.recruiter?.companyName || "Recruiter",
+            title: job.title,
+            match: 85,
+            salary: job.salary || "$70k - $95k",
+            tags: job.skills ? job.skills.map((s) => s.name) : ["Full Time"],
+          }));
+          setRecommendedJobs(mapped);
+        }
+      } catch (err) {
+        console.error("Error loading candidate dashboard jobs:", err);
+      } finally {
+        setLoadingJobs(false);
+      }
+    }
+    loadData();
+  }, []);
+
   return (
     <div className="p-8 space-y-8 max-w-6xl mx-auto">
       {/* Title Header */}
@@ -105,15 +131,15 @@ export default function CandidateDashboard() {
           <Card.Content className="space-y-3">
             <div className="flex justify-between items-center text-sm border-b border-default-100 dark:border-default-50/10 pb-1.5">
               <span className="text-default-500 font-medium">Applied Jobs</span>
-              <span className="font-bold text-default-800 dark:text-default-255">4</span>
+              <span className="font-bold text-default-800 dark:text-default-255">0</span>
             </div>
             <div className="flex justify-between items-center text-sm border-b border-default-100 dark:border-default-50/10 pb-1.5">
               <span className="text-default-500 font-medium">Under AI Review</span>
-              <span className="font-bold text-accent">2</span>
+              <span className="font-bold text-accent">0</span>
             </div>
             <div className="flex justify-between items-center text-sm">
               <span className="text-default-500 font-medium">Interviews Scheduled</span>
-              <span className="font-bold text-success">1</span>
+              <span className="font-bold text-success">0</span>
             </div>
           </Card.Content>
           <Card.Footer className="border-t border-slate-100 dark:border-slate-800">
@@ -132,10 +158,8 @@ export default function CandidateDashboard() {
         <div className="lg:col-span-2 space-y-4">
           <h3 className="font-bold text-base text-default-800 dark:text-default-200 select-none">AI-Recommended Positions</h3>
           <RecommendedJobs
-            jobs={[
-              { company: "ViteTech Solutions", title: "Senior React & Next.js Engineer", match: 98, salary: "$85k - $110k", tags: ["Next.js", "HeroUI", "Tailwind"] },
-              { company: "CognitiveAI Systems", title: "Lead Frontend Systems Engineer", match: 89, salary: "$100k - $130k", tags: ["React 19", "Typescript", "GraphQL"] },
-            ]}
+            jobs={recommendedJobs}
+            loading={loadingJobs}
           />
         </div>
 

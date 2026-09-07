@@ -3,4 +3,19 @@
 
 @config "../tailwind.config.mjs";
 
+:root {
+  --background: #ffffff;
+  --foreground: #171717;
+}
 
+.dark {
+  --background: #151a22;
+  --foreground: #ededed;
+}
+
+@layer base {
+  body {
+    background-color: var(--background);
+    color: var(--foreground);
+  }
+}

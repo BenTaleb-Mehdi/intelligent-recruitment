@@ -21,26 +21,34 @@ export default function WelcomePage() {
 
     useEffect(() => {
         if (!mounted) return;
+        const normalizedRole = role?.toUpperCase();
+        if (normalizedRole === "ADMIN") {
+            router.push("/admin/dashboard");
+            return;
+        }
         if (isOnboarded) {
-            router.push(role === "RECRUITER" ? "/recruiter/dashboard" : "/candidate/dashboard");
-
+            if (normalizedRole === "RECRUITER" || role === "recruteur") {
+                router.push("/recruiter/dashboard");
+            } else {
+                router.push("/candidate/dashboard");
+            }
         }
     }, [isOnboarded, role, router, mounted]);
 
-    const handleSelectRole = async (role: "candidat" | "recruteur") => {
+    const handleSelectRole = async (selectedRole: "candidat" | "recruteur") => {
         if (!session?.user?.id) return;
-        setSelected(role);
+        setSelected(selectedRole);
         setLoading(true);
 
         try {
             const response = await fetch("http://localhost:5000/api/user/update-role", {
                 method: "PATCH",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ userId: session.user.id, role }),
+                body: JSON.stringify({ userId: session.user.id, role: selectedRole }),
             });
 
             if (response.ok) {
-                window.location.href = role === "recruteur" ? "/recruiter/dashboard" : "/candidate/dashboard";
+                window.location.href = selectedRole === "recruteur" ? "/recruiter/dashboard" : "/candidate/dashboard";
             }
         } catch (error) {
             console.error("Error updating role:", error);

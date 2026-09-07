@@ -1,0 +1,58 @@
+"use client";
+import React, { useEffect, useState } from "react";
+import { authClient } from "@/lib/auth-client";
+import { useRouter } from "next/navigation";
+import { Spinner, Card } from "@heroui/react";
+import { Sidebar } from "@/components/ui/sidebar";
+import DashboardNavbar from "@/components/DashboardNavbar";
+
+export default function DashboardPage() {
+    const { data: session, isPending } = authClient.useSession();
+    const router = useRouter();
+    const [mounted, setMounted] = useState(false);
+
+    useEffect(() => {
+        setMounted(true);
+    }, []);
+
+    useEffect(() => {
+        if (!mounted || isPending) return;
+
+        if (!session) {
+            router.push("/");
+            return;
+        }
+
+        const role = (session.user as any)?.role?.toUpperCase();
+        if (role === "ADMIN") {
+            router.push("/admin/dashboard");
+            return;
+        }
+
+        const isOnboarded = (session.user as any)?.isOnboarded;
+        if (!isOnboarded) {
+            router.push("/welcome");
+        } else if (role === "RECRUITER") {
+            router.push("/recruiter/dashboard");
+        } else {
+            router.push("/candidate/dashboard");
+        }
+    }, [session, isPending, router, mounted]);
+
+    if (!mounted || isPending) return <div className="h-screen w-screen flex justify-center items-center"><Spinner size="lg" /></div>;
+    if (!session) return null;
+
+    return (
+        <Sidebar.Provider variant="sidebar" collapsible="icon" defaultOpen navigate={router.push}>
+            <Sidebar.Main>
+                <DashboardNavbar userName={session?.user?.name} />
+                <div className="min-h-[calc(100vh-64px)] flex-1 bg-background p-6">
+                    <Card className="p-6 shadow-sm">
+                        <h2 className="text-2xl font-bold mb-4">Welcome to your Dashboard! 🎉</h2>
+                        <p className="text-default-500">This page is built with TypeScript (TSX) and HeroUI components.</p>
+                    </Card>
+                </div>
+            </Sidebar.Main>
+        </Sidebar.Provider>
+    );
+}
