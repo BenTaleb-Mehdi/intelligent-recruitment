@@ -1,12 +1,28 @@
 import Message from "../models/Message.js";
 import prisma from "../config/db.js";
 
+const getAccessibleApplicationIds = async (userId, role) => {
+    const where = role === "RECRUITER"
+        ? { jobOffer: { recruiter: { userId } } }
+        : { candidate: { userId } };
+
+    const applications = await prisma.application.findMany({
+        where,
+        select: { id: true },
+    });
+    return applications.map(({ id }) => id);
+};
+
 export const getMessagesByApplication = async (applicationId) => {
     return Message.find({ applicationId }).sort({ createdAt: 1 });
 };
 
-export const getRecruiterConversations = async () => {
+export const getRecruiterConversations = async (userId) => {
+    const applicationIds = await getAccessibleApplicationIds(userId, "RECRUITER");
+    if (applicationIds.length === 0) return [];
+
     const rawConversations = await Message.aggregate([
+        { $match: { applicationId: { $in: applicationIds } } },
         { $sort: { createdAt: -1 } },
         {
             $group: {
@@ -113,8 +129,12 @@ export const getRecruiterConversations = async () => {
     );
 };
 
-export const getCandidateConversations = async () => {
+export const getCandidateConversations = async (userId) => {
+    const applicationIds = await getAccessibleApplicationIds(userId, "CANDIDATE");
+    if (applicationIds.length === 0) return [];
+
     const rawConversations = await Message.aggregate([
+        { $match: { applicationId: { $in: applicationIds } } },
         { $sort: { createdAt: -1 } },
         {
             $group: {
@@ -256,12 +276,19 @@ export const deleteMessage = async (messageId) => {
     return message;
 };
 
-export const getUnreadCount = async (role) => {
+export const getUnreadCount = async (role, userId) => {
+    const applicationIds = await getAccessibleApplicationIds(userId, role);
+    if (applicationIds.length === 0) return 0;
+
     const senderRoleToCount = role === "RECRUITER" ? "CANDIDATE" : "RECRUITER";
-    return Message.countDocuments({ senderRole: senderRoleToCount, read: false });
+    return Message.countDocuments({
+        applicationId: { $in: applicationIds },
+        senderRole: senderRoleToCount,
+        read: false,
+    });
 };
 
-export const markAsRead = async (applicationId, role) => {
+export const markAsRead = async (applicationId, role, userId) => {
     const senderRoleToMark = role === "RECRUITER" ? "CANDIDATE" : "RECRUITER";
     return Message.updateMany(
         { applicationId, senderRole: senderRoleToMark, read: false },

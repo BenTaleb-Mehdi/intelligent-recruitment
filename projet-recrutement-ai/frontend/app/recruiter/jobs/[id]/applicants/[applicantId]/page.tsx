@@ -6,6 +6,7 @@ import Link from "next/link";
 import { Icon } from "@iconify/react";
 import data from "@/data/applicants.json";
 import { api } from "@/lib/api";
+import ReportUserButton from "@/components/ReportUserButton";
 
 const statusStyles: Record<string, string> = {
   Nouveau: "bg-blue-50 text-blue-700 border-blue-100/80",
@@ -313,6 +314,7 @@ export default function ApplicantDetailPage() {
 
       {/* Actions */}
       <div className="flex items-center justify-between gap-3">
+        <ReportUserButton userId={applicant.userId} />
         <Link
           href={`/recruiter/messages?candidateId=${applicant.id || applicant.candidateId}&candidateName=${encodeURIComponent(applicant.name || "")}`}
           className="inline-flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs py-3 px-5 rounded-xl shadow-sm transition-all"

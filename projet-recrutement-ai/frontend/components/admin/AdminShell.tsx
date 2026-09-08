@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect } from "react";
 import { authClient } from "@/lib/auth-client";
 import { useRouter } from "next/navigation";
 import { Spinner } from "@heroui/react";
@@ -16,27 +16,22 @@ interface AdminShellProps {
 export default function AdminShell({ children }: AdminShellProps) {
   const { data: session, isPending } = authClient.useSession();
   const router = useRouter();
-  const [mounted, setMounted] = useState(false);
+  const role = (session?.user as { role?: string } | undefined)?.role?.toUpperCase();
 
   useEffect(() => {
-    setMounted(true);
-  }, []);
-
-  useEffect(() => {
-    if (!mounted || isPending) return;
+    if (isPending) return;
 
     if (!session) {
-      router.push("/");
+      router.replace("/");
       return;
     }
 
-    const role = (session.user as { role?: string }).role?.toUpperCase();
     if (role !== "ADMIN") {
-      router.push("/candidate/dashboard");
+      router.replace("/dashboard");
     }
-  }, [mounted, isPending, session, router]);
+  }, [isPending, role, session, router]);
 
-  if (!mounted || isPending) {
+  if (isPending) {
     return (
       <div className="flex h-screen w-screen items-center justify-center bg-background">
         <Spinner size="lg" color="accent" />
@@ -44,7 +39,7 @@ export default function AdminShell({ children }: AdminShellProps) {
     );
   }
 
-  if (!session) return null;
+  if (!session || role !== "ADMIN") return null;
 
   return (
     <ScopedThemeProvider storageKey="theme-admin">

@@ -41,10 +41,12 @@ export default function WelcomePage() {
         setLoading(true);
 
         try {
-            const response = await fetch("http://localhost:5000/api/user/update-role", {
+            const apiBase = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
+            const response = await fetch(`${apiBase}/api/user/update-role`, {
                 method: "PATCH",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ userId: session.user.id, role: selectedRole }),
+                credentials: "include",
+                body: JSON.stringify({ role: selectedRole }),
             });
 
             if (response.ok) {

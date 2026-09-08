@@ -10,7 +10,7 @@ import { Icon } from "@iconify/react";
 const NAV_ITEMS = [
   { href: "/admin/dashboard", icon: "lucide:layout-dashboard", label: "Dashboard" },
   { href: "/admin/users", icon: "lucide:users", label: "Manage Users" },
-  { href: "/admin/reported", icon: "lucide:shield-alert", label: "Reported Users", badge: "3" },
+  { href: "/admin/reported", icon: "lucide:shield-alert", label: "Reported Users" },
   { href: "/admin/jobs", icon: "lucide:briefcase", label: "Job Offers" },
   { href: "/admin/quizzes", icon: "lucide:clipboard-list", label: "Quizzes" },
 ];
@@ -56,11 +56,6 @@ function AdminNavItems() {
             label={
               <span className="flex flex-1 items-center justify-between gap-2">
                 {item.label}
-                {item.badge && expanded && (
-                  <span className="rounded-full bg-danger/15 px-2 py-0.5 text-[10px] font-semibold text-danger">
-                    {item.badge}
-                  </span>
-                )}
               </span>
             }
           />
@@ -111,7 +106,7 @@ export default function AdminSidebar() {
             <Sidebar.GroupLabel>System</Sidebar.GroupLabel>
             <Sidebar.Menu>
               <Sidebar.MenuItem
-                href="/settings"
+                href="/admin/settings"
                 icon={<Icon icon="lucide:settings" className="size-5" />}
                 label="Settings"
               />

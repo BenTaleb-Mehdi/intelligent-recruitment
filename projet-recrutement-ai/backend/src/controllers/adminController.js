@@ -16,6 +16,7 @@ export async function getAdminStats(req, res) {
       jobOffers,
       applications,
       quizResults,
+      pendingReports,
     ] = await Promise.all([
       prisma.user.count(),
       prisma.user.count({ where: { role: "CANDIDATE" } }),
@@ -27,9 +28,8 @@ export async function getAdminStats(req, res) {
       prisma.jobOffer.count(),
       prisma.application.count(),
       prisma.testResult.count(),
+      prisma.report.count({ where: { status: "PENDING" } }),
     ]);
-
-    const pendingReports = 0;
 
     res.json({
       success: true,
@@ -103,6 +103,54 @@ export async function getAdminUsers(req, res) {
   } catch (error) {
     console.error("getAdminUsers error:", error);
     res.status(500).json({ success: false, message: "Failed to fetch users" });
+  }
+}
+
+export async function getAdminUser(req, res) {
+  try {
+    const user = await prisma.user.findUnique({
+      where: { id: req.params.id },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        emailVerified: true,
+        role: true,
+        isOnboarded: true,
+        createdAt: true,
+        image: true,
+        candidate: {
+          select: {
+            id: true,
+            title: true,
+            phone: true,
+            location: true,
+            status: true,
+            employabilityScore: true,
+            _count: { select: { applications: true, testResults: true } },
+          },
+        },
+        recruiter: {
+          select: {
+            id: true,
+            companyName: true,
+            industry: true,
+            headquarters: true,
+            verificationStatus: true,
+            _count: { select: { jobOffers: true } },
+          },
+        },
+      },
+    });
+
+    if (!user) {
+      return res.status(404).json({ success: false, message: "User not found" });
+    }
+
+    res.json({ success: true, user });
+  } catch (error) {
+    console.error("getAdminUser error:", error);
+    res.status(500).json({ success: false, message: "Failed to fetch user" });
   }
 }
 
