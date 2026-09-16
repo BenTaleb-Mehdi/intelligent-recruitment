@@ -3,10 +3,12 @@
 import React from "react";
 import Link from "next/link";
 import { Icon } from "@iconify/react";
-import { saveRecruiterConversation } from "@/lib/recruiterChat";
 
 export interface Applicant {
   id: string;
+  applicationId?: string;
+  candidateId?: string;
+  userId?: string;
   name: string;
   email: string;
   phone: string;
@@ -17,6 +19,13 @@ export interface Applicant {
   rating: number;
   bio?: string;
   image?: string;
+  location?: string;
+  github?: string;
+  linkedin?: string;
+  portfolio?: string;
+  cv?: string;
+  matchScore?: number;
+  matchExplanation?: string;
 }
 
 export interface ApplicantsTableProps {
@@ -199,7 +208,7 @@ export default function ApplicantsTable({ applicants, jobId }: ApplicantsTablePr
                   <td className="py-3.5 px-4 text-center">
                     <div className="flex items-center justify-center gap-1.5">
                       <Link
-                        href={`/recruiter/messages?candidateId=${applicant.id}&candidateName=${encodeURIComponent(applicant.name || "")}`}
+                        href={`/recruiter/messages?appId=${applicant.applicationId || applicant.id}&candidateId=${applicant.candidateId || applicant.id}&candidateName=${encodeURIComponent(applicant.name || "")}`}
                         className="inline-flex items-center gap-1 px-2.5 py-1.5 text-[10px] font-bold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200/80 rounded-lg transition-all"
                       >
                         <Icon icon="solar:chat-round-dots-bold" className="w-3.5 h-3.5 text-emerald-600" />
@@ -345,7 +354,7 @@ export default function ApplicantsTable({ applicants, jobId }: ApplicantsTablePr
 
               <div className="pt-2 border-t border-slate-100 flex items-center gap-2">
                 <Link
-                  href={`/recruiter/messages?candidateId=${applicant.id}&candidateName=${encodeURIComponent(applicant.name || "")}`}
+                  href={`/recruiter/messages?appId=${applicant.applicationId || applicant.id}&candidateId=${applicant.candidateId || applicant.id}&candidateName=${encodeURIComponent(applicant.name || "")}`}
                   className="inline-flex items-center gap-1 px-3 py-1.5 text-[10px] font-bold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200/80 rounded-lg transition-all"
                 >
                   <Icon icon="solar:chat-round-dots-bold" className="w-3.5 h-3.5 text-emerald-600" />

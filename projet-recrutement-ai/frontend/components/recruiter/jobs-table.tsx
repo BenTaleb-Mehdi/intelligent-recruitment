@@ -15,8 +15,12 @@ export interface JobOffer {
   id: string;
   title: string;
   date: string;
+  createdAtRaw?: string;
   status: "Ouverte" | "Fermée";
   applicants: number;
+  contractType?: string;
+  locationType?: string;
+  location?: string;
   skills?: { id: string; name: string }[];
   recruiterId?: string;
 }

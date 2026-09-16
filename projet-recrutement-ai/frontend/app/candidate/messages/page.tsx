@@ -7,6 +7,7 @@ import { Icon } from "@iconify/react";
 import ChatBox from "@/components/chat/ChatBox";
 import { api } from "@/lib/api";
 import { getSocket } from "@/lib/socket";
+import { authClient } from "@/lib/auth-client";
 import { CandidateConversation } from "@/lib/candidateChat";
 
 function formatDisplayName(name: string, company?: string) {
@@ -21,6 +22,7 @@ function formatDisplayName(name: string, company?: string) {
 }
 
 function CandidateMessagesContent() {
+  const { data: session } = authClient.useSession();
   const searchParams = useSearchParams();
   const initialAppId = searchParams ? searchParams.get("appId") : null;
   const initialCompany = searchParams ? searchParams.get("company") : null;
@@ -147,7 +149,7 @@ function CandidateMessagesContent() {
       )}
 
       {/* Main split view container */}
-      <div className="flex-1 flex overflow-hidden rounded-2xl bg-white shadow-sm border border-slate-200/80">
+      <div className="flex-1 flex min-h-0 overflow-hidden rounded-2xl bg-white shadow-sm border border-slate-200/80">
         {/* Left Sidebar - Conversations List */}
         <div
           className={`w-full md:w-80 lg:w-96 border-r border-slate-200/80 flex-shrink-0 ${
@@ -264,7 +266,7 @@ function CandidateMessagesContent() {
 
         {/* Right Main Panel - Realtime ChatBox */}
         <div
-          className={`flex-1 flex flex-col bg-white ${
+          className={`flex-1 flex flex-col min-h-0 bg-white ${
             showConversationsMobile ? "hidden md:flex" : "flex"
           }`}
         >
@@ -272,9 +274,9 @@ function CandidateMessagesContent() {
             <ChatBox
               key={activeConv.applicationId || activeConv.id}
               applicationId={activeConv.applicationId || activeConv.id}
-              currentUserId="candidate-1"
+              currentUserId={session?.user?.id || ""}
               currentUserRole="CANDIDATE"
-              currentUserName="Mehdi Ben Taleb"
+              currentUserName={session?.user?.name || "Candidat"}
               otherUserName={formatDisplayName(activeConv.recruiterName, activeConv.companyName)}
               otherUserLogo={activeConv.logo || activeConv.recruiterImage || activeConv.image}
               onMessageSent={() => {

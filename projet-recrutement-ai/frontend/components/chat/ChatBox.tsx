@@ -26,6 +26,7 @@ interface ChatBoxProps {
   currentUserName: string;
   otherUserName?: string;
   otherUserLogo?: string;
+  className?: string;
   onMessageSent?: (content: string) => void;
 }
 
@@ -36,6 +37,7 @@ export default function ChatBox({
   currentUserName,
   otherUserName = "Correspondant",
   otherUserLogo,
+  className,
   onMessageSent,
 }: ChatBoxProps) {
   const [messages, setMessages] = useState<Message[]>([]);
@@ -259,9 +261,9 @@ export default function ChatBox({
   };
 
   return (
-    <div className="flex flex-col h-[520px] bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+    <div className={`flex flex-col flex-1 h-full min-h-0 bg-white overflow-hidden ${className || ""}`}>
       {/* Header */}
-      <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-slate-50/50">
+      <div className="flex items-center justify-between px-6 py-3.5 border-b border-slate-100 bg-white shrink-0">
         <div className="flex items-center gap-3">
           <div className="relative">
             {otherUserLogo ? (
@@ -296,7 +298,7 @@ export default function ChatBox({
       </div>
 
       {/* Messages List */}
-      <div className="flex-1 p-6 overflow-y-auto space-y-4 bg-slate-50/30">
+      <div className="flex-1 min-h-0 p-6 overflow-y-auto space-y-4 bg-slate-50/30">
         {messages.length === 0 ? (
           <div className="h-full flex flex-col items-center justify-center text-center space-y-2 text-slate-400">
             <div className="w-12 h-12 rounded-full bg-blue-50 text-blue-500 flex items-center justify-center">
@@ -309,7 +311,9 @@ export default function ChatBox({
           </div>
         ) : (
           messages.map((msg, index) => {
-            const isMe = msg.senderId === currentUserId;
+            const isMe =
+              (currentUserId && msg.senderId === currentUserId) ||
+              msg.senderRole === currentUserRole;
             const msgId = msg._id || (msg as any).id;
             const isEditingThis = Boolean(msgId && editingId === msgId);
 
@@ -437,7 +441,7 @@ export default function ChatBox({
       {/* Input Form */}
       <form
         onSubmit={handleSendMessage}
-        className="p-4 border-t border-slate-100 bg-white flex items-center gap-2"
+        className="p-4 border-t border-slate-100 bg-white flex items-center gap-2 shrink-0 mt-auto"
       >
         <input
           type="text"

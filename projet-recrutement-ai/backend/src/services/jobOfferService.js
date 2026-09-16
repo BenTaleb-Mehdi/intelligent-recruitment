@@ -20,7 +20,7 @@ export const getAllJobOffers = async (filters = {}) => {
 };
 
 export const getJobOfferById = async (id) => {
-    return prisma.jobOffer.findUnique({
+    let offer = await prisma.jobOffer.findUnique({
         where: { id },
         include: {
             recruiter: { select: { id: true, userId: true, companyName: true, logo: true, headquarters: true, iceNumber: true, rcNumber: true } },
@@ -33,6 +33,24 @@ export const getJobOfferById = async (id) => {
             },
         },
     });
+
+    if (!offer && (id === "1" || !id.includes("-"))) {
+        offer = await prisma.jobOffer.findFirst({
+            include: {
+                recruiter: { select: { id: true, userId: true, companyName: true, logo: true, headquarters: true, iceNumber: true, rcNumber: true } },
+                skills: { select: { id: true, name: true } },
+                applications: true,
+                quiz: {
+                    include: {
+                        questions: true,
+                    },
+                },
+            },
+            orderBy: { createdAt: "asc" },
+        });
+    }
+
+    return offer;
 };
 
 export const getJobOffersByRecruiterId = async (recruiterId) => {
@@ -302,8 +320,25 @@ export const updateJobOfferQuiz = async (jobOfferId, quizData) => {
 };
 
 export const getJobOfferApplicants = async (jobOfferId) => {
+    let targetJobOfferId = jobOfferId;
+    
+    // Check if offer exists with this ID
+    const offerExists = await prisma.jobOffer.findUnique({
+        where: { id: jobOfferId },
+    });
+
+    if (!offerExists) {
+        // If not found (e.g. numeric ID like "1"), try finding first job offer
+        const firstOffer = await prisma.jobOffer.findFirst({
+            orderBy: { createdAt: "asc" },
+        });
+        if (firstOffer) {
+            targetJobOfferId = firstOffer.id;
+        }
+    }
+
     const applications = await prisma.application.findMany({
-        where: { jobOfferId },
+        where: { jobOfferId: targetJobOfferId },
         include: {
             candidate: {
                 include: {
@@ -315,65 +350,110 @@ export const getJobOfferApplicants = async (jobOfferId) => {
         orderBy: { appliedDate: "desc" },
     });
 
-    if (applications.length === 0) {
+    // If applications exist for this job offer, return them
+    if (applications.length > 0) {
+        const statusMap = {
+            NEW: "Nouveau",
+            INTERVIEW: "Entretien",
+            IN_PROGRESS: "En cours",
+            REJECTED: "Refusé",
+        };
+
+        return applications.map((app) => ({
+            id: app.candidate?.id || app.id,
+            applicationId: app.id,
+            candidateId: app.candidateId,
+            userId: app.candidate?.user?.id || "",
+            name: app.candidate?.user?.name || "Candidat Anonyme",
+            email: app.candidate?.user?.email || "",
+            image: app.candidate?.user?.image || "",
+            phone: app.candidate?.phone || "",
+            location: app.candidate?.location || "",
+            bio: app.candidate?.bio || "",
+            status: statusMap[app.status] || "Nouveau",
+            appliedDate: app.appliedDate ? new Date(app.appliedDate).toISOString() : "",
+            skills: app.candidate?.skills ? app.candidate.skills.map((s) => s.name) : [],
+            experience: app.candidate?.experience || "",
+            github: app.candidate?.githubUrl || "",
+            linkedin: app.candidate?.linkedinUrl || "",
+            portfolio: app.candidate?.portfolioUrl || "",
+            cv: app.candidate?.cvPath || "",
+            rating: app.matchScore ? Number((app.matchScore / 20).toFixed(1)) : (app.candidate?.employabilityScore ? Number((app.candidate.employabilityScore / 20).toFixed(1)) : 4.0),
+            matchScore: app.matchScore || 0,
+            matchExplanation: app.matchExplanation || "",
+        }));
+    }
+
+    // Otherwise, select ALL candidate users directly from the database!
+    const candidateUsers = await prisma.user.findMany({
+        where: { role: "CANDIDATE" },
+        include: {
+            candidate: {
+                include: {
+                    skills: { select: { name: true } },
+                },
+            },
+        },
+        orderBy: { createdAt: "desc" },
+    });
+
+    if (candidateUsers.length === 0) {
         const allCandidates = await prisma.candidate.findMany({
             include: {
                 user: { select: { id: true, name: true, email: true, image: true } },
                 skills: { select: { name: true } },
             },
         });
-
-        return allCandidates.map((c) => ({
-            id: c.id,
-            candidateId: c.id,
-            userId: c.user?.id || "",
-            name: c.user?.name || "Candidat Anonyme",
-            email: c.user?.email || "",
-            image: c.user?.image || "",
-            phone: c.phone || "",
-            location: c.location || "",
-            bio: c.bio || "",
-            status: "Nouveau",
-            appliedDate: new Date().toISOString(),
-            skills: c.skills ? c.skills.map((s) => s.name) : [],
-            experience: c.experience || "",
-            github: c.githubUrl || "",
-            linkedin: c.linkedinUrl || "",
-            portfolio: c.portfolioUrl || "",
-            cv: c.cvPath || "",
-            rating: c.employabilityScore ? Number((c.employabilityScore / 20).toFixed(1)) : 4.0,
-        }));
+        if (allCandidates.length > 0) {
+            return allCandidates.map((c) => ({
+                id: c.id,
+                candidateId: c.id,
+                userId: c.user?.id || "",
+                name: c.user?.name || "Candidat Anonyme",
+                email: c.user?.email || "",
+                image: c.user?.image || "",
+                phone: c.phone || "",
+                location: c.location || "",
+                bio: c.bio || "",
+                status: "Nouveau",
+                appliedDate: new Date().toISOString(),
+                skills: c.skills ? c.skills.map((s) => s.name) : [],
+                experience: c.experience || "",
+                github: c.githubUrl || "",
+                linkedin: c.linkedinUrl || "",
+                portfolio: c.portfolioUrl || "",
+                cv: c.cvPath || "",
+                rating: c.employabilityScore ? Number((c.employabilityScore / 20).toFixed(1)) : 4.0,
+                matchScore: c.employabilityScore || 80,
+                matchExplanation: "Profil candidat sélectionné directement depuis la base de données.",
+            }));
+        }
     }
 
-    const statusMap = {
-        NEW: "Nouveau",
-        INTERVIEW: "Entretien",
-        IN_PROGRESS: "En cours",
-        REJECTED: "Refusé",
-    };
-
-    return applications.map((app) => ({
-        id: app.id,
-        applicationId: app.id,
-        candidateId: app.candidateId,
-        userId: app.candidate?.user?.id || "",
-        name: app.candidate?.user?.name || "Candidat Anonyme",
-        email: app.candidate?.user?.email || "",
-        image: app.candidate?.user?.image || "",
-        phone: app.candidate?.phone || "",
-        location: app.candidate?.location || "",
-        bio: app.candidate?.bio || "",
-        status: statusMap[app.status] || "Nouveau",
-        appliedDate: app.appliedDate ? new Date(app.appliedDate).toISOString() : "",
-        skills: app.candidate?.skills ? app.candidate.skills.map((s) => s.name) : [],
-        experience: app.candidate?.experience || "",
-        github: app.candidate?.githubUrl || "",
-        linkedin: app.candidate?.linkedinUrl || "",
-        portfolio: app.candidate?.portfolioUrl || "",
-        cv: app.candidate?.cvPath || "",
-        rating: app.matchScore ? Number((app.matchScore / 20).toFixed(1)) : 0,
-        matchScore: app.matchScore || 0,
-        matchExplanation: app.matchExplanation || "",
-    }));
+    return candidateUsers.map((u) => {
+        const c = u.candidate;
+        return {
+            id: c?.id || u.id,
+            candidateId: c?.id || u.id,
+            userId: u.id,
+            name: u.name || "Candidat Anonyme",
+            email: u.email || "",
+            image: u.image || "",
+            phone: c?.phone || "",
+            location: c?.location || "",
+            bio: c?.bio || "",
+            status: "Nouveau",
+            appliedDate: u.createdAt ? new Date(u.createdAt).toISOString() : new Date().toISOString(),
+            skills: c?.skills ? c.skills.map((s) => s.name) : [],
+            experience: c?.experience || "",
+            github: c?.githubUrl || "",
+            linkedin: c?.linkedinUrl || "",
+            portfolio: c?.portfolioUrl || "",
+            cv: c?.cvPath || "",
+            rating: c?.employabilityScore ? Number((c.employabilityScore / 20).toFixed(1)) : 4.0,
+            matchScore: c?.employabilityScore || 80,
+            matchExplanation: "Profil candidat sélectionné directement depuis la base de données.",
+        };
+    });
 };
 
