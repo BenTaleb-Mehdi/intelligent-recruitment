@@ -11,7 +11,7 @@ export const getAllJobOffers = async (filters = {}) => {
     return prisma.jobOffer.findMany({
         where,
         include: {
-            recruiter: { select: { id: true, companyName: true, logo: true, headquarters: true, iceNumber: true, rcNumber: true } },
+            recruiter: { select: { id: true, userId: true, companyName: true, logo: true, headquarters: true, iceNumber: true, rcNumber: true } },
             skills: { select: { id: true, name: true } },
             _count: { select: { applications: true } },
         },
@@ -23,7 +23,7 @@ export const getJobOfferById = async (id) => {
     return prisma.jobOffer.findUnique({
         where: { id },
         include: {
-            recruiter: { select: { id: true, companyName: true, logo: true, headquarters: true, iceNumber: true, rcNumber: true } },
+            recruiter: { select: { id: true, userId: true, companyName: true, logo: true, headquarters: true, iceNumber: true, rcNumber: true } },
             skills: { select: { id: true, name: true } },
             applications: true,
             quiz: {
@@ -326,6 +326,7 @@ export const getJobOfferApplicants = async (jobOfferId) => {
         return allCandidates.map((c) => ({
             id: c.id,
             candidateId: c.id,
+            userId: c.user?.id || "",
             name: c.user?.name || "Candidat Anonyme",
             email: c.user?.email || "",
             image: c.user?.image || "",
@@ -355,6 +356,7 @@ export const getJobOfferApplicants = async (jobOfferId) => {
         id: app.id,
         applicationId: app.id,
         candidateId: app.candidateId,
+        userId: app.candidate?.user?.id || "",
         name: app.candidate?.user?.name || "Candidat Anonyme",
         email: app.candidate?.user?.email || "",
         image: app.candidate?.user?.image || "",

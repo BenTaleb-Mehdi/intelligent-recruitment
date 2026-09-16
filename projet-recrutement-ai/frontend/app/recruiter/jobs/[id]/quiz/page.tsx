@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { Icon } from "@iconify/react";
@@ -73,12 +73,11 @@ export default function JobQuizPage() {
               options: Array.isArray(q.options)
                 ? q.options
                 : typeof q.options === "string"
-                ? JSON.parse(q.options)
-                : [],
-              correctAnswer: decodeCorrectAnswers(q.correctAnswer),
+                  ? JSON.parse(q.options)
+                  : [],
+
             }))
           );
-          setValidated(offer.quiz.status === "VALIDATED");
           setRejected(offer.quiz.status === "REJECTED");
           if (offer.quiz.duration) {
             setDuration(String(offer.quiz.duration));
@@ -91,7 +90,7 @@ export default function JobQuizPage() {
               const dd = String(d.getDate()).padStart(2, "0");
               try {
                 setEndDate(parseDate(`${yyyy}-${mm}-${dd}`));
-              } catch {}
+              } catch { }
               const hh = String(d.getHours()).padStart(2, "0");
               const min = String(d.getMinutes()).padStart(2, "0");
               setEndTime(`${hh}:${min}`);
@@ -119,7 +118,7 @@ export default function JobQuizPage() {
     if (jobId) {
       fetchQuiz(true);
     }
-  }, [jobId]);
+  }, [fetchQuiz, jobId]);
 
   const handleCorrectChange = (qId: string, optIndex: number) => {
     setQuestions((prev) =>
@@ -128,8 +127,8 @@ export default function JobQuizPage() {
         const currentArr = Array.isArray(q.correctAnswer)
           ? q.correctAnswer
           : typeof q.correctAnswer === "number"
-          ? [q.correctAnswer]
-          : [];
+            ? [q.correctAnswer]
+            : [];
 
         const exists = currentArr.includes(optIndex);
         const updated = exists
@@ -231,7 +230,7 @@ export default function JobQuizPage() {
           const res = await api.get<{ data: ApiJobOffer }>(`/api/job-offers/${jobId}`);
           if (res?.data && res.data.quiz) {
             const newQuestionTexts = res.data.quiz.questions.map((q: any) => q.text).join("|");
-            
+
             if (newQuestionTexts !== originalQuestionTexts || (questions.length === 0 && res.data.quiz.questions.length > 0)) {
               clearInterval(pollInterval);
               await fetchQuiz(false);
@@ -244,8 +243,8 @@ export default function JobQuizPage() {
               showAlert("warning", "La régénération prend plus de temps que prévu. Elle sera actualisée plus tard.");
             }
           } else if (attempts >= maxAttempts) {
-             clearInterval(pollInterval);
-             setValidating(false);
+            clearInterval(pollInterval);
+            setValidating(false);
           }
         } catch (error) {
           console.error("Error polling quiz:", error);
@@ -345,7 +344,7 @@ export default function JobQuizPage() {
           <Icon icon="solar:calendar-date-linear" className="w-4 h-4 text-purple-600" />
           Paramètres d&apos;accès & Temps
         </h3>
-        
+
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-start">
           {/* Calendar Picker Column */}
           <div className="flex flex-col items-center sm:items-start space-y-3">
@@ -398,11 +397,10 @@ export default function JobQuizPage() {
                       setDuration(timeOption);
                       setValidated(false);
                     }}
-                    className={`py-2 px-3 text-xs font-semibold rounded-xl border transition-all ${
-                      duration === timeOption
-                        ? "bg-purple-50 border-purple-200 text-purple-700 shadow-sm"
-                        : "bg-slate-50 border-slate-200/60 text-slate-600 hover:bg-slate-100"
-                    }`}
+                    className={`py-2 px-3 text-xs font-semibold rounded-xl border transition-all ${duration === timeOption
+                      ? "bg-purple-50 border-purple-200 text-purple-700 shadow-sm"
+                      : "bg-slate-50 border-slate-200/60 text-slate-600 hover:bg-slate-100"
+                      }`}
                   >
                     {timeOption} min
                   </button>

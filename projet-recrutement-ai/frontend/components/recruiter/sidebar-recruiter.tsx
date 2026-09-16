@@ -31,7 +31,7 @@ export default function SidebarRecruiter({ isOpen, onClose, logo, companyName }:
 
   return (
     <aside 
-      className={`fixed md:static inset-y-0 left-0 z-50 flex flex-col bg-white border-r border-slate-200/85 text-slate-800 h-screen font-sans transition-all duration-300 ease-in-out md:transition-all ${
+      className={`fixed md:sticky md:top-0 inset-y-0 left-0 z-50 flex flex-col bg-white dark:bg-zinc-900 border-r border-slate-200/85 dark:border-default-100/20 text-slate-800 dark:text-slate-100 h-screen shrink-0 font-sans transition-all duration-300 ease-in-out md:transition-all ${
         isOpen 
           ? "w-64 translate-x-0" 
           : "w-64 -translate-x-full md:w-16 md:translate-x-0"
@@ -295,7 +295,7 @@ export default function SidebarRecruiter({ isOpen, onClose, logo, companyName }:
       </nav>
 
       {/* Footer Navigation Area (Help & Logout) */}
-      <div className={`border-t border-slate-200/65 bg-white ${
+      <div className={`mt-auto shrink-0 border-t border-slate-200/65 dark:border-default-100/20 bg-white dark:bg-zinc-900 ${
         isOpen ? "p-3 space-y-1" : "p-2 space-y-3"
       }`}>
         <Link 

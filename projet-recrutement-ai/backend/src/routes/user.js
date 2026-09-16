@@ -1,13 +1,15 @@
 import { Router } from "express";
 import prisma from "../config/db.js";
+import { protectDashboard } from "../middleware/authMiddleware.js";
 
 const router = Router();
 
-router.patch("/api/user/update-role", async (req, res) => {
+router.patch("/api/user/update-role", protectDashboard, async (req, res) => {
     try {
-        const { userId, role } = req.body;
+        const { role } = req.body;
+        const userId = req.user?.id;
         if (!userId || !role) {
-            return res.status(400).json({ error: "Missing userId or role" });
+            return res.status(400).json({ error: "Missing role" });
         }
 
         const ROLE_MAP = {
@@ -15,10 +17,18 @@ router.patch("/api/user/update-role", async (req, res) => {
             candidate: "CANDIDATE",
             recruteur: "RECRUITER",
             recruiter: "RECRUITER",
-            admin: "ADMIN",
         };
 
-        const normalizedRole = ROLE_MAP[role] || role.toUpperCase();
+        const normalizedRole = ROLE_MAP[String(role).toLowerCase()];
+        if (!normalizedRole) {
+            return res.status(400).json({ error: "Invalid role" });
+        }
+
+        // Role selection is only for onboarding. Admin privileges are granted
+        // through a controlled server-side process, never through this endpoint.
+        if (req.user.role && String(req.user.role).toUpperCase() === "ADMIN") {
+            return res.status(403).json({ error: "Admin role cannot be changed here" });
+        }
 
         const user = await prisma.user.update({
             where: { id: userId },

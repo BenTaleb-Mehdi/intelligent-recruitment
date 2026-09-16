@@ -9,6 +9,7 @@ import { Button } from "@/components/candidate/Button";
 import { Chip } from "@/components/candidate/Chip";
 import { Alert } from "@/components/candidate/Alert";
 import { api } from "@/lib/api";
+import ReportUserButton from "@/components/ReportUserButton";
 
 export default function CandidateJobDetails() {
   const params = useParams();
@@ -65,6 +66,7 @@ export default function CandidateJobDetails() {
           id: jd.id,
           title: jd.title,
           company: jd.recruiter?.companyName || "Unknown Company",
+          recruiterUserId: jd.recruiter?.userId,
           location: jd.location || "Hybrid",
           salary: jd.salary || "$70k - $90k",
           experience: `${jd.experienceYears}+ years`,
@@ -240,6 +242,7 @@ export default function CandidateJobDetails() {
               )}
             </Card.Content>
             <Card.Footer className="flex-col gap-3">
+              <ReportUserButton userId={job.recruiterUserId} className="w-full justify-center" />
               {applied ? (
                 <>
                   <div className="w-full flex items-center justify-between p-3 bg-danger-soft/10 text-danger rounded-lg text-xs font-bold mb-1 select-none">

@@ -1,0 +1,4 @@
+-- No-op migration.
+-- `isOnboarded` and the verification text columns are already established by
+-- `20260713165427_add_domain_models`. Keeping this migration in the chain
+-- preserves its history while avoiding a duplicate-column failure on a fresh DB.

@@ -21,7 +21,7 @@ export default function Calendar({
     <div
       className={`bg-white p-3 rounded-2xl border border-slate-200/50 w-full max-w-[280px] sm:max-w-none flex justify-center ${className}`}
     >
-      <HeroUICalendar aria-label={ariaLabel} value={value} onChange={onChange}>
+      <HeroUICalendar aria-label={ariaLabel} value={value as any} onChange={onChange as any}>
         <HeroUICalendar.Header>
           <HeroUICalendar.Heading />
           <HeroUICalendar.NavButton slot="previous" />
@@ -34,7 +34,7 @@ export default function Calendar({
             )}
           </HeroUICalendar.GridHeader>
           <HeroUICalendar.GridBody>
-            {(date: CalendarDate) => <HeroUICalendar.Cell date={date} />}
+            {(date: any) => <HeroUICalendar.Cell date={date} />}
           </HeroUICalendar.GridBody>
         </HeroUICalendar.Grid>
       </HeroUICalendar>

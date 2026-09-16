@@ -13,7 +13,7 @@ export const getCandidateQuizzes = async (req, res) => {
         res.status(200).json({ success: true, data: quizzes });
     } catch (error) {
         console.error("Error in getCandidateQuizzes:", error);
-        res.status(500).json({ success: false, error: error.message || "Internal server error" });
+        res.status(error.statusCode || 500).json({ success: false, error: error.message || "Internal server error" });
     }
 };
 

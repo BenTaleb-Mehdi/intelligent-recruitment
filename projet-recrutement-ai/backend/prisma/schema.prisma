@@ -45,6 +45,19 @@ enum VerificationStatus {
   REJECTED
 }
 
+enum ReportStatus {
+  PENDING
+  REVIEWING
+  RESOLVED
+  DISMISSED
+}
+
+enum ReportSeverity {
+  LOW
+  MEDIUM
+  HIGH
+}
+
 // ==========================================================
 // 🟦 MYSQL DATABASE (RELATIONAL CORE)
 // ==========================================================
@@ -62,6 +75,9 @@ model User {
   accounts      Account[]
   candidate     Candidate?
   recruiter     Recruiter?
+  reportsReceived Report[] @relation("ReportsReceived")
+  reportsMade     Report[] @relation("ReportsMade")
+  reportsResolved Report[] @relation("ReportsResolved")
 
   @@map("user")
 }
@@ -108,6 +124,27 @@ model Verification {
   updatedAt  DateTime @updatedAt
 
   @@map("verification")
+}
+
+model Report {
+  id             String        @id @default(uuid())
+  reportedUserId String
+  reportedUser   User          @relation("ReportsReceived", fields: [reportedUserId], references: [id], onDelete: Cascade)
+  reporterUserId String
+  reporterUser   User          @relation("ReportsMade", fields: [reporterUserId], references: [id], onDelete: Cascade)
+  reason         String        @db.Text
+  severity       ReportSeverity @default(MEDIUM)
+  status         ReportStatus   @default(PENDING)
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+  resolvedAt     DateTime?
+  resolvedById   String?
+  resolvedBy     User?         @relation("ReportsResolved", fields: [resolvedById], references: [id], onDelete: SetNull)
+
+  @@index([status, createdAt])
+  @@index([reportedUserId])
+  @@index([reporterUserId])
+  @@map("report")
 }
 
 model Candidate {

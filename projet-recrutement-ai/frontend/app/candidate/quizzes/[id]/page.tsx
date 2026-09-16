@@ -10,6 +10,20 @@ import { Chip } from "@/components/candidate/Chip";
 import { Alert } from "@/components/candidate/Alert";
 import { api } from "@/lib/api";
 
+function getCorrectAnswerIndexes(question: any): number[] {
+  if (Array.isArray(question.correctAnswers)) return question.correctAnswers.map(Number);
+  if (Array.isArray(question.correctAnswer)) return question.correctAnswer.map(Number);
+
+  const value = Number(question.correctAnswer ?? question.correctAnswers);
+  if (!Number.isInteger(value) || value < 0) return [];
+
+  const indexes: number[] = [];
+  for (let index = 0; index < 8; index += 1) {
+    if ((value & (1 << index)) !== 0) indexes.push(index);
+  }
+  return indexes;
+}
+
 export default function CandidateQuizRoom() {
   const params = useParams();
   const router = useRouter();
@@ -66,20 +80,7 @@ export default function CandidateQuizRoom() {
   const currentQ = questions[currentQuestion];
   const correctArr = useMemo(() => {
     if (!currentQ) return [];
-    if (Array.isArray(currentQ.correctAnswers)) return currentQ.correctAnswers.map((x: any) => Number(x));
-    if (Array.isArray(currentQ.correctAnswer)) return currentQ.correctAnswer.map((x: any) => Number(x));
-
-    const val = currentQ.correctAnswer !== undefined ? currentQ.correctAnswer : currentQ.correctAnswers;
-    const num = typeof val === "number" ? val : parseInt(val, 10);
-    if (isNaN(num)) return [];
-
-    const indices: number[] = [];
-    for (let i = 0; i < 8; i++) {
-      if ((num & (1 << i)) !== 0) {
-        indices.push(i);
-      }
-    }
-    return indices.length > 0 ? indices : [num >= 0 ? num : 0];
+    return getCorrectAnswerIndexes(currentQ);
   }, [currentQ]);
 
   const isMultipleChoice = correctArr.length > 1;
@@ -124,14 +125,7 @@ export default function CandidateQuizRoom() {
     let correctCount = 0;
     questions.forEach((q, idx) => {
       const selected = selectedAnswers[idx] || [];
-      let correctArr: number[] = [];
-      if (Array.isArray(q.correctAnswers)) {
-        correctArr = q.correctAnswers;
-      } else if (Array.isArray(q.correctAnswer)) {
-        correctArr = q.correctAnswer;
-      } else if (typeof q.correctAnswer === "number") {
-        correctArr = [q.correctAnswer];
-      }
+      const correctArr = getCorrectAnswerIndexes(q);
 
       const sSorted = [...selected].sort();
       const cSorted = [...correctArr].sort();
@@ -139,7 +133,7 @@ export default function CandidateQuizRoom() {
         sSorted.length === cSorted.length &&
         sSorted.every((val, index) => val === cSorted[index]);
 
-      if (isExactMatch || (correctArr.length > 0 && selected.some((s) => correctArr.includes(s)))) {
+      if (isExactMatch) {
         correctCount++;
       }
     });
