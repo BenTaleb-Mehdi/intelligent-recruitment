@@ -9,10 +9,19 @@ router.get("/api/recruiters", recruiterController.getAllRecruiters);
 router.get("/api/recruiters/:id", recruiterController.getRecruiterById);
 router.get("/api/recruiters/:recruiterId/stats", async (req, res) => {
     try {
-        const stats = await getRecruiterStats(req.params.recruiterId);
+        const stats = await getRecruiterStats(req.params.recruiterId, req.query.jobOfferId);
         res.status(200).json({ success: true, data: stats });
     } catch (error) {
         console.error("Error fetching stats:", error);
+        res.status(500).json({ success: false, error: "Internal server error" });
+    }
+});
+router.get("/api/recruiters/:recruiterId/analytics", async (req, res) => {
+    try {
+        const stats = await getRecruiterStats(req.params.recruiterId, req.query.jobOfferId);
+        res.status(200).json({ success: true, data: { ...stats.analytics, jobOffers: stats.jobOffersList } });
+    } catch (error) {
+        console.error("Error fetching analytics:", error);
         res.status(500).json({ success: false, error: "Internal server error" });
     }
 });

@@ -12,9 +12,8 @@ router.post("/api/job-offers", protectDashboard, requireVerifiedRecruiter, jobOf
 router.post("/api/jobs/create", protectDashboard, requireVerifiedRecruiter, jobOfferController.createJobOffer);
 router.put("/api/job-offers/:id", protectDashboard, requireJobOfferOwnerOrAdmin, jobOfferController.updateJobOffer);
 router.delete("/api/job-offers/:id", protectDashboard, requireJobOfferOwnerOrAdmin, jobOfferController.deleteJobOffer);
-router.patch("/api/job-offers/:id/toggle-status", protectDashboard, requireJobOfferOwnerOrAdmin, jobOfferController.toggleStatus);
 router.patch("/api/job-offers/description-webhook", jobOfferController.updateDescriptionFromWebhook);
-router.get("/api/job-offers/:id/applicants", protectDashboard, requireJobOfferOwnerOrAdmin, jobOfferController.getJobOfferApplicants);
+router.get("/api/job-offers/:id/applicants", protectDashboard, jobOfferController.getJobOfferApplicants);
 router.post("/api/job-offers/:id/regenerate", protectDashboard, requireJobOfferOwnerOrAdmin, jobOfferController.regenerateJobOfferDescription);
 router.put("/api/job-offers/:id/quiz", protectDashboard, requireJobOfferOwnerOrAdmin, jobOfferController.updateJobOfferQuiz);
 

@@ -9,19 +9,47 @@ import { authClient } from "@/lib/auth-client";
 import CustomSelect from "@/components/recruiter/custom-select";
 import { useAlert } from "@/contexts/AlertContext";
 
+import Dropdown, { DropdownOption } from "@/components/recruiter/Dropdown";
+
 type Tab = "profile" | "ai" | "security";
 
 const tabs: { id: Tab; label: string; icon: string }[] = [
   { id: "profile", label: "Profil entreprise", icon: "solar:building-linear" },
-  { id: "ai", label: "Configuration IA", icon: "solar:magic-stick-3-linear" },
+  { id: "ai", label: "Préférences de recrutement intelligent", icon: "solar:magic-stick-3-linear" },
   { id: "security", label: "Sécurité", icon: "solar:shield-check-linear" },
+];
+
+const RIGOR_OPTIONS: DropdownOption[] = [
+  { id: "lenient", label: "Tolérant (Détection de potentiels & profils atypiques)" },
+  { id: "balanced", label: "Équilibré (Standard recommandé)" },
+  { id: "strict", label: "Strict (Exigence maximale sur les compétences clés)" },
+];
+
+const DEADLINE_OPTIONS: DropdownOption[] = [
+  { id: "24", label: "24 heures (1 jour)" },
+  { id: "48", label: "48 heures (2 jours - Recommandé)" },
+  { id: "72", label: "72 heures (3 jours)" },
+  { id: "168", label: "7 jours (1 semaine)" },
 ];
 
 export default function SettingsPage() {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<Tab>("profile");
-  const [threshold, setThreshold] = useState(70);
-  const [skillWeight, setSkillWeight] = useState(60);
+
+  // AI & Smart Recruitment Preferences states
+  const [threshold, setThreshold] = useState(75);
+  const [autoSendQuiz, setAutoSendQuiz] = useState(true);
+  const [quizTriggerThreshold, setQuizTriggerThreshold] = useState(80);
+  const [quizDeadlineHours, setQuizDeadlineHours] = useState("48");
+  const [skillWeight, setSkillWeight] = useState(50);
+  const [experienceWeight, setExperienceWeight] = useState(30);
+  const [educationWeight, setEducationWeight] = useState(20);
+  const [aiRigorLevel, setAiRigorLevel] = useState("balanced");
+  const [notifyTopMatch, setNotifyTopMatch] = useState(true);
+  const [weeklyDigest, setWeeklyDigest] = useState(true);
+  const [autoRejectLowScore, setAutoRejectLowScore] = useState(false);
+  const [autoRejectThreshold, setAutoRejectThreshold] = useState(40);
+  const [isSavingAi, setIsSavingAi] = useState(false);
 
   const [companyName, setCompanyName] = useState("");
   const [website, setWebsite] = useState("");
@@ -92,6 +120,76 @@ export default function SettingsPage() {
 
     fetchRecruiter();
   }, []);
+
+  // Load AI Preferences
+  useEffect(() => {
+    try {
+      const key = `smart_recruitment_preferences_${recruiterId || "default"}`;
+      const saved = localStorage.getItem(key);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (parsed.threshold !== undefined) setThreshold(parsed.threshold);
+        if (parsed.autoSendQuiz !== undefined) setAutoSendQuiz(parsed.autoSendQuiz);
+        if (parsed.quizTriggerThreshold !== undefined) setQuizTriggerThreshold(parsed.quizTriggerThreshold);
+        if (parsed.quizDeadlineHours !== undefined) setQuizDeadlineHours(parsed.quizDeadlineHours);
+        if (parsed.skillWeight !== undefined) setSkillWeight(parsed.skillWeight);
+        if (parsed.experienceWeight !== undefined) setExperienceWeight(parsed.experienceWeight);
+        if (parsed.educationWeight !== undefined) setEducationWeight(parsed.educationWeight);
+        if (parsed.aiRigorLevel !== undefined) setAiRigorLevel(parsed.aiRigorLevel);
+        if (parsed.notifyTopMatch !== undefined) setNotifyTopMatch(parsed.notifyTopMatch);
+        if (parsed.weeklyDigest !== undefined) setWeeklyDigest(parsed.weeklyDigest);
+        if (parsed.autoRejectLowScore !== undefined) setAutoRejectLowScore(parsed.autoRejectLowScore);
+        if (parsed.autoRejectThreshold !== undefined) setAutoRejectThreshold(parsed.autoRejectThreshold);
+      }
+    } catch (err) {
+      console.error("Error reading saved AI preferences:", err);
+    }
+  }, [recruiterId]);
+
+  const handleSaveAiSettings = () => {
+    setIsSavingAi(true);
+    try {
+      const prefs = {
+        threshold,
+        autoSendQuiz,
+        quizTriggerThreshold,
+        quizDeadlineHours,
+        skillWeight,
+        experienceWeight,
+        educationWeight,
+        aiRigorLevel,
+        notifyTopMatch,
+        weeklyDigest,
+        autoRejectLowScore,
+        autoRejectThreshold,
+        updatedAt: new Date().toISOString(),
+      };
+      const key = `smart_recruitment_preferences_${recruiterId || "default"}`;
+      localStorage.setItem(key, JSON.stringify(prefs));
+      showAlert("success", "Vos préférences de recrutement intelligent ont été enregistrées avec succès !");
+    } catch (err) {
+      console.error("Error saving AI settings:", err);
+      showAlert("danger", "Erreur lors de l'enregistrement des préférences.");
+    } finally {
+      setTimeout(() => setIsSavingAi(false), 300);
+    }
+  };
+
+  const handleResetAiDefaults = () => {
+    setThreshold(75);
+    setAutoSendQuiz(true);
+    setQuizTriggerThreshold(80);
+    setQuizDeadlineHours("48");
+    setSkillWeight(50);
+    setExperienceWeight(30);
+    setEducationWeight(20);
+    setAiRigorLevel("balanced");
+    setNotifyTopMatch(true);
+    setWeeklyDigest(true);
+    setAutoRejectLowScore(false);
+    setAutoRejectThreshold(40);
+    showAlert("info", "Préférences réinitialisées aux valeurs recommandées par défaut.");
+  };
 
   const handleVerifyCompany = async () => {
     if (!companyName || (!iceNumber && !rcNumber)) {
@@ -570,81 +668,338 @@ export default function SettingsPage() {
       )}
 
       {activeTab === "ai" && (
-        <div className="bg-white rounded-2xl border border-slate-200/70 shadow-sm p-6 sm:p-8 space-y-8">
-          <h3 className="text-sm font-bold text-slate-800 border-b border-slate-100 pb-2 flex items-center gap-2">
-            <Icon icon="solar:magic-stick-3-linear" className="w-4 h-4 text-purple-500" />
-            Préférences de recrutement intelligent
-          </h3>
+        <div className="bg-white rounded-2xl border border-slate-200/80 shadow-xs p-6 sm:p-8 space-y-8 font-sans">
+          {/* Header */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 pb-4">
+            <div>
+              <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
+                <div className="w-8 h-8 rounded-xl bg-purple-100 text-purple-600 flex items-center justify-center">
+                  <Icon icon="solar:magic-stick-3-linear" className="w-4 h-4" />
+                </div>
+                Préférences de recrutement intelligent
+              </h3>
+              <p className="text-xs text-slate-500 mt-1">
+                Configurez les algorithmes de matching IA, l&apos;automatisation des quiz et les seuils de présélection.
+              </p>
+            </div>
+            <span className="self-start sm:self-center bg-purple-50 text-purple-700 border border-purple-100 text-xs font-bold px-3 py-1.5 rounded-full flex items-center gap-1.5">
+              <span className="w-2 h-2 rounded-full bg-purple-500 animate-pulse" />
+              Moteur IA Actif
+            </span>
+          </div>
 
-          <div className="space-y-3">
+          {/* AI Strategy Overview Card */}
+          <div className="bg-gradient-to-r from-purple-50 via-indigo-50/50 to-blue-50 border border-purple-100 rounded-2xl p-5 space-y-3">
+            <div className="flex items-center gap-2 text-purple-900 font-bold text-xs">
+              <Icon icon="solar:info-circle-linear" className="w-4 h-4 text-purple-600" />
+              Stratégie de matching actuelle
+            </div>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
+              <div className="bg-white/80 backdrop-blur-xs rounded-xl p-3 border border-purple-100/60">
+                <span className="text-[10px] text-slate-400 uppercase font-bold block">Seuil Top Match</span>
+                <span className="text-sm font-extrabold text-purple-700">{threshold}%</span>
+              </div>
+              <div className="bg-white/80 backdrop-blur-xs rounded-xl p-3 border border-purple-100/60">
+                <span className="text-[10px] text-slate-400 uppercase font-bold block">Poids Technique</span>
+                <span className="text-sm font-extrabold text-blue-700">{skillWeight}%</span>
+              </div>
+              <div className="bg-white/80 backdrop-blur-xs rounded-xl p-3 border border-purple-100/60">
+                <span className="text-[10px] text-slate-400 uppercase font-bold block">Envoi Quiz IA</span>
+                <span className={`text-sm font-extrabold ${autoSendQuiz ? "text-emerald-700" : "text-slate-500"}`}>
+                  {autoSendQuiz ? "Automatisé" : "Manuel"}
+                </span>
+              </div>
+              <div className="bg-white/80 backdrop-blur-xs rounded-xl p-3 border border-purple-100/60">
+                <span className="text-[10px] text-slate-400 uppercase font-bold block">Rigueur IA</span>
+                <span className="text-sm font-extrabold text-indigo-700 capitalize">
+                  {aiRigorLevel === "lenient" ? "Tolérant" : aiRigorLevel === "strict" ? "Strict" : "Équilibré"}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* Section 1: Seuil de compatibilité IA */}
+          <div className="space-y-4">
             <div className="flex items-center justify-between">
-              <label className="text-xs font-bold text-slate-700">Seuil de compatibilité IA</label>
-              <span className="text-sm font-bold text-purple-600 bg-purple-50 px-2.5 py-0.5 rounded-lg">{threshold}%</span>
+              <div>
+                <h4 className="text-xs font-bold text-slate-800 uppercase tracking-wider">
+                  1. Seuil de compatibilité IA (Matching Minimal)
+                </h4>
+                <p className="text-xs text-slate-500 mt-0.5">
+                  Score minimal pour qualifier un candidat comme &quot;Top Match&quot; dans votre pipeline.
+                </p>
+              </div>
+              <span className="text-sm font-extrabold text-purple-700 bg-purple-100/80 px-3 py-1 rounded-xl">
+                {threshold}%
+              </span>
             </div>
             <input
               type="range"
-              min={0}
-              max={100}
+              min={50}
+              max={95}
+              step={5}
               value={threshold}
               onChange={(e) => setThreshold(Number(e.target.value))}
-              className="w-full h-2 bg-slate-200 rounded-full appearance-none cursor-pointer accent-purple-600"
+              className="w-full h-2.5 bg-slate-100 rounded-full appearance-none cursor-pointer accent-purple-600"
             />
-            <p className="text-[10px] text-slate-400">
-              Les candidats en dessous de ce seuil sont automatiquement masqués du tableau de bord principal.
-            </p>
+            <div className="flex justify-between text-[10px] font-semibold text-slate-400">
+              <span>50% (Très ouvert)</span>
+              <span>75% (Recommandé)</span>
+              <span>95% (Très strict)</span>
+            </div>
           </div>
 
-          <div className="flex items-center justify-between py-4 border-t border-slate-100">
+          {/* Section 2: Niveau d'exigence et rigueur */}
+          <div className="space-y-3 pt-6 border-t border-slate-100">
             <div>
-              <p className="text-xs font-bold text-slate-700">Envoi automatique des quiz</p>
-              <p className="text-[10px] text-slate-400 mt-0.5">
-                Envoyer automatiquement les quiz techniques aux candidats dont le score CV dépasse 80%.
+              <h4 className="text-xs font-bold text-slate-800 uppercase tracking-wider">
+                2. Modèle d&apos;analyse & rigueur IA
+              </h4>
+              <p className="text-xs text-slate-500 mt-0.5">
+                Ajuste la sensibilité de l&apos;IA lors de l&apos;analyse sémantique du CV et des expériences.
               </p>
             </div>
-            <label className="relative inline-flex items-center cursor-pointer">
-              <input type="checkbox" defaultChecked className="sr-only peer" />
-              <div className="w-10 h-5 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:bg-purple-600 after:content-[''] after:absolute after:top-[3px] after:left-[3px] after:bg-white after:rounded-full after:h-3.5 after:w-3.5 after:transition-all" />
-            </label>
+            <div className="w-full max-w-xl">
+              <Dropdown
+                options={RIGOR_OPTIONS}
+                value={aiRigorLevel}
+                placeholder="Sélectionner la rigueur"
+                onChange={(key) => {
+                  if (key != null) setAiRigorLevel(String(key));
+                }}
+                ariaLabel="Rigueur du modèle IA"
+              />
+            </div>
           </div>
 
-          <div className="space-y-4 border-t border-slate-100 pt-6">
-            <p className="text-xs font-bold text-slate-700">Pondération des critères</p>
-            <div className="space-y-3">
+          {/* Section 3: Pondération multicritères */}
+          <div className="space-y-5 pt-6 border-t border-slate-100">
+            <div className="flex items-center justify-between">
+              <div>
+                <h4 className="text-xs font-bold text-slate-800 uppercase tracking-wider">
+                  3. Pondération des critères de matching
+                </h4>
+                <p className="text-xs text-slate-500 mt-0.5">
+                  Définissez l&apos;importance relative de chaque axe dans le calcul du score global (Total = 100%).
+                </p>
+              </div>
+              <span className="text-xs font-bold px-2.5 py-1 rounded-lg bg-slate-100 text-slate-700">
+                Total : {skillWeight + experienceWeight + educationWeight}%
+              </span>
+            </div>
+
+            <div className="space-y-4">
+              {/* Compétences techniques */}
               <div className="space-y-1.5">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-semibold text-slate-600">Compétences techniques</span>
-                  <span className="text-xs font-bold text-blue-600">{skillWeight}%</span>
+                <div className="flex items-center justify-between text-xs">
+                  <span className="font-semibold text-slate-700 flex items-center gap-1.5">
+                    <span className="w-2 h-2 rounded-full bg-blue-500" />
+                    Compétences techniques & Hard Skills
+                  </span>
+                  <span className="font-bold text-blue-600">{skillWeight}%</span>
                 </div>
                 <input
                   type="range"
-                  min={0}
-                  max={100}
+                  min={10}
+                  max={80}
+                  step={5}
                   value={skillWeight}
                   onChange={(e) => setSkillWeight(Number(e.target.value))}
-                  className="w-full h-2 bg-slate-200 rounded-full appearance-none cursor-pointer accent-blue-600"
+                  className="w-full h-2 bg-slate-100 rounded-full appearance-none cursor-pointer accent-blue-600"
                 />
               </div>
+
+              {/* Expérience professionnelle */}
               <div className="space-y-1.5">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-semibold text-slate-600">Expérience professionnelle</span>
-                  <span className="text-xs font-bold text-emerald-600">{100 - skillWeight}%</span>
+                <div className="flex items-center justify-between text-xs">
+                  <span className="font-semibold text-slate-700 flex items-center gap-1.5">
+                    <span className="w-2 h-2 rounded-full bg-emerald-500" />
+                    Expérience professionnelle & Projets
+                  </span>
+                  <span className="font-bold text-emerald-600">{experienceWeight}%</span>
+                </div>
+                <input
+                  type="range"
+                  min={10}
+                  max={80}
+                  step={5}
+                  value={experienceWeight}
+                  onChange={(e) => setExperienceWeight(Number(e.target.value))}
+                  className="w-full h-2 bg-slate-100 rounded-full appearance-none cursor-pointer accent-emerald-600"
+                />
+              </div>
+
+              {/* Formation & Diplômes */}
+              <div className="space-y-1.5">
+                <div className="flex items-center justify-between text-xs">
+                  <span className="font-semibold text-slate-700 flex items-center gap-1.5">
+                    <span className="w-2 h-2 rounded-full bg-amber-500" />
+                    Formation académique & Certifications
+                  </span>
+                  <span className="font-bold text-amber-600">{educationWeight}%</span>
                 </div>
                 <input
                   type="range"
                   min={0}
-                  max={100}
-                  value={100 - skillWeight}
-                  onChange={(e) => setSkillWeight(100 - Number(e.target.value))}
-                  className="w-full h-2 bg-slate-200 rounded-full appearance-none cursor-pointer accent-emerald-600"
+                  max={50}
+                  step={5}
+                  value={educationWeight}
+                  onChange={(e) => setEducationWeight(Number(e.target.value))}
+                  className="w-full h-2 bg-slate-100 rounded-full appearance-none cursor-pointer accent-amber-600"
                 />
               </div>
             </div>
           </div>
 
-          <div className="flex justify-end pt-4 border-t border-slate-100">
-            <button className="inline-flex items-center gap-2 bg-purple-600 hover:bg-purple-700 text-white font-semibold text-xs py-3 px-6 rounded-xl shadow-sm transition-all active:scale-[0.98] select-none">
-              <Icon icon="solar:diskette-linear" className="w-4 h-4" />
-              Enregistrer
+          {/* Section 4: Automatisation des Quiz Techniques */}
+          <div className="space-y-4 pt-6 border-t border-slate-100">
+            <div>
+              <h4 className="text-xs font-bold text-slate-800 uppercase tracking-wider">
+                4. Automatisation des Quiz Techniques
+              </h4>
+              <p className="text-xs text-slate-500 mt-0.5">
+                Accélérez le pré-screening en invitant automatiquement les meilleurs candidats à passer leur test.
+              </p>
+            </div>
+
+            <div className="flex items-center justify-between p-4 bg-slate-50 rounded-xl border border-slate-200/80">
+              <div className="space-y-0.5">
+                <p className="text-xs font-bold text-slate-800">Envoi automatique du test technique</p>
+                <p className="text-[11px] text-slate-500">
+                  Transmettre automatiquement l&apos;évaluation IA dès qu&apos;un candidat dépasse le seuil défini.
+                </p>
+              </div>
+              <label className="relative inline-flex items-center cursor-pointer shrink-0">
+                <input
+                  type="checkbox"
+                  checked={autoSendQuiz}
+                  onChange={(e) => setAutoSendQuiz(e.target.checked)}
+                  className="sr-only peer"
+                />
+                <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:bg-purple-600 after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all" />
+              </label>
+            </div>
+
+            {autoSendQuiz && (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
+                <div className="space-y-2 p-4 bg-white border border-slate-200/80 rounded-xl">
+                  <div className="flex justify-between items-center">
+                    <span className="text-xs font-bold text-slate-700">Seuil CV déclencheur</span>
+                    <span className="text-xs font-extrabold text-purple-600 bg-purple-50 px-2 py-0.5 rounded">
+                      ≥ {quizTriggerThreshold}%
+                    </span>
+                  </div>
+                  <input
+                    type="range"
+                    min={60}
+                    max={90}
+                    step={5}
+                    value={quizTriggerThreshold}
+                    onChange={(e) => setQuizTriggerThreshold(Number(e.target.value))}
+                    className="w-full h-2 bg-slate-100 rounded-full appearance-none cursor-pointer accent-purple-600"
+                  />
+                  <p className="text-[10px] text-slate-400">
+                    Seuls les candidats avec un score IA supérieur ou égal recevront le test.
+                  </p>
+                </div>
+
+                <div className="space-y-2 p-4 bg-white border border-slate-200/80 rounded-xl">
+                  <label className="text-xs font-bold text-slate-700 block">Délai limite pour passer le quiz</label>
+                  <Dropdown
+                    options={DEADLINE_OPTIONS}
+                    value={quizDeadlineHours}
+                    placeholder="Délai"
+                    onChange={(key) => {
+                      if (key != null) setQuizDeadlineHours(String(key));
+                    }}
+                    ariaLabel="Délai limite du quiz"
+                  />
+                  <p className="text-[10px] text-slate-400">
+                    Temps accordé au candidat avant expiration du lien de test.
+                  </p>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Section 5: Notifications & Alertes Intelligentes */}
+          <div className="space-y-4 pt-6 border-t border-slate-100">
+            <div>
+              <h4 className="text-xs font-bold text-slate-800 uppercase tracking-wider">
+                5. Alertes & Notifications IA
+              </h4>
+              <p className="text-xs text-slate-500 mt-0.5">
+                Restez alerté en temps réel lors de l&apos;arrivée de profils à forte valeur ajoutée.
+              </p>
+            </div>
+
+            <div className="space-y-3">
+              <div className="flex items-center justify-between p-4 bg-slate-50 rounded-xl border border-slate-200/80">
+                <div className="space-y-0.5">
+                  <p className="text-xs font-bold text-slate-800">Alerte instantanée pour les Top Matchs (&gt; 85%)</p>
+                  <p className="text-[11px] text-slate-500">
+                    Recevoir une notification immédiate lorsqu&apos;un candidat exceptionnel postule.
+                  </p>
+                </div>
+                <label className="relative inline-flex items-center cursor-pointer shrink-0">
+                  <input
+                    type="checkbox"
+                    checked={notifyTopMatch}
+                    onChange={(e) => setNotifyTopMatch(e.target.checked)}
+                    className="sr-only peer"
+                  />
+                  <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:bg-purple-600 after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all" />
+                </label>
+              </div>
+
+              <div className="flex items-center justify-between p-4 bg-slate-50 rounded-xl border border-slate-200/80">
+                <div className="space-y-0.5">
+                  <p className="text-xs font-bold text-slate-800">Digest analytique hebdomadaire</p>
+                  <p className="text-[11px] text-slate-500">
+                    Résumé de la performance du pipeline, temps de réponse et statistiques IA de la semaine.
+                  </p>
+                </div>
+                <label className="relative inline-flex items-center cursor-pointer shrink-0">
+                  <input
+                    type="checkbox"
+                    checked={weeklyDigest}
+                    onChange={(e) => setWeeklyDigest(e.target.checked)}
+                    className="sr-only peer"
+                  />
+                  <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:bg-purple-600 after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all" />
+                </label>
+              </div>
+            </div>
+          </div>
+
+          {/* Action Bar */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-6 border-t border-slate-100">
+            <button
+              type="button"
+              onClick={handleResetAiDefaults}
+              className="inline-flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl text-xs font-semibold text-slate-600 bg-slate-100 hover:bg-slate-200 transition-all cursor-pointer select-none"
+            >
+              <Icon icon="solar:restart-linear" className="w-4 h-4 text-slate-500" />
+              Rétablir les valeurs par défaut
+            </button>
+
+            <button
+              type="button"
+              onClick={handleSaveAiSettings}
+              disabled={isSavingAi}
+              className="inline-flex items-center justify-center gap-2 bg-purple-600 hover:bg-purple-700 text-white font-semibold text-xs py-3 px-6 rounded-xl shadow-sm transition-all active:scale-[0.98] select-none disabled:opacity-75 cursor-pointer min-w-[150px]"
+            >
+              {isSavingAi ? (
+                <>
+                  <Icon icon="solar:restart-bold" className="w-4 h-4 animate-spin" />
+                  Enregistrement...
+                </>
+              ) : (
+                <>
+                  <Icon icon="solar:diskette-linear" className="w-4 h-4" />
+                  Enregistrer les préférences
+                </>
+              )}
             </button>
           </div>
         </div>

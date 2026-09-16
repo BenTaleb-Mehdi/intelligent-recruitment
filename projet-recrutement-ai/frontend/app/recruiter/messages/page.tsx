@@ -9,10 +9,12 @@ import ChatConversations from "@/components/recruiter/ChatConversations";
 import ChatBox from "@/components/chat/ChatBox";
 import { api } from "@/lib/api";
 import { getSocket } from "@/lib/socket";
+import { authClient } from "@/lib/auth-client";
 import { RecruiterConversation } from "@/lib/recruiterChat";
 import type { Conversation } from "@/lib/chat";
 
 function RecruiterMessagesContent() {
+  const { data: session } = authClient.useSession();
   const searchParams = useSearchParams();
   const initialCandidateId = searchParams ? searchParams.get("appId") || searchParams.get("candidateId") : null;
   const initialCandidateName = searchParams ? searchParams.get("candidateName") : null;
@@ -131,7 +133,7 @@ function RecruiterMessagesContent() {
   }
 
   return (
-    <div className="h-full flex flex-col font-sans overflow-hidden">
+    <div className="h-[calc(100vh-6.5rem)] flex flex-col font-sans overflow-hidden">
       {/* Mobile header */}
       {!showConversations && activeConv && (
         <div className="md:hidden flex items-center px-3 py-2 bg-white border-b border-slate-200 gap-2 shrink-0">
@@ -155,7 +157,7 @@ function RecruiterMessagesContent() {
         </div>
       )}
 
-      <div className="flex-1 flex overflow-hidden rounded-xl bg-white shadow-sm border border-slate-200/70">
+      <div className="flex-1 flex min-h-0 overflow-hidden rounded-2xl bg-white shadow-sm border border-slate-200/70">
         {/* Left panel - conversations list */}
         <div
           className={`w-full md:w-80 lg:w-96 border-r border-slate-200/70 flex-shrink-0 ${
@@ -190,7 +192,7 @@ function RecruiterMessagesContent() {
 
         {/* Right panel - real-time chat area */}
         <div
-          className={`flex-1 flex flex-col bg-white ${
+          className={`flex-1 flex flex-col min-h-0 bg-white ${
             showConversations ? "hidden md:flex" : "flex"
           }`}
         >
@@ -198,9 +200,9 @@ function RecruiterMessagesContent() {
             <ChatBox
               key={activeConv.applicationId || activeConv.candidateId || activeConv.id}
               applicationId={activeConv.applicationId || activeConv.candidateId || activeConv.id}
-              currentUserId="recruiter-1"
+              currentUserId={session?.user?.id || ""}
               currentUserRole="RECRUITER"
-              currentUserName="Recruteur"
+              currentUserName={session?.user?.name || "Recruteur"}
               otherUserName={activeConv.candidateName}
               otherUserLogo={activeConv.candidateImage || activeConv.logo || activeConv.image}
               onMessageSent={() => {

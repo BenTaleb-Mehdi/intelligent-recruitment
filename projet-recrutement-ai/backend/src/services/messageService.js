@@ -8,13 +8,42 @@ const getAccessibleApplicationIds = async (userId, role) => {
 
     const applications = await prisma.application.findMany({
         where,
-        select: { id: true },
+        select: { id: true, candidateId: true, candidate: { select: { userId: true } } },
     });
-    return applications.map(({ id }) => id);
+
+    const ids = new Set();
+    applications.forEach((app) => {
+        if (app.id) ids.add(app.id);
+        if (app.candidateId) ids.add(app.candidateId);
+        if (app.candidate?.userId) ids.add(app.candidate.userId);
+    });
+
+    return Array.from(ids);
 };
 
 export const getMessagesByApplication = async (applicationId) => {
-    return Message.find({ applicationId }).sort({ createdAt: 1 });
+    const relatedIds = new Set([applicationId]);
+    try {
+        const app = await prisma.application.findFirst({
+            where: {
+                OR: [
+                    { id: applicationId },
+                    { candidateId: applicationId },
+                    { candidate: { userId: applicationId } },
+                ],
+            },
+            select: { id: true, candidateId: true, candidate: { select: { userId: true } } },
+        });
+        if (app) {
+            if (app.id) relatedIds.add(app.id);
+            if (app.candidateId) relatedIds.add(app.candidateId);
+            if (app.candidate?.userId) relatedIds.add(app.candidate.userId);
+        }
+    } catch (e) {
+        // ignore prisma fallback error
+    }
+
+    return Message.find({ applicationId: { $in: Array.from(relatedIds) } }).sort({ createdAt: 1 });
 };
 
 export const getRecruiterConversations = async (userId) => {
